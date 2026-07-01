@@ -51,6 +51,12 @@ export const createUser = createServerFn({ method: "POST" })
       },
     });
     if (error || !created.user) throw new Error(error?.message || "Falha ao criar usuário");
+    await supabaseAdmin.from("profiles").upsert({
+      id: created.user.id,
+      username: data.username.toLowerCase(),
+      full_name: data.full_name,
+      must_change_password: true,
+    });
     const { error: roleErr } = await supabaseAdmin.from("user_roles").insert({ user_id: created.user.id, role: data.role });
     if (roleErr) throw new Error(roleErr.message);
     return { id: created.user.id };
@@ -108,6 +114,9 @@ export const seedInitialUsers = createServerFn({ method: "POST" })
         user_metadata: { username: u.username, full_name: u.full_name, must_change_password: true },
       });
       if (error || !data.user) throw new Error(`${u.username}: ${error?.message || "sem usuário"}`);
+      await supabaseAdmin.from("profiles").upsert({
+        id: data.user.id, username: u.username, full_name: u.full_name, must_change_password: true,
+      });
       const { error: rerr } = await supabaseAdmin.from("user_roles").insert({ user_id: data.user.id, role: u.role });
       if (rerr) throw new Error(`role ${u.username}: ${rerr.message}`);
     }
