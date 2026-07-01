@@ -183,12 +183,26 @@ function BalancesPage() {
           {!canWrite && <p className="rounded-md border border-status-yellow/30 bg-status-yellow/5 px-3 py-2 text-xs text-status-yellow">Seu perfil não permite cadastrar saldos.</p>}
 
           <label className="block">
-            <span className="text-xs font-medium text-muted-foreground">Empresa</span>
-            <input required disabled={!canWrite || busy} value={form.company_name} onChange={(e) => update("company_name", e.target.value)} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm" placeholder="Ex.: Grupo PreverMed" />
+            <span className="text-xs font-medium text-muted-foreground">CNPJ da empresa</span>
+            <select required disabled={!canWrite || busy} value={form.company_name} onChange={(e) => update("company_name", e.target.value)} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm">
+              <option value="">Selecione…</option>
+              {COMPANIES.map((c) => (
+                <option key={c.doc} value={c.doc}>{c.doc} — {c.name}</option>
+              ))}
+              {form.company_name && !COMPANIES.some((c) => c.doc === form.company_name) && (
+                <option value={form.company_name}>{form.company_name}</option>
+              )}
+            </select>
           </label>
           <label className="block">
-            <span className="text-xs font-medium text-muted-foreground">Conta bancária</span>
-            <input required disabled={!canWrite || busy} value={form.account_name} onChange={(e) => update("account_name", e.target.value)} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm" placeholder="Ex.: Banco / Agência / Conta" />
+            <span className="text-xs font-medium text-muted-foreground">Banco</span>
+            <select required disabled={!canWrite || busy} value={form.account_name} onChange={(e) => update("account_name", e.target.value)} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm">
+              <option value="">Selecione…</option>
+              {BANKS.map((b) => (<option key={b} value={b}>{b}</option>))}
+              {form.account_name && !BANKS.includes(form.account_name) && (
+                <option value={form.account_name}>{form.account_name}</option>
+              )}
+            </select>
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
