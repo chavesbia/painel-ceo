@@ -177,7 +177,6 @@ function BalancesPage() {
             <div className="size-9 rounded-md bg-primary/10 text-primary flex items-center justify-center"><Landmark className="size-4" /></div>
             <div>
               <h2 className="font-display font-semibold">{editingId ? "Editar saldo" : "Novo saldo"}</h2>
-              <p className="text-xs text-muted-foreground">Bruna e Beatriz podem cadastrar e alterar.</p>
             </div>
           </div>
 
