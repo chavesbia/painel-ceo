@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import {
   LayoutDashboard,
@@ -9,31 +9,58 @@ import {
   Upload,
   Settings,
   ChevronDown,
+  Users as UsersIcon,
+  LogOut,
 } from "lucide-react";
 import logoSquare from "@/assets/prevermed-logo-square.png.asset.json";
+import { useCurrentUser, initials, type AppRole } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 type NavItem = {
   to: string;
   label: string;
   icon: typeof LayoutDashboard;
-  group: "Executivo" | "Operação" | "Sistema";
+  group: "Executivo" | "Operação" | "Sistema" | "Administração";
   disabled?: boolean;
+  requires?: AppRole; // minimum role
 };
 
 const NAV: NavItem[] = [
-  { to: "/", label: "Painel do CEO", icon: LayoutDashboard, group: "Executivo" },
-  { to: "/tesouraria", label: "Tesouraria", icon: Wallet, group: "Operação", disabled: true },
-  { to: "/fluxo-de-caixa", label: "Fluxo de Caixa", icon: LineChart, group: "Operação", disabled: true },
-  { to: "/contas-a-pagar", label: "Contas a Pagar", icon: ArrowUpCircle, group: "Operação", disabled: true },
-  { to: "/contas-a-receber", label: "Contas a Receber", icon: ArrowDownCircle, group: "Operação", disabled: true },
-  { to: "/importacoes", label: "Importações", icon: Upload, group: "Sistema" },
-  { to: "/configuracoes", label: "Configurações", icon: Settings, group: "Sistema", disabled: true },
+  { to: "/", label: "Painel do CEO", icon: LayoutDashboard, group: "Executivo", requires: "viewer" },
+  { to: "/tesouraria", label: "Tesouraria", icon: Wallet, group: "Operação", disabled: true, requires: "operator" },
+  { to: "/fluxo-de-caixa", label: "Fluxo de Caixa", icon: LineChart, group: "Operação", disabled: true, requires: "operator" },
+  { to: "/contas-a-pagar", label: "Contas a Pagar", icon: ArrowUpCircle, group: "Operação", disabled: true, requires: "operator" },
+  { to: "/contas-a-receber", label: "Contas a Receber", icon: ArrowDownCircle, group: "Operação", disabled: true, requires: "operator" },
+  { to: "/importacoes", label: "Importações", icon: Upload, group: "Sistema", requires: "operator" },
+  { to: "/usuarios", label: "Usuários", icon: UsersIcon, group: "Administração", requires: "admin" },
+  { to: "/configuracoes", label: "Configurações", icon: Settings, group: "Sistema", disabled: true, requires: "admin" },
 ];
 
-const GROUPS: NavItem["group"][] = ["Executivo", "Operação", "Sistema"];
+const GROUPS: NavItem["group"][] = ["Executivo", "Operação", "Sistema", "Administração"];
+
+function roleAllows(userRoles: AppRole[], required?: AppRole) {
+  if (!required) return true;
+  if (required === "viewer") return userRoles.length > 0;
+  if (required === "operator") return userRoles.includes("operator") || userRoles.includes("admin");
+  return userRoles.includes("admin");
+}
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const { data: me } = useCurrentUser();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const roles = me?.roles ?? [];
+  const visibleNav = NAV.filter((n) => roleAllows(roles, n.requires));
+  const activeItem = visibleNav.find((n) => n.to === pathname);
+  const roleLabel = me?.isAdmin ? "Administrador" : me?.isOperator ? "Operacional" : me?.isViewer ? "Visualização" : "—";
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    qc.clear();
+    navigate({ to: "/auth" });
+  };
 
   return (
     <div className="min-h-screen w-full flex bg-background text-foreground font-sans">
@@ -56,13 +83,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="flex-1 px-3 space-y-6 overflow-y-auto">
-          {GROUPS.map((group) => (
+          {GROUPS.filter((g) => visibleNav.some((n) => n.group === g)).map((group) => (
             <div key={group}>
               <p className="px-3 mb-2 text-[10px] uppercase tracking-[0.2em] text-white/40 font-semibold">
                 {group}
               </p>
               <div className="space-y-0.5">
-                {NAV.filter((n) => n.group === group).map((item) => {
+                {visibleNav.filter((n) => n.group === group).map((item) => {
                   const active = pathname === item.to;
                   const Icon = item.icon;
                   const cls = [
@@ -97,12 +124,15 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="px-4 py-4 border-t border-white/10">
           <div className="flex items-center gap-3">
             <div className="size-9 rounded-full bg-white/10 flex items-center justify-center text-sm font-semibold">
-              DE
+              {initials(me?.full_name || me?.username || "?")}
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium leading-tight">Diretoria Executiva</p>
-              <p className="text-[11px] text-white/50 leading-tight">Grupo PreverMed</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium leading-tight truncate">{me?.full_name || "—"}</p>
+              <p className="text-[11px] text-white/50 leading-tight">{roleLabel}</p>
             </div>
+            <button onClick={handleLogout} title="Sair" className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors">
+              <LogOut className="size-4" />
+            </button>
           </div>
         </div>
       </aside>
@@ -112,9 +142,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         {/* Topbar */}
         <header className="h-14 sticky top-0 z-20 bg-background/85 backdrop-blur border-b border-border flex items-center justify-between px-6">
           <div className="flex items-center gap-3 text-sm">
-            <span className="text-muted-foreground">Executivo</span>
+            <span className="text-muted-foreground">{activeItem?.group ?? "Executivo"}</span>
             <span className="text-border">/</span>
-            <span className="font-medium">Painel do CEO</span>
+            <span className="font-medium">{activeItem?.label ?? "Painel do CEO"}</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -134,12 +164,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className="font-medium">30 dias</span>
               <ChevronDown className="size-4 text-muted-foreground" />
             </button>
-            <div className="hidden lg:flex flex-col items-end px-3 border-l border-border pl-4">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Última importação</span>
-              <span className="text-xs font-medium tabular-nums">30/06/2026 · 07:12</span>
-            </div>
             <div className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold">
-              CE
+              {initials(me?.full_name || me?.username || "?")}
             </div>
           </div>
         </header>
