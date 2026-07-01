@@ -2,7 +2,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import {
   LayoutDashboard,
-  Wallet,
+  Landmark,
   LineChart,
   ArrowDownCircle,
   ArrowUpCircle,
@@ -28,7 +28,7 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { to: "/", label: "Painel do CEO", icon: LayoutDashboard, group: "Executivo", requires: "viewer" },
-  { to: "/tesouraria", label: "Tesouraria", icon: Wallet, group: "Operação", disabled: true, requires: "operator" },
+  { to: "/saldos", label: "Saldos", icon: Landmark, group: "Operação", requires: "operator" },
   { to: "/fluxo-de-caixa", label: "Fluxo de Caixa", icon: LineChart, group: "Operação", disabled: true, requires: "operator" },
   { to: "/contas-a-pagar", label: "Contas a Pagar", icon: ArrowUpCircle, group: "Operação", disabled: true, requires: "operator" },
   { to: "/contas-a-receber", label: "Contas a Receber", icon: ArrowDownCircle, group: "Operação", disabled: true, requires: "operator" },
@@ -76,7 +76,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 Prever<span className="opacity-70 font-normal">Med</span>
               </p>
               <p className="text-[10px] uppercase tracking-[0.18em] text-white/50 mt-1">
-                Intelligence Unit
+                Inteligência Financeira
               </p>
             </div>
           </div>

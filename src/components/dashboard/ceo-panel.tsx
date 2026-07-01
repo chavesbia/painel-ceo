@@ -64,7 +64,7 @@ export function CeoPanel() {
   if (!data.hasData) return <EmptyState ultima={data.ultimaImportacao} />;
 
   const resultado = data.aReceberTotal - data.aPagarTotal;
-  const saldoAtual = 0; // Fase 2: saldo bancário via Tesouraria
+  const saldoAtual = data.saldoBancarioTotal;
   const fluxoChart = data.fluxo.map((f) => ({ dia: f.label, saldo: f.saldo }));
   const menorSaldoPoint = fluxoChart.length
     ? fluxoChart.reduce((min, p) => (p.saldo < min.saldo ? p : min), fluxoChart[0])
@@ -115,7 +115,7 @@ export function CeoPanel() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">
-            Performance Consolidada
+            Visão Consolidada
           </p>
           <h1 className="mt-1 text-3xl md:text-4xl font-display font-bold text-foreground tracking-tight">
             Painel do CEO
@@ -131,7 +131,7 @@ export function CeoPanel() {
       <section className="grid grid-cols-12 gap-6">
         <Card className="col-span-12 lg:col-span-8">
           <div className="flex flex-col gap-4">
-            <Label>Resultado Projetado 30 dias</Label>
+            <Label>Resultado de Faturas 30 dias</Label>
             <div className="flex flex-wrap items-end gap-4">
               <h2 className="text-5xl md:text-6xl font-display font-bold tabular-nums tracking-tight text-foreground">
                 {resultado >= 0 ? "+" : ""}{brl(resultado)}
@@ -160,7 +160,7 @@ export function CeoPanel() {
               <Label className="text-primary-foreground/70">Saldo bancário inicial</Label>
               <p className="mt-2 text-xl font-display font-semibold tabular-nums">
                 {brl(saldoAtual)}
-                <span className="ml-2 text-[10px] font-normal opacity-70 uppercase tracking-wider">Tesouraria — Fase 2</span>
+                <span className="ml-2 text-[10px] font-normal opacity-70 uppercase tracking-wider">Saldos cadastrados</span>
               </p>
             </div>
           </div>
@@ -222,7 +222,7 @@ export function CeoPanel() {
             <div>
               <h3 className="text-lg font-display font-semibold">Fluxo de Caixa Projetado</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Saldo acumulado por vencimento (30 dias) · saldo bancário inicial será somado na Fase 2
+                Saldo acumulado por vencimento (30 dias) · saldo bancário inicial incluso
               </p>
             </div>
             <div className="flex gap-1 p-1 rounded-md bg-muted">
@@ -317,18 +317,20 @@ export function CeoPanel() {
         </Card>
 
         <Card>
-          <Label>Movimento por Conta Bancária</Label>
-          <div className="mt-5 flex flex-col items-center">
-            {bancos.length > 0 ? <Donut segments={bancos} /> : <p className="text-xs text-muted-foreground">Sem dados</p>}
-            <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 w-full">
-              {bancos.map((b) => (
-                <div key={b.nome} className="flex items-center gap-2 text-xs">
-                  <span className="size-2.5 rounded-sm" style={{ background: b.cor }} />
-                  <span className="truncate text-muted-foreground">{b.nome}</span>
-                  <span className="ml-auto tabular-nums font-medium">{b.pct}%</span>
+          <Label>Saldos por Conta Bancária</Label>
+          <div className="mt-5 space-y-3">
+            {data.saldos.length === 0 && <p className="text-xs text-muted-foreground">Sem saldos cadastrados</p>}
+            {data.saldos.slice(0, 5).map((saldo) => (
+              <div key={`${saldo.empresa}-${saldo.conta}`} className="rounded-md border border-border bg-muted/25 px-3 py-2.5">
+                <div className="flex items-start justify-between gap-3 text-sm">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{saldo.conta}</p>
+                    <p className="text-xs text-muted-foreground truncate">{saldo.empresa} · {new Date(saldo.data + "T00:00:00").toLocaleDateString("pt-BR")}</p>
+                  </div>
+                  <p className={`tabular-nums font-semibold ${saldo.saldo >= 0 ? "text-status-green" : "text-status-red"}`}>{brlShort(saldo.saldo)}</p>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </Card>
 
@@ -346,7 +348,7 @@ export function CeoPanel() {
         <Card>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <Label>Top 5 títulos a pagar vencidos</Label>
+              <Label>5 maiores títulos a pagar vencidos</Label>
               <p className="text-xs text-muted-foreground mt-1">Priorize regularização por valor e dias em atraso</p>
             </div>
             <TrendingUp className="size-4 text-muted-foreground" />
@@ -383,7 +385,7 @@ export function CeoPanel() {
 
       <footer className="text-[11px] text-muted-foreground pt-2 pb-6 flex flex-wrap items-center gap-2">
         <Info className="size-3.5" />
-        Empresa CNPJ 37.260.594/0002-60 é excluída globalmente. Saldo bancário inicial será integrado na Fase 2 (Tesouraria).
+        Empresa CNPJ 37.260.594/0002-60 é excluída globalmente. O fluxo considera os saldos bancários cadastrados.
       </footer>
     </div>
   );

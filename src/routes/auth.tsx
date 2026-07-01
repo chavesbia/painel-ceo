@@ -39,7 +39,7 @@ function AuthPage() {
           </div>
           <div>
             <p className="font-display font-bold text-lg tracking-tight">PreverMed</p>
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/60">Intelligence Unit</p>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-white/60">Inteligência Financeira</p>
           </div>
         </div>
         <div>
@@ -82,7 +82,7 @@ function AuthPage() {
             {busy ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
             Entrar
           </button>
-          <p className="text-[11px] text-muted-foreground text-center">Esqueceu sua senha? Solicite reset ao administrador.</p>
+          <p className="text-[11px] text-muted-foreground text-center">Primeiro acesso: senha <span className="font-mono">prevermed</span>. Esqueceu sua senha? Solicite redefinição à administradora.</p>
         </form>
       </div>
     </div>
