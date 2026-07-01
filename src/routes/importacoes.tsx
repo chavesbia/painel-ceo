@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import { AppShell } from "@/components/app-shell";
 import { csvToInvoices } from "@/lib/csv";
 import { importInvoices } from "@/lib/imports.functions";
@@ -30,6 +31,7 @@ function ImportPage() {
   const [status, setStatus] = useState<null | { kind: "info" | "ok" | "err"; msg: string }>(null);
   const [busy, setBusy] = useState(false);
   const doImport = useServerFn(importInvoices);
+  const qc = useQueryClient();
 
   const load = async () => {
     const { data } = await supabase
@@ -57,6 +59,7 @@ function ImportPage() {
         msg: `Importado com sucesso: ${res.imported} registros (${res.skipped} ignorados de ${res.total} totais).`,
       });
       void load();
+      void qc.invalidateQueries({ queryKey: ["dashboard"] });
     } catch (e) {
       setStatus({ kind: "err", msg: e instanceof Error ? e.message : "Erro ao importar" });
     } finally {
