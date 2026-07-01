@@ -77,7 +77,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 Prever<span className="opacity-70 font-normal">Med</span>
               </p>
               <p className="text-[10px] uppercase tracking-[0.18em] text-white/50 mt-1">
-                Inteligência Financeira
+                Painel Financeiro
               </p>
             </div>
           </div>
