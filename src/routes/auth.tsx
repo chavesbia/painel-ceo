@@ -39,7 +39,7 @@ function AuthPage() {
           </div>
           <div>
             <p className="font-display font-bold text-lg tracking-tight">PreverMed</p>
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/60">Inteligência Financeira</p>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-white/60">Painel Financeiro</p>
           </div>
         </div>
         <div>

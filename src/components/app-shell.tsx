@@ -52,7 +52,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const roles = me?.roles ?? [];
-  const visibleNav = NAV.filter((n) => roleAllows(roles, n.requires));
+  const isAdmin = !!me?.isAdmin;
+  const visibleNav = NAV.filter((n) => roleAllows(roles, n.requires) && (!n.disabled || isAdmin));
   const activeItem = visibleNav.find((n) => n.to === pathname);
   const roleLabel = me?.isAdmin ? "Administrador" : me?.isOperator ? "Operacional" : me?.isViewer ? "Visualização" : "—";
 
@@ -76,7 +77,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 Prever<span className="opacity-70 font-normal">Med</span>
               </p>
               <p className="text-[10px] uppercase tracking-[0.18em] text-white/50 mt-1">
-                Inteligência Financeira
+                Painel Financeiro
               </p>
             </div>
           </div>

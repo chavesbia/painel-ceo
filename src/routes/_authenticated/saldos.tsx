@@ -36,6 +36,18 @@ const today = () => new Date().toISOString().slice(0, 10);
 const emptyForm = (): FormState => ({ company_name: "", account_name: "", balance: "", balance_date: today(), notes: "" });
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+const COMPANIES: { doc: string; name: string }[] = [
+  { doc: "37.260.594/0001-80", name: "Prever Alpha Estética e Assessoria (Matriz)" },
+  { doc: "46.638.275/0001-56", name: "PreverMed Medicina Ocupacional (Matriz)" },
+  { doc: "46.638.275/0002-37", name: "PreverMed Medicina Ocupacional (Filial)" },
+  { doc: "96.492.707/0001-31", name: "Prever Centro Médico" },
+];
+const companyLabel = (doc: string) => {
+  const c = COMPANIES.find((x) => x.doc === doc);
+  return c ? `${c.doc} — ${c.name}` : doc;
+};
+const BANKS: string[] = ["Banco do Brasil"];
+
 function parseMoney(value: string) {
   const normalized = value.trim().replace(/\s/g, "").replace(/R\$/gi, "").replace(/\./g, "").replace(",", ".");
   const parsed = Number(normalized);
@@ -165,19 +177,32 @@ function BalancesPage() {
             <div className="size-9 rounded-md bg-primary/10 text-primary flex items-center justify-center"><Landmark className="size-4" /></div>
             <div>
               <h2 className="font-display font-semibold">{editingId ? "Editar saldo" : "Novo saldo"}</h2>
-              <p className="text-xs text-muted-foreground">Bruna e Beatriz podem cadastrar e alterar.</p>
             </div>
           </div>
 
           {!canWrite && <p className="rounded-md border border-status-yellow/30 bg-status-yellow/5 px-3 py-2 text-xs text-status-yellow">Seu perfil não permite cadastrar saldos.</p>}
 
           <label className="block">
-            <span className="text-xs font-medium text-muted-foreground">Empresa</span>
-            <input required disabled={!canWrite || busy} value={form.company_name} onChange={(e) => update("company_name", e.target.value)} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm" placeholder="Ex.: Grupo PreverMed" />
+            <span className="text-xs font-medium text-muted-foreground">CNPJ da empresa</span>
+            <select required disabled={!canWrite || busy} value={form.company_name} onChange={(e) => update("company_name", e.target.value)} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm">
+              <option value="">Selecione…</option>
+              {COMPANIES.map((c) => (
+                <option key={c.doc} value={c.doc}>{c.doc} — {c.name}</option>
+              ))}
+              {form.company_name && !COMPANIES.some((c) => c.doc === form.company_name) && (
+                <option value={form.company_name}>{form.company_name}</option>
+              )}
+            </select>
           </label>
           <label className="block">
-            <span className="text-xs font-medium text-muted-foreground">Conta bancária</span>
-            <input required disabled={!canWrite || busy} value={form.account_name} onChange={(e) => update("account_name", e.target.value)} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm" placeholder="Ex.: Banco / Agência / Conta" />
+            <span className="text-xs font-medium text-muted-foreground">Banco</span>
+            <select required disabled={!canWrite || busy} value={form.account_name} onChange={(e) => update("account_name", e.target.value)} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm">
+              <option value="">Selecione…</option>
+              {BANKS.map((b) => (<option key={b} value={b}>{b}</option>))}
+              {form.account_name && !BANKS.includes(form.account_name) && (
+                <option value={form.account_name}>{form.account_name}</option>
+              )}
+            </select>
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
@@ -219,7 +244,7 @@ function BalancesPage() {
               {data.map((row) => (
                 <tr key={row.id}>
                   <td className="px-4 py-3 font-medium">{row.account_name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{row.company_name}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{companyLabel(row.company_name)}</td>
                   <td className="px-4 py-3 tabular-nums text-muted-foreground">{new Date(row.balance_date + "T00:00:00").toLocaleDateString("pt-BR")}</td>
                   <td className={`px-4 py-3 text-right tabular-nums font-semibold ${row.balance >= 0 ? "text-status-green" : "text-status-red"}`}>{brl(row.balance)}</td>
                   <td className="px-4 py-3 text-right">
