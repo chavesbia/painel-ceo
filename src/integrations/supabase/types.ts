@@ -14,7 +14,131 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      imports: {
+        Row: {
+          created_at: string
+          filename: string
+          id: string
+          kind: Database["public"]["Enums"]["invoice_kind"]
+          notes: string | null
+          rows_imported: number
+          rows_skipped: number
+          rows_total: number
+        }
+        Insert: {
+          created_at?: string
+          filename: string
+          id?: string
+          kind: Database["public"]["Enums"]["invoice_kind"]
+          notes?: string | null
+          rows_imported?: number
+          rows_skipped?: number
+          rows_total?: number
+        }
+        Update: {
+          created_at?: string
+          filename?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["invoice_kind"]
+          notes?: string | null
+          rows_imported?: number
+          rows_skipped?: number
+          rows_total?: number
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          centro_custos: string | null
+          conta_bancaria: string | null
+          created_at: string
+          criado_por: string | null
+          data_cadastro: string | null
+          data_competencia: string | null
+          data_pagamento: string | null
+          data_vencimento: string | null
+          descricao: string | null
+          entidade: string | null
+          entidade_doc: string | null
+          forma_pagamento: string | null
+          id: string
+          import_id: string | null
+          kind: Database["public"]["Enums"]["invoice_kind"]
+          numero: string
+          numero_nota: string | null
+          origem: string | null
+          plano_contas: string | null
+          situacao: string | null
+          total_fatura: number | null
+          unidade_negocio: string | null
+          updated_at: string
+          valor_pago: number
+          valor_parcela: number
+        }
+        Insert: {
+          centro_custos?: string | null
+          conta_bancaria?: string | null
+          created_at?: string
+          criado_por?: string | null
+          data_cadastro?: string | null
+          data_competencia?: string | null
+          data_pagamento?: string | null
+          data_vencimento?: string | null
+          descricao?: string | null
+          entidade?: string | null
+          entidade_doc?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          import_id?: string | null
+          kind: Database["public"]["Enums"]["invoice_kind"]
+          numero: string
+          numero_nota?: string | null
+          origem?: string | null
+          plano_contas?: string | null
+          situacao?: string | null
+          total_fatura?: number | null
+          unidade_negocio?: string | null
+          updated_at?: string
+          valor_pago?: number
+          valor_parcela?: number
+        }
+        Update: {
+          centro_custos?: string | null
+          conta_bancaria?: string | null
+          created_at?: string
+          criado_por?: string | null
+          data_cadastro?: string | null
+          data_competencia?: string | null
+          data_pagamento?: string | null
+          data_vencimento?: string | null
+          descricao?: string | null
+          entidade?: string | null
+          entidade_doc?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          import_id?: string | null
+          kind?: Database["public"]["Enums"]["invoice_kind"]
+          numero?: string
+          numero_nota?: string | null
+          origem?: string | null
+          plano_contas?: string | null
+          situacao?: string | null
+          total_fatura?: number | null
+          unidade_negocio?: string | null
+          updated_at?: string
+          valor_pago?: number
+          valor_parcela?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +147,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      invoice_kind: "receivable" | "payable"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +274,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      invoice_kind: ["receivable", "payable"],
+    },
   },
 } as const
