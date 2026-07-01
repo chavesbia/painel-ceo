@@ -29,9 +29,9 @@ function SetupPage() {
         <div className="mx-auto size-12 rounded-full bg-accent/10 text-accent flex items-center justify-center">
           <ShieldCheck className="size-6" />
         </div>
-        <h1 className="mt-4 text-xl font-display font-bold">Bootstrap inicial</h1>
+        <h1 className="mt-4 text-xl font-display font-bold">Configuração inicial</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Cria os três usuários iniciais (Beatriz — admin, Bruna — operacional, Patricia — visualização). Senha padrão <code className="font-mono">prevermed</code>, com troca obrigatória no 1º acesso.
+          Cria os três usuários iniciais (Beatriz — administradora, Bruna — operacional, Patricia — visualização). Senha padrão <code className="font-mono">prevermed</code>, com troca obrigatória no 1º acesso.
         </p>
         <button
           onClick={run} disabled={busy}

@@ -35,7 +35,7 @@ function UsersPage() {
   const refresh = () => qc.invalidateQueries({ queryKey: ["users"] });
 
   const handleReset = async (u: Row) => {
-    if (!confirm(`Resetar senha de ${u.full_name} para "prevermed"?`)) return;
+    if (!confirm(`Redefinir senha de ${u.full_name} para "prevermed"?`)) return;
     setBusy(u.id);
     try { await reset({ data: { userId: u.id, password: "prevermed" } }); setFlash(`Senha de ${u.full_name} redefinida para "prevermed".`); }
     catch (e) { alert(e instanceof Error ? e.message : "Erro"); }
@@ -108,7 +108,7 @@ function UsersPage() {
                 <td className="px-4 py-3 text-right">
                   <div className="inline-flex items-center gap-1.5">
                     <button onClick={() => handleReset(u)} disabled={busy===u.id} title="Resetar senha" className="h-8 px-2.5 rounded border border-border hover:bg-muted text-xs inline-flex items-center gap-1.5">
-                      <KeyRound className="size-3.5" /> Resetar
+                      <KeyRound className="size-3.5" /> Redefinir
                     </button>
                     <button onClick={() => handleDelete(u)} disabled={busy===u.id} title="Excluir" className="h-8 px-2.5 rounded border border-status-red/30 text-status-red hover:bg-status-red/5 text-xs inline-flex items-center gap-1.5">
                       <Trash2 className="size-3.5" /> Excluir
@@ -127,7 +127,7 @@ function UsersPage() {
 }
 
 function RoleBadges({ roles }: { roles: ("admin"|"operator"|"viewer")[] }) {
-  const map = { admin: { label: "Admin", cls: "bg-primary/10 text-primary", Icon: ShieldCheck },
+  const map = { admin: { label: "Administrador", cls: "bg-primary/10 text-primary", Icon: ShieldCheck },
                 operator: { label: "Operacional", cls: "bg-accent/10 text-accent", Icon: Wrench },
                 viewer: { label: "Visualização", cls: "bg-muted text-muted-foreground", Icon: Eye } } as const;
   return (

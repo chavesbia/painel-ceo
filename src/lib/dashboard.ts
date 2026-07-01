@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type DashboardData = {
   hasData: boolean;
   ultimaImportacao: string | null;
+  saldoBancarioTotal: number;
   aReceberTotal: number;
   aReceberVencidosCount: number;
   aReceberVencidosValor: number;
@@ -14,6 +15,7 @@ export type DashboardData = {
   fluxo: { dia: string; label: string; entrada: number; saida: number; saldo: number }[];
   empresas: { nome: string; valor: number; pct: number }[];
   bancos: { nome: string; valor: number; pct: number }[];
+  saldos: { empresa: string; conta: string; saldo: number; data: string }[];
   topVencidos: {
     fornecedor: string; empresa: string; venc: string; dias: number; valor: number;
   }[];
@@ -30,6 +32,14 @@ type InvoiceRow = {
   situacao: string | null;
   data_vencimento: string | null;
   data_pagamento: string | null;
+};
+
+type CashBalanceRow = {
+  company_name: string;
+  account_name: string;
+  balance: number;
+  balance_date: string;
+  updated_at: string;
 };
 
 const ymd = (d: Date) => d.toISOString().slice(0, 10);
@@ -51,7 +61,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   const past = new Date(today);
   past.setDate(past.getDate() - 365);
 
-  const [invRes, impRes] = await Promise.all([
+  const [invRes, impRes, cashRes] = await Promise.all([
     supabase
       .from("invoices")
       .select("kind,numero,unidade_negocio,entidade,conta_bancaria,valor_parcela,valor_pago,situacao,data_vencimento,data_pagamento")
@@ -59,20 +69,43 @@ export async function loadDashboard(): Promise<DashboardData> {
       .lte("data_vencimento", ymd(horizon))
       .limit(50000),
     supabase.from("imports").select("created_at").order("created_at", { ascending: false }).limit(1),
+    supabase
+      .from("cash_balances")
+      .select("company_name,account_name,balance,balance_date,updated_at")
+      .order("balance_date", { ascending: false })
+      .order("updated_at", { ascending: false })
+      .limit(5000),
   ]);
 
   const rows = (invRes.data as InvoiceRow[] | null) || [];
+  const cashRows = (cashRes.data as CashBalanceRow[] | null) || [];
   const ultima = impRes.data?.[0]?.created_at || null;
 
-  if (rows.length === 0) {
+  const latestCash = new Map<string, CashBalanceRow>();
+  cashRows.forEach((row) => {
+    const key = `${row.company_name.trim().toLowerCase()}|${row.account_name.trim().toLowerCase()}`;
+    if (!latestCash.has(key)) latestCash.set(key, row);
+  });
+  const saldos = Array.from(latestCash.values())
+    .map((row) => ({
+      empresa: row.company_name,
+      conta: row.account_name,
+      saldo: Number(row.balance) || 0,
+      data: row.balance_date,
+    }))
+    .sort((a, b) => Math.abs(b.saldo) - Math.abs(a.saldo));
+  const saldoBancarioTotal = saldos.reduce((sum, row) => sum + row.saldo, 0);
+
+  if (rows.length === 0 && saldos.length === 0) {
     return {
       hasData: false,
       ultimaImportacao: ultima,
+      saldoBancarioTotal: 0,
       aReceberTotal: 0, aReceberVencidosCount: 0, aReceberVencidosValor: 0,
       aPagarTotal: 0, aPagarVencidosCount: 0, aPagarVencidosValor: 0,
       hoje: { receber: 0, pagar: 0, vencidos: 0 },
       semana: { receber: 0, pagar: 0 },
-      fluxo: [], empresas: [], bancos: [], topVencidos: [],
+      fluxo: [], empresas: [], bancos: [], saldos: [], topVencidos: [],
     };
   }
 
@@ -98,7 +131,7 @@ export async function loadDashboard(): Promise<DashboardData> {
     pagar: pay.filter((r) => r.data_vencimento! >= todayStr && r.data_vencimento! <= weekStr).reduce((s, r) => s + openAmount(r), 0),
   };
 
-  // Fluxo projetado 30d — saldo começa em 0 (tesouraria será Fase 2)
+  // Fluxo projetado 30d — saldo começa com os saldos bancários cadastrados.
   const buckets = new Map<string, { entrada: number; saida: number }>();
   for (let i = 0; i < 30; i++) {
     const d = new Date(today); d.setDate(d.getDate() + i);
@@ -110,7 +143,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   pay.filter((r) => r.data_vencimento! >= todayStr).forEach((r) => {
     const b = buckets.get(r.data_vencimento!); if (b) b.saida += openAmount(r);
   });
-  let saldo = 0;
+  let saldo = saldoBancarioTotal;
   const fluxo = Array.from(buckets.entries()).map(([d, v]) => {
     saldo += v.entrada - v.saida;
     const dt = new Date(d + "T00:00:00");
@@ -163,12 +196,13 @@ export async function loadDashboard(): Promise<DashboardData> {
   return {
     hasData: true,
     ultimaImportacao: ultima,
+    saldoBancarioTotal,
     aReceberTotal, aReceberVencidosCount: recvVenc.length,
     aReceberVencidosValor: recvVenc.reduce((s, r) => s + openAmount(r), 0),
     aPagarTotal, aPagarVencidosCount: payVenc.length,
     aPagarVencidosValor: payVenc.reduce((s, r) => s + openAmount(r), 0),
     hoje, semana, fluxo,
-    empresas: empresasWithPct, bancos: bancosWithPct, topVencidos,
+    empresas: empresasWithPct, bancos: bancosWithPct, saldos, topVencidos,
   };
 }
 
