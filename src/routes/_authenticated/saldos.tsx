@@ -36,6 +36,18 @@ const today = () => new Date().toISOString().slice(0, 10);
 const emptyForm = (): FormState => ({ company_name: "", account_name: "", balance: "", balance_date: today(), notes: "" });
 const brl = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+const COMPANIES: { doc: string; name: string }[] = [
+  { doc: "37.260.594/0001-80", name: "Prever Alpha Estética e Assessoria (Matriz)" },
+  { doc: "46.638.275/0001-56", name: "PreverMed Medicina Ocupacional (Matriz)" },
+  { doc: "46.638.275/0002-37", name: "PreverMed Medicina Ocupacional (Filial)" },
+  { doc: "96.492.707/0001-31", name: "Prever Centro Médico" },
+];
+const companyLabel = (doc: string) => {
+  const c = COMPANIES.find((x) => x.doc === doc);
+  return c ? `${c.doc} — ${c.name}` : doc;
+};
+const BANKS: string[] = ["Banco do Brasil"];
+
 function parseMoney(value: string) {
   const normalized = value.trim().replace(/\s/g, "").replace(/R\$/gi, "").replace(/\./g, "").replace(",", ".");
   const parsed = Number(normalized);
