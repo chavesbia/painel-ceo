@@ -17,10 +17,9 @@ import {
   Info,
   TrendingUp,
 } from "lucide-react";
-
-/* ------------------------------------------------------------------ */
-/* MOCK DATA — substituído pelos CSVs quando a importação for ligada  */
-/* ------------------------------------------------------------------ */
+import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { loadDashboard, type DashboardData } from "@/lib/dashboard";
 
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
@@ -32,86 +31,12 @@ const brlShort = (v: number) => {
   return brl(v);
 };
 
-const HERO = {
-  saldo: 12_847_302.55,
-  variacao7d: 2.3,
-  cobertura: 62,
-  menorSaldoValor: 3_240_500,
-  menorSaldoData: "22/07/2026",
-  ultimaImportacao: "30/06/2026 · 07:12",
-};
-
-const KPIS = {
-  aReceber: { total: 4_120_000, vencidos: 12, vencidosValor: 285_400 },
-  aPagar: { total: 3_560_000, vencidos: 8, vencidosValor: 142_800 },
-  resultado: { valor: 560_000, entradas: 4_120_000, saidas: 3_560_000 },
-};
-
-const HOJE = { receber: 182_400, pagar: 96_200, vencidos: 2 };
-const SEMANA = { receber: 890_500, pagar: 745_200, saldoFinal: 12_992_600 };
-
-// Fluxo de caixa projetado — 30 dias
-const fluxoCaixa = (() => {
-  const base = HERO.saldo;
-  const arr: { dia: string; saldo: number }[] = [];
-  let atual = base;
-  const delta = [
-    120, -240, 80, -80, 210, -50, 30, -320, 120, -180,
-    -60, -410, 320, 90, -220, -140, 380, 40, -260, -90,
-    150, -70, -3_240, 420, 180, -120, 260, 60, -80, 210,
-  ];
-  for (let i = 0; i < 30; i++) {
-    atual += delta[i] * 1000;
-    const d = new Date(2026, 5, 30);
-    d.setDate(d.getDate() + i);
-    arr.push({
-      dia: d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
-      saldo: Math.round(atual),
-    });
-  }
-  return arr;
-})();
-
-const menorSaldoPoint = fluxoCaixa.reduce((min, p) => (p.saldo < min.saldo ? p : min), fluxoCaixa[0]);
-
-const EMPRESAS = [
-  { nome: "Prevermed Centro Médico", saldo: 6_420_000, pct: 50 },
-  { nome: "Centro Médico Diagnóstico", saldo: 3_147_000, pct: 24 },
-  { nome: "Prevermed Odontologia", saldo: 2_040_300, pct: 16 },
-  { nome: "Holding Administrativa", saldo: 1_240_002, pct: 10 },
-];
-
-const BANCOS = [
-  { nome: "Banco do Brasil", pct: 55, cor: "var(--brand-deep)" },
-  { nome: "Itaú Unibanco", pct: 28, cor: "var(--brand-blue)" },
-  { nome: "Sicredi", pct: 12, cor: "oklch(0.70 0.15 200)" },
-  { nome: "Santander", pct: 5, cor: "oklch(0.75 0.14 85)" },
-];
-
-const ALERTAS = [
-  {
-    tipo: "red" as const,
-    titulo: "Saldo abaixo do mínimo previsto em 22/07",
-    detalhe: "Menor saldo projetado: R$ 3,2M · queda concentrada em compromissos SUS",
-  },
-  {
-    tipo: "yellow" as const,
-    titulo: "Concentração alta no Banco do Brasil (55%)",
-    detalhe: "Recomenda-se rebalancear caixa entre Itaú e Sicredi",
-  },
-  {
-    tipo: "green" as const,
-    titulo: "Recebimento extraordinário confirmado",
-    detalhe: "Repasse Unimed R$ 420k programado para 05/07",
-  },
-];
-
-const TOP_VENCIDOS = [
-  { fornecedor: "Laboratório DASA S.A.", empresa: "Prevermed Centro Médico", venc: "12/06/2026", dias: 18, valor: 68_400 },
-  { fornecedor: "Siemens Healthineers", empresa: "Centro Médico Diagnóstico", venc: "18/06/2026", dias: 12, valor: 54_200 },
-  { fornecedor: "MedSupply Distribuidora", empresa: "Prevermed Centro Médico", venc: "20/06/2026", dias: 10, valor: 42_800 },
-  { fornecedor: "Energisa Distribuição", empresa: "Holding Administrativa", venc: "22/06/2026", dias: 8, valor: 32_100 },
-  { fornecedor: "Construtora Alfa Ltda", empresa: "Prevermed Odontologia", venc: "24/06/2026", dias: 6, valor: 28_500 },
+const BANK_COLORS = [
+  "var(--brand-deep)",
+  "var(--brand-blue)",
+  "oklch(0.70 0.15 200)",
+  "oklch(0.75 0.14 85)",
+  "oklch(0.65 0.15 25)",
 ];
 
 /* ------------------------------------------------------------------ */
@@ -119,6 +44,76 @@ const TOP_VENCIDOS = [
 /* ------------------------------------------------------------------ */
 
 export function CeoPanel() {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    loadDashboard()
+      .then((d) => { if (alive) setData(d); })
+      .catch((e) => { if (alive) setError(e instanceof Error ? e.message : "Erro ao carregar dados"); });
+    return () => { alive = false; };
+  }, []);
+
+  if (error) {
+    return (
+      <div className="p-8 max-w-2xl mx-auto">
+        <div className="rounded-lg border border-status-red/30 bg-status-red/5 p-4 text-sm text-status-red">
+          Falha ao carregar dashboard: {error}
+        </div>
+      </div>
+    );
+  }
+  if (!data) return <div className="p-8 text-sm text-muted-foreground">Carregando painel…</div>;
+
+  if (!data.hasData) return <EmptyState ultima={data.ultimaImportacao} />;
+
+  const resultado = data.aReceberTotal - data.aPagarTotal;
+  const saldoAtual = 0; // Fase 2: saldo bancário via Tesouraria
+  const fluxoChart = data.fluxo.map((f) => ({ dia: f.label, saldo: f.saldo }));
+  const menorSaldoPoint = fluxoChart.length
+    ? fluxoChart.reduce((min, p) => (p.saldo < min.saldo ? p : min), fluxoChart[0])
+    : { dia: "", saldo: 0 };
+  const bancos = data.bancos.map((b, i) => ({ ...b, cor: BANK_COLORS[i % BANK_COLORS.length] }));
+
+  const alertas: { tipo: "green" | "yellow" | "red"; titulo: string; detalhe: string }[] = [];
+  if (data.aPagarVencidosCount > 0) {
+    alertas.push({
+      tipo: "red",
+      titulo: `${data.aPagarVencidosCount} títulos a pagar vencidos`,
+      detalhe: `Total em aberto: ${brl(data.aPagarVencidosValor)}`,
+    });
+  }
+  if (data.aReceberVencidosCount > 0) {
+    alertas.push({
+      tipo: "yellow",
+      titulo: `${data.aReceberVencidosCount} recebimentos em atraso`,
+      detalhe: `Total a cobrar: ${brl(data.aReceberVencidosValor)}`,
+    });
+  }
+  if (resultado > 0) {
+    alertas.push({
+      tipo: "green",
+      titulo: "Resultado projetado positivo nos próximos 30 dias",
+      detalhe: `Superávit de ${brl(resultado)} previsto`,
+    });
+  } else if (resultado < 0) {
+    alertas.push({
+      tipo: "red",
+      titulo: "Resultado projetado negativo nos próximos 30 dias",
+      detalhe: `Déficit projetado de ${brl(Math.abs(resultado))}`,
+    });
+  }
+
+  const semaforoState: "green" | "yellow" | "red" =
+    resultado < 0 || data.aPagarVencidosCount > 5 ? "red"
+    : data.aReceberVencidosCount > 0 || data.aPagarVencidosCount > 0 ? "yellow" : "green";
+  const semaforoLabel = semaforoState === "green" ? "Saudável" : semaforoState === "yellow" ? "Atenção" : "Crítico";
+
+  const ultimaFmt = data.ultimaImportacao
+    ? new Date(data.ultimaImportacao).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
+    : "—";
+
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-[1440px] mx-auto">
       {/* HEADER */}
@@ -131,27 +126,29 @@ export function CeoPanel() {
             Painel do CEO
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Fonte: ERP · última importação em {HERO.ultimaImportacao}
+            Fonte: ERP · última importação em {ultimaFmt}
           </p>
         </div>
-        <StatusPill state="green" label="Saudável" hint={`Cobertura ${HERO.cobertura} dias`} />
+        <StatusPill state={semaforoState} label={semaforoLabel} hint={`Resultado 30d ${brlShort(resultado)}`} />
       </header>
 
       {/* FAIXA 1 — HERO */}
       <section className="grid grid-cols-12 gap-6">
         <Card className="col-span-12 lg:col-span-8">
           <div className="flex flex-col gap-4">
-            <Label>Saldo Consolidado</Label>
+            <Label>Resultado Projetado 30 dias</Label>
             <div className="flex flex-wrap items-end gap-4">
               <h2 className="text-5xl md:text-6xl font-display font-bold tabular-nums tracking-tight text-foreground">
-                {brl(HERO.saldo)}
+                {resultado >= 0 ? "+" : ""}{brl(resultado)}
               </h2>
-              <div className="flex items-center gap-1 text-status-green text-sm font-semibold pb-2">
-                <ArrowUpRight className="size-4" />
-                +{HERO.variacao7d}% em 7 dias
+              <div className={`flex items-center gap-1 text-sm font-semibold pb-2 ${resultado >= 0 ? "text-status-green" : "text-status-red"}`}>
+                {resultado >= 0 ? <ArrowUpRight className="size-4" /> : <ArrowDownRight className="size-4" />}
+                Entradas {brlShort(data.aReceberTotal)} · Saídas {brlShort(data.aPagarTotal)}
               </div>
             </div>
-            <MiniSparkline data={fluxoCaixa.slice(0, 14).map((d) => d.saldo)} />
+            {fluxoChart.length > 0 && (
+              <MiniSparkline data={fluxoChart.slice(0, 14).map((d) => d.saldo)} />
+            )}
           </div>
         </Card>
 
@@ -160,14 +157,15 @@ export function CeoPanel() {
             <div>
               <Label className="text-primary-foreground/70">Menor saldo projetado (30d)</Label>
               <p className="mt-3 text-3xl font-display font-bold tabular-nums">
-                {brlShort(HERO.menorSaldoValor)}
+                {brlShort(menorSaldoPoint.saldo)}
               </p>
-              <p className="text-sm text-primary-foreground/75 mt-1">em {HERO.menorSaldoData}</p>
+              <p className="text-sm text-primary-foreground/75 mt-1">em {menorSaldoPoint.dia || "—"}</p>
             </div>
             <div className="border-t border-white/15 pt-4">
-              <Label className="text-primary-foreground/70">Cobertura operacional</Label>
-              <p className="mt-2 text-2xl font-display font-semibold tabular-nums">
-                {HERO.cobertura} <span className="text-sm font-normal opacity-70">dias</span>
+              <Label className="text-primary-foreground/70">Saldo bancário inicial</Label>
+              <p className="mt-2 text-xl font-display font-semibold tabular-nums">
+                {brl(saldoAtual)}
+                <span className="ml-2 text-[10px] font-normal opacity-70 uppercase tracking-wider">Tesouraria — Fase 2</span>
               </p>
             </div>
           </div>
@@ -178,27 +176,21 @@ export function CeoPanel() {
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <KpiCard
           label="A Receber"
-          value={brl(KPIS.aReceber.total)}
-          hint={`${KPIS.aReceber.vencidos} títulos vencidos · ${brlShort(KPIS.aReceber.vencidosValor)}`}
+          value={brl(data.aReceberTotal)}
+          hint={`${data.aReceberVencidosCount} títulos vencidos · ${brlShort(data.aReceberVencidosValor)}`}
           accent="green"
         />
         <KpiCard
           label="A Pagar"
-          value={brl(KPIS.aPagar.total)}
-          hint={`${KPIS.aPagar.vencidos} títulos vencidos · ${brlShort(KPIS.aPagar.vencidosValor)}`}
+          value={brl(data.aPagarTotal)}
+          hint={`${data.aPagarVencidosCount} títulos vencidos · ${brlShort(data.aPagarVencidosValor)}`}
           accent="red"
         />
         <KpiCard
           label="Resultado Líquido Projetado 30d"
-          value={`+${brl(KPIS.resultado.valor)}`}
-          hint={`Entradas ${brlShort(KPIS.resultado.entradas)} · Saídas ${brlShort(KPIS.resultado.saidas)}`}
+          value={`${resultado >= 0 ? "+" : ""}${brl(resultado)}`}
+          hint={`Entradas ${brlShort(data.aReceberTotal)} · Saídas ${brlShort(data.aPagarTotal)}`}
           accent="brand"
-          extra={
-            <div className="mt-4 flex items-end gap-2 h-10">
-              <div className="flex-1 rounded-sm bg-status-green/25 border-t-2 border-status-green" style={{ height: "82%" }} />
-              <div className="flex-1 rounded-sm bg-status-red/25 border-t-2 border-status-red" style={{ height: "68%" }} />
-            </div>
-          }
         />
       </section>
 
@@ -206,24 +198,24 @@ export function CeoPanel() {
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <div className="flex items-center justify-between">
-            <Label>Hoje · 30/06/2026</Label>
+            <Label>Hoje · {new Date().toLocaleDateString("pt-BR")}</Label>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Movimentos previstos</span>
           </div>
           <div className="mt-5 grid grid-cols-3 gap-4">
-            <MiniStat label="A Receber" value={brlShort(HOJE.receber)} color="green" />
-            <MiniStat label="A Pagar" value={brlShort(HOJE.pagar)} color="red" />
-            <MiniStat label="Vencidos hoje" value={String(HOJE.vencidos)} color="yellow" suffix="títulos" />
+            <MiniStat label="A Receber" value={brlShort(data.hoje.receber)} color="green" />
+            <MiniStat label="A Pagar" value={brlShort(data.hoje.pagar)} color="red" />
+            <MiniStat label="Vencidos" value={String(data.hoje.vencidos)} color="yellow" suffix="títulos" />
           </div>
         </Card>
         <Card>
           <div className="flex items-center justify-between">
             <Label>Esta Semana</Label>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">30/06 → 06/07</span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">7 dias</span>
           </div>
           <div className="mt-5 grid grid-cols-3 gap-4">
-            <MiniStat label="A Receber" value={brlShort(SEMANA.receber)} color="green" />
-            <MiniStat label="A Pagar" value={brlShort(SEMANA.pagar)} color="red" />
-            <MiniStat label="Saldo final estimado" value={brlShort(SEMANA.saldoFinal)} color="brand" />
+            <MiniStat label="A Receber" value={brlShort(data.semana.receber)} color="green" />
+            <MiniStat label="A Pagar" value={brlShort(data.semana.pagar)} color="red" />
+            <MiniStat label="Resultado" value={brlShort(data.semana.receber - data.semana.pagar)} color="brand" />
           </div>
         </Card>
       </section>
@@ -235,7 +227,7 @@ export function CeoPanel() {
             <div>
               <h3 className="text-lg font-display font-semibold">Fluxo de Caixa Projetado</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Saldo consolidado dia a dia · marcadores em menor saldo e primeiro dia negativo
+                Saldo acumulado por vencimento (30 dias) · saldo bancário inicial será somado na Fase 2
               </p>
             </div>
             <div className="flex gap-1 p-1 rounded-md bg-muted">
@@ -253,7 +245,7 @@ export function CeoPanel() {
           </div>
           <div className="mt-6 h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={fluxoCaixa} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
+              <AreaChart data={fluxoChart} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="var(--brand-blue)" stopOpacity={0.35} />
@@ -272,7 +264,7 @@ export function CeoPanel() {
                   tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v) => `R$ ${(v / 1_000_000).toFixed(1)}M`}
+                  tickFormatter={(v) => brlShort(v)}
                   width={70}
                 />
                 <Tooltip
@@ -293,14 +285,16 @@ export function CeoPanel() {
                   strokeWidth={2}
                   fill="url(#areaFill)"
                 />
-                <ReferenceDot
-                  x={menorSaldoPoint.dia}
-                  y={menorSaldoPoint.saldo}
-                  r={6}
-                  fill="var(--status-yellow)"
-                  stroke="var(--color-card)"
-                  strokeWidth={2}
-                />
+                {menorSaldoPoint.dia && (
+                  <ReferenceDot
+                    x={menorSaldoPoint.dia}
+                    y={menorSaldoPoint.saldo}
+                    r={6}
+                    fill="var(--status-yellow)"
+                    stroke="var(--color-card)"
+                    strokeWidth={2}
+                  />
+                )}
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -310,16 +304,17 @@ export function CeoPanel() {
       {/* FAIXA 5 — EMPRESAS / BANCOS / ALERTAS */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card>
-          <Label>Saldo por Empresa</Label>
+          <Label>Exposição por Empresa (líquido)</Label>
           <div className="mt-5 space-y-4">
-            {EMPRESAS.map((e) => (
+            {data.empresas.length === 0 && <p className="text-xs text-muted-foreground">Sem dados</p>}
+            {data.empresas.map((e) => (
               <div key={e.nome}>
                 <div className="flex justify-between text-sm mb-1.5">
                   <span className="font-medium truncate">{e.nome}</span>
-                  <span className="tabular-nums text-muted-foreground">{brlShort(e.saldo)}</span>
+                  <span className={`tabular-nums ${e.valor >= 0 ? "text-status-green" : "text-status-red"}`}>{brlShort(e.valor)}</span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-accent rounded-full" style={{ width: `${e.pct}%` }} />
+                  <div className={`h-full rounded-full ${e.valor >= 0 ? "bg-accent" : "bg-status-red"}`} style={{ width: `${e.pct}%` }} />
                 </div>
               </div>
             ))}
@@ -327,11 +322,11 @@ export function CeoPanel() {
         </Card>
 
         <Card>
-          <Label>Saldo por Banco</Label>
+          <Label>Movimento por Conta Bancária</Label>
           <div className="mt-5 flex flex-col items-center">
-            <Donut segments={BANCOS} />
+            {bancos.length > 0 ? <Donut segments={bancos} /> : <p className="text-xs text-muted-foreground">Sem dados</p>}
             <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 w-full">
-              {BANCOS.map((b) => (
+              {bancos.map((b) => (
                 <div key={b.nome} className="flex items-center gap-2 text-xs">
                   <span className="size-2.5 rounded-sm" style={{ background: b.cor }} />
                   <span className="truncate text-muted-foreground">{b.nome}</span>
@@ -345,9 +340,8 @@ export function CeoPanel() {
         <Card>
           <Label>Alertas</Label>
           <div className="mt-4 space-y-3">
-            {ALERTAS.map((a, i) => (
-              <AlertRow key={i} {...a} />
-            ))}
+            {alertas.length === 0 && <p className="text-xs text-muted-foreground">Nenhum alerta ativo.</p>}
+            {alertas.map((a, i) => <AlertRow key={i} {...a} />)}
           </div>
         </Card>
       </section>
@@ -357,7 +351,7 @@ export function CeoPanel() {
         <Card>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <Label>Top 5 títulos vencidos</Label>
+              <Label>Top 5 títulos a pagar vencidos</Label>
               <p className="text-xs text-muted-foreground mt-1">Priorize regularização por valor e dias em atraso</p>
             </div>
             <TrendingUp className="size-4 text-muted-foreground" />
@@ -374,11 +368,14 @@ export function CeoPanel() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {TOP_VENCIDOS.map((t, i) => (
+                {data.topVencidos.length === 0 && (
+                  <tr><td colSpan={5} className="px-2 py-6 text-center text-muted-foreground">Nenhum título vencido 🎉</td></tr>
+                )}
+                {data.topVencidos.map((t, i) => (
                   <tr key={i} className="hover:bg-muted/50 transition-colors">
                     <td className="px-2 py-3 font-medium">{t.fornecedor}</td>
                     <td className="px-2 py-3 text-muted-foreground">{t.empresa}</td>
-                    <td className="px-2 py-3 tabular-nums text-muted-foreground">{t.venc}</td>
+                    <td className="px-2 py-3 tabular-nums text-muted-foreground">{new Date(t.venc + "T00:00:00").toLocaleDateString("pt-BR")}</td>
                     <td className="px-2 py-3 text-right tabular-nums text-status-red font-semibold">{t.dias}</td>
                     <td className="px-2 py-3 text-right tabular-nums font-semibold">{brl(t.valor)}</td>
                   </tr>
@@ -391,8 +388,33 @@ export function CeoPanel() {
 
       <footer className="text-[11px] text-muted-foreground pt-2 pb-6 flex flex-wrap items-center gap-2">
         <Info className="size-3.5" />
-        Dados exibidos são de demonstração até a primeira importação dos CSVs do ERP. Empresa CNPJ 37.260.594/0002-60 é excluída globalmente.
+        Empresa CNPJ 37.260.594/0002-60 é excluída globalmente. Saldo bancário inicial será integrado na Fase 2 (Tesouraria).
       </footer>
+    </div>
+  );
+}
+
+function EmptyState({ ultima }: { ultima: string | null }) {
+  return (
+    <div className="p-6 md:p-8 max-w-3xl mx-auto">
+      <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
+        <div className="mx-auto size-14 rounded-full bg-accent/10 text-accent flex items-center justify-center">
+          <Info className="size-6" />
+        </div>
+        <h2 className="mt-4 text-xl font-display font-semibold">Sem dados importados</h2>
+        <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
+          O painel será populado automaticamente assim que você importar os CSVs de Faturas a Pagar e Faturas a Receber exportados do ERP.
+        </p>
+        <Link
+          to="/importacoes"
+          className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+        >
+          Ir para Importações
+        </Link>
+        {ultima && (
+          <p className="mt-4 text-xs text-muted-foreground">Última tentativa: {new Date(ultima).toLocaleString("pt-BR")}</p>
+        )}
+      </div>
     </div>
   );
 }
