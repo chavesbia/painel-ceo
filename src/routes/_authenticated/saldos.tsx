@@ -244,7 +244,7 @@ function BalancesPage() {
               {data.map((row) => (
                 <tr key={row.id}>
                   <td className="px-4 py-3 font-medium">{row.account_name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{row.company_name}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{companyLabel(row.company_name)}</td>
                   <td className="px-4 py-3 tabular-nums text-muted-foreground">{new Date(row.balance_date + "T00:00:00").toLocaleDateString("pt-BR")}</td>
                   <td className={`px-4 py-3 text-right tabular-nums font-semibold ${row.balance >= 0 ? "text-status-green" : "text-status-red"}`}>{brl(row.balance)}</td>
                   <td className="px-4 py-3 text-right">
