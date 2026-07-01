@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as AuthenticatedTrocarSenhaRouteImport } from './routes/_authenticated/trocar-senha'
+import { Route as AuthenticatedSaldosRouteImport } from './routes/_authenticated/saldos'
 import { Route as AuthenticatedImportacoesRouteImport } from './routes/_authenticated/importacoes'
 
 const SetupRoute = SetupRouteImport.update({
@@ -47,6 +48,11 @@ const AuthenticatedTrocarSenhaRoute =
     path: '/trocar-senha',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSaldosRoute = AuthenticatedSaldosRouteImport.update({
+  id: '/saldos',
+  path: '/saldos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedImportacoesRoute =
   AuthenticatedImportacoesRouteImport.update({
     id: '/importacoes',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/setup': typeof SetupRoute
   '/importacoes': typeof AuthenticatedImportacoesRoute
+  '/saldos': typeof AuthenticatedSaldosRoute
   '/trocar-senha': typeof AuthenticatedTrocarSenhaRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
 }
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/setup': typeof SetupRoute
   '/importacoes': typeof AuthenticatedImportacoesRoute
+  '/saldos': typeof AuthenticatedSaldosRoute
   '/trocar-senha': typeof AuthenticatedTrocarSenhaRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/': typeof AuthenticatedIndexRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/setup': typeof SetupRoute
   '/_authenticated/importacoes': typeof AuthenticatedImportacoesRoute
+  '/_authenticated/saldos': typeof AuthenticatedSaldosRoute
   '/_authenticated/trocar-senha': typeof AuthenticatedTrocarSenhaRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -87,16 +96,25 @@ export interface FileRouteTypes {
     | '/auth'
     | '/setup'
     | '/importacoes'
+    | '/saldos'
     | '/trocar-senha'
     | '/usuarios'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/setup' | '/importacoes' | '/trocar-senha' | '/usuarios' | '/'
+  to:
+    | '/auth'
+    | '/setup'
+    | '/importacoes'
+    | '/saldos'
+    | '/trocar-senha'
+    | '/usuarios'
+    | '/'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
     | '/setup'
     | '/_authenticated/importacoes'
+    | '/_authenticated/saldos'
     | '/_authenticated/trocar-senha'
     | '/_authenticated/usuarios'
     | '/_authenticated/'
@@ -152,6 +170,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTrocarSenhaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/saldos': {
+      id: '/_authenticated/saldos'
+      path: '/saldos'
+      fullPath: '/saldos'
+      preLoaderRoute: typeof AuthenticatedSaldosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/importacoes': {
       id: '/_authenticated/importacoes'
       path: '/importacoes'
@@ -164,6 +189,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedImportacoesRoute: typeof AuthenticatedImportacoesRoute
+  AuthenticatedSaldosRoute: typeof AuthenticatedSaldosRoute
   AuthenticatedTrocarSenhaRoute: typeof AuthenticatedTrocarSenhaRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -171,6 +197,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedImportacoesRoute: AuthenticatedImportacoesRoute,
+  AuthenticatedSaldosRoute: AuthenticatedSaldosRoute,
   AuthenticatedTrocarSenhaRoute: AuthenticatedTrocarSenhaRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
