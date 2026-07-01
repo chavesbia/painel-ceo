@@ -26,7 +26,7 @@ const NAV: NavItem[] = [
   { to: "/fluxo-de-caixa", label: "Fluxo de Caixa", icon: LineChart, group: "Operação", disabled: true },
   { to: "/contas-a-pagar", label: "Contas a Pagar", icon: ArrowUpCircle, group: "Operação", disabled: true },
   { to: "/contas-a-receber", label: "Contas a Receber", icon: ArrowDownCircle, group: "Operação", disabled: true },
-  { to: "/importacoes", label: "Importações", icon: Upload, group: "Sistema", disabled: true },
+  { to: "/importacoes", label: "Importações", icon: Upload, group: "Sistema" },
   { to: "/configuracoes", label: "Configurações", icon: Settings, group: "Sistema", disabled: true },
 ];
 
