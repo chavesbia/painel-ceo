@@ -17,8 +17,8 @@ import {
   Info,
   TrendingUp,
 } from "lucide-react";
-import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { loadDashboard, type DashboardData } from "@/lib/dashboard";
 
 const brl = (v: number) =>
@@ -44,22 +44,17 @@ const BANK_COLORS = [
 /* ------------------------------------------------------------------ */
 
 export function CeoPanel() {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    loadDashboard()
-      .then((d) => { if (alive) setData(d); })
-      .catch((e) => { if (alive) setError(e instanceof Error ? e.message : "Erro ao carregar dados"); });
-    return () => { alive = false; };
-  }, []);
+  const { data, error } = useQuery<DashboardData>({
+    queryKey: ["dashboard"],
+    queryFn: loadDashboard,
+    refetchOnWindowFocus: true,
+  });
 
   if (error) {
     return (
       <div className="p-8 max-w-2xl mx-auto">
         <div className="rounded-lg border border-status-red/30 bg-status-red/5 p-4 text-sm text-status-red">
-          Falha ao carregar dashboard: {error}
+          Falha ao carregar dashboard: {error instanceof Error ? error.message : String(error)}
         </div>
       </div>
     );
