@@ -6,9 +6,10 @@ import { AppShell } from "@/components/app-shell";
 import { csvToInvoices } from "@/lib/csv";
 import { importInvoices } from "@/lib/imports.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { useCurrentUser } from "@/lib/auth";
+import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, Lock } from "lucide-react";
 
-export const Route = createFileRoute("/importacoes")({
+export const Route = createFileRoute("/_authenticated/importacoes")({
   component: () => (
     <AppShell>
       <ImportPage />
@@ -27,6 +28,7 @@ type ImpRow = {
 };
 
 function ImportPage() {
+  const { data: me } = useCurrentUser();
   const [history, setHistory] = useState<ImpRow[]>([]);
   const [status, setStatus] = useState<null | { kind: "info" | "ok" | "err"; msg: string }>(null);
   const [busy, setBusy] = useState(false);
@@ -34,16 +36,15 @@ function ImportPage() {
   const qc = useQueryClient();
 
   const load = async () => {
-    const { data } = await supabase
-      .from("imports")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(20);
+    const { data } = await supabase.from("imports").select("*").order("created_at", { ascending: false }).limit(20);
     setHistory((data as ImpRow[]) || []);
   };
   useEffect(() => { void load(); }, []);
 
+  const canWrite = !!me?.isOperator;
+
   const handleFile = async (file: File, kind: "receivable" | "payable") => {
+    if (!canWrite) return;
     setBusy(true);
     setStatus({ kind: "info", msg: `Lendo ${file.name}…` });
     try {
@@ -51,20 +52,13 @@ function ImportPage() {
       const text = new TextDecoder("iso-8859-1").decode(buf);
       const parsed = csvToInvoices(text, kind);
       setStatus({ kind: "info", msg: `Enviando ${parsed.rows.length} registros…` });
-      const res = await doImport({
-        data: { kind, filename: file.name, total: parsed.total, skipped: parsed.skipped, rows: parsed.rows },
-      });
-      setStatus({
-        kind: "ok",
-        msg: `Importado com sucesso: ${res.imported} registros (${res.skipped} ignorados de ${res.total} totais).`,
-      });
+      const res = await doImport({ data: { kind, filename: file.name, total: parsed.total, skipped: parsed.skipped, rows: parsed.rows } });
+      setStatus({ kind: "ok", msg: `Importado com sucesso: ${res.imported} registros (${res.skipped} ignorados de ${res.total} totais).` });
       void load();
       void qc.invalidateQueries({ queryKey: ["dashboard"] });
     } catch (e) {
       setStatus({ kind: "err", msg: e instanceof Error ? e.message : "Erro ao importar" });
-    } finally {
-      setBusy(false);
-    }
+    } finally { setBusy(false); }
   };
 
   return (
@@ -77,21 +71,23 @@ function ImportPage() {
         </p>
       </header>
 
+      {!canWrite && (
+        <div className="rounded-lg border border-status-yellow/30 bg-status-yellow/5 p-4 text-sm text-status-yellow flex items-center gap-2">
+          <Lock className="size-4" /> Seu perfil não permite importar arquivos. Contate o administrador.
+        </div>
+      )}
+
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <UploadCard label="Faturas a Receber" kind="receivable" onFile={handleFile} disabled={busy} />
-        <UploadCard label="Faturas a Pagar" kind="payable" onFile={handleFile} disabled={busy} />
+        <UploadCard label="Faturas a Receber" kind="receivable" onFile={handleFile} disabled={busy || !canWrite} />
+        <UploadCard label="Faturas a Pagar" kind="payable" onFile={handleFile} disabled={busy || !canWrite} />
       </section>
 
       {status && (
-        <div
-          className={`rounded-lg border p-4 flex items-start gap-3 text-sm ${
-            status.kind === "ok"
-              ? "border-status-green/30 bg-status-green/5 text-status-green"
-              : status.kind === "err"
-                ? "border-status-red/30 bg-status-red/5 text-status-red"
-                : "border-border bg-muted/40 text-foreground"
-          }`}
-        >
+        <div className={`rounded-lg border p-4 flex items-start gap-3 text-sm ${
+          status.kind === "ok" ? "border-status-green/30 bg-status-green/5 text-status-green"
+            : status.kind === "err" ? "border-status-red/30 bg-status-red/5 text-status-red"
+            : "border-border bg-muted/40 text-foreground"
+        }`}>
           {status.kind === "ok" ? <CheckCircle2 className="size-4 mt-0.5" /> :
            status.kind === "err" ? <AlertCircle className="size-4 mt-0.5" /> :
            <Loader2 className="size-4 mt-0.5 animate-spin" />}
@@ -135,13 +131,9 @@ function ImportPage() {
   );
 }
 
-function UploadCard({
-  label, kind, onFile, disabled,
-}: {
-  label: string;
-  kind: "receivable" | "payable";
-  onFile: (f: File, k: "receivable" | "payable") => void;
-  disabled: boolean;
+function UploadCard({ label, kind, onFile, disabled }: {
+  label: string; kind: "receivable" | "payable";
+  onFile: (f: File, k: "receivable" | "payable") => void; disabled: boolean;
 }) {
   return (
     <label className={`rounded-xl border-2 border-dashed border-border bg-card p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-accent hover:bg-accent/5 transition-colors ${disabled ? "opacity-50 pointer-events-none" : "cursor-pointer"}`}>
@@ -151,20 +143,11 @@ function UploadCard({
       <div>
         <p className="font-semibold">{label}</p>
         <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5 justify-center">
-          <Upload className="size-3.5" />
-          Clique para selecionar um CSV
+          <Upload className="size-3.5" /> Clique para selecionar um CSV
         </p>
       </div>
-      <input
-        type="file"
-        accept=".csv,text/csv"
-        className="hidden"
-        disabled={disabled}
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) onFile(f, kind);
-          e.target.value = "";
-        }}
+      <input type="file" accept=".csv,text/csv" className="hidden" disabled={disabled}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f, kind); e.target.value = ""; }}
       />
     </label>
   );
