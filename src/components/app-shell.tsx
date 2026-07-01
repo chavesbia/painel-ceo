@@ -52,7 +52,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const roles = me?.roles ?? [];
-  const visibleNav = NAV.filter((n) => roleAllows(roles, n.requires));
+  const isAdmin = !!me?.isAdmin;
+  const visibleNav = NAV.filter((n) => roleAllows(roles, n.requires) && (!n.disabled || isAdmin));
   const activeItem = visibleNav.find((n) => n.to === pathname);
   const roleLabel = me?.isAdmin ? "Administrador" : me?.isOperator ? "Operacional" : me?.isViewer ? "Visualização" : "—";
 
