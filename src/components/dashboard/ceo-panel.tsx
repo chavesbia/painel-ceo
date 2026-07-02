@@ -1,7 +1,5 @@
 import * as React from "react";
 import {
-  ArrowUpRight,
-
   ArrowDownRight,
   ArrowUp,
   ArrowDown,
