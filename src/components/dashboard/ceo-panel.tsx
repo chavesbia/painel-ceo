@@ -496,7 +496,7 @@ function CashFlowChart({
   data,
   minPoint,
 }: {
-  data: { dia: string; saldo: number }[];
+  data: { dia: string; saldo: number; entrada: number; saida: number }[];
   minPoint: { dia: string; saldo: number };
 }) {
   if (data.length === 0) {
@@ -527,8 +527,49 @@ function CashFlowChart({
   const tickValues = Array.from({ length: 5 }, (_, i) => min + ((max - min) / 4) * i).reverse();
   const xTickStep = Math.max(1, Math.ceil(data.length / 6));
 
+  const svgRef = React.useRef<SVGSVGElement | null>(null);
+  const [activeIdx, setActiveIdx] = React.useState<number | null>(null);
+
+  const handleMove = (clientX: number) => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const localX = ((clientX - rect.left) / rect.width) * width;
+    let best = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i < points.length; i++) {
+      const d = Math.abs(points[i].x - localX);
+      if (d < bestDist) {
+        bestDist = d;
+        best = i;
+      }
+    }
+    setActiveIdx(best);
+  };
+
+  const active = activeIdx != null ? points[activeIdx] : null;
+  const tooltipW = 190;
+  const tooltipH = 82;
+  const tooltipX = active
+    ? Math.min(Math.max(active.x - tooltipW / 2, pad.left), width - pad.right - tooltipW)
+    : 0;
+  const tooltipY = active
+    ? Math.max(pad.top, active.y - tooltipH - 14)
+    : 0;
+
   return (
-    <svg className="h-full w-full overflow-visible" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Fluxo de caixa projetado por data de vencimento" preserveAspectRatio="none">
+    <svg
+      ref={svgRef}
+      className="h-full w-full overflow-visible touch-none select-none"
+      viewBox={`0 0 ${width} ${height}`}
+      role="img"
+      aria-label="Fluxo de caixa projetado por data de vencimento"
+      onMouseMove={(e) => handleMove(e.clientX)}
+      onMouseLeave={() => setActiveIdx(null)}
+      onTouchStart={(e) => { if (e.touches[0]) handleMove(e.touches[0].clientX); }}
+      onTouchMove={(e) => { if (e.touches[0]) handleMove(e.touches[0].clientX); }}
+      onTouchEnd={() => setActiveIdx(null)}
+    >
       <defs>
         <linearGradient id="cashFlowFill" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="var(--brand-blue)" stopOpacity="0.30" />
@@ -553,9 +594,7 @@ function CashFlowChart({
       <path d={linePath} fill="none" stroke="var(--brand-blue)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" />
       {points.map((p, i) => (
         <g key={`${p.dia}-${i}`}>
-          <circle cx={p.x} cy={p.y} r="3" fill="var(--brand-blue)" stroke="var(--color-card)" strokeWidth="1.5" vectorEffect="non-scaling-stroke">
-            <title>{`${p.dia}: ${brl(p.saldo)}`}</title>
-          </circle>
+          <circle cx={p.x} cy={p.y} r={activeIdx === i ? 5 : 3} fill="var(--brand-blue)" stroke="var(--color-card)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
           {i % xTickStep === 0 && (
             <text x={p.x} y={height - 10} textAnchor="middle" className="fill-muted-foreground text-[11px] tabular-nums">
               {p.dia}
@@ -564,9 +603,20 @@ function CashFlowChart({
         </g>
       ))}
       {minDot && (
-        <circle cx={minDot.x} cy={minDot.y} r="6" fill="var(--status-yellow)" stroke="var(--color-card)" strokeWidth="2" vectorEffect="non-scaling-stroke">
-          <title>{`Menor saldo: ${brl(minDot.saldo)} em ${minDot.dia}`}</title>
-        </circle>
+        <circle cx={minDot.x} cy={minDot.y} r="6" fill="var(--status-yellow)" stroke="var(--color-card)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+      )}
+      {active && (
+        <g pointerEvents="none">
+          <line x1={active.x} x2={active.x} y1={pad.top} y2={pad.top + chartH} stroke="var(--brand-blue)" strokeOpacity="0.4" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+          <rect x={tooltipX} y={tooltipY} width={tooltipW} height={tooltipH} rx="8" fill="var(--color-card)" stroke="var(--color-border)" vectorEffect="non-scaling-stroke" />
+          <text x={tooltipX + 12} y={tooltipY + 20} className="fill-foreground text-[12px] font-semibold">{active.dia}</text>
+          <text x={tooltipX + 12} y={tooltipY + 38} className="fill-muted-foreground text-[11px]">Saldo:</text>
+          <text x={tooltipX + tooltipW - 12} y={tooltipY + 38} textAnchor="end" className={`text-[11px] tabular-nums font-semibold ${active.saldo >= 0 ? "fill-[var(--status-green)]" : "fill-[var(--status-red)]"}`}>{brl(active.saldo)}</text>
+          <text x={tooltipX + 12} y={tooltipY + 54} className="fill-muted-foreground text-[11px]">Entradas:</text>
+          <text x={tooltipX + tooltipW - 12} y={tooltipY + 54} textAnchor="end" className="fill-[var(--status-green)] text-[11px] tabular-nums">{brl(active.entrada)}</text>
+          <text x={tooltipX + 12} y={tooltipY + 70} className="fill-muted-foreground text-[11px]">Saídas:</text>
+          <text x={tooltipX + tooltipW - 12} y={tooltipY + 70} textAnchor="end" className="fill-[var(--status-red)] text-[11px] tabular-nums">{brl(active.saida)}</text>
+        </g>
       )}
     </svg>
   );
