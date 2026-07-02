@@ -41,6 +41,7 @@ const COMPANIES: { doc: string; name: string }[] = [
   { doc: "46.638.275/0001-56", name: "PreverMed Medicina Ocupacional (Matriz)" },
   { doc: "46.638.275/0002-37", name: "PreverMed Medicina Ocupacional (Filial)" },
   { doc: "96.492.707/0001-31", name: "Prever Centro Médico" },
+  { doc: "28.309.721/0001-05", name: "Prever Medical Group" },
 ];
 const companyLabel = (doc: string) => {
   const c = COMPANIES.find((x) => x.doc === doc);
