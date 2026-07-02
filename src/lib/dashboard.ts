@@ -17,7 +17,7 @@ export type DashboardData = {
   bancos: { nome: string; valor: number; pct: number }[];
   saldos: { empresaCnpj: string | null; empresaNome: string; conta: string; saldo: number; data: string }[];
   topVencidos: {
-    fornecedor: string; empresaCnpj: string | null; empresaNome: string; venc: string; dias: number; valor: number;
+    fornecedor: string; descricao: string | null; empresaCnpj: string | null; empresaNome: string; venc: string; dias: number; valor: number;
   }[];
 };
 
@@ -26,6 +26,7 @@ type InvoiceRow = {
   numero: string;
   unidade_negocio: string | null;
   entidade: string | null;
+  descricao: string | null;
   conta_bancaria: string | null;
   valor_parcela: number;
   valor_pago: number;
@@ -64,7 +65,7 @@ async function fetchAllInvoices(pastStr: string): Promise<InvoiceRow[]> {
   while (true) {
     const { data, error } = await supabase
       .from("invoices")
-      .select("kind,numero,unidade_negocio,entidade,conta_bancaria,valor_parcela,valor_pago,situacao,data_vencimento,data_pagamento")
+      .select("kind,numero,unidade_negocio,entidade,descricao,conta_bancaria,valor_parcela,valor_pago,situacao,data_vencimento,data_pagamento")
       .gte("data_vencimento", pastStr)
       .in("situacao", ["Pendente", "Protestada"])
       .order("data_vencimento", { ascending: true })
@@ -213,6 +214,7 @@ export async function loadDashboard(): Promise<DashboardData> {
       const info = companyInfo(r.unidade_negocio);
       return {
         fornecedor: shortName(r.entidade) || "-",
+        descricao: r.descricao?.trim() || null,
         empresaCnpj: info.cnpj,
         empresaNome: info.nome,
         venc: r.data_vencimento!,
@@ -220,7 +222,7 @@ export async function loadDashboard(): Promise<DashboardData> {
         valor: openAmount(r),
       };
     })
-    .sort((a, b) => b.valor - a.valor)
+    .sort((a, b) => b.dias - a.dias)
     .slice(0, 5);
 
   return {
