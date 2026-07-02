@@ -65,7 +65,7 @@ function BalancesPage() {
   const [status, setStatus] = useState<null | { kind: "ok" | "err"; msg: string }>(null);
 
   const canWrite = !!me?.isOperator;
-  const canDelete = !!me?.isAdmin;
+  const canDelete = !!me?.isOperator;
 
   const { data = [], isLoading } = useQuery<BalanceRow[]>({
     queryKey: ["cash-balances"],
