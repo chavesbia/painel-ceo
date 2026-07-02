@@ -58,15 +58,15 @@ async function fetchAllInvoices(pastStr: string): Promise<InvoiceRow[]> {
   const pageSize = 1000;
   let from = 0;
   const all: InvoiceRow[] = [];
-  // Traz tudo com vencimento >= 1 ano atrás (sem cortar futuro) para KPIs corretos.
-  // O gráfico de fluxo filtra a janela de 30 dias localmente.
-  // Paginado porque PostgREST limita a 1000 por request.
+  // Só faturas em aberto (Pendente/Protestada) — reduz drasticamente o payload
+  // (não precisamos das Pagas/Canceladas para os KPIs do painel).
   // eslint-disable-next-line no-constant-condition
   while (true) {
     const { data, error } = await supabase
       .from("invoices")
       .select("kind,numero,unidade_negocio,entidade,conta_bancaria,valor_parcela,valor_pago,situacao,data_vencimento,data_pagamento")
       .gte("data_vencimento", pastStr)
+      .in("situacao", ["Pendente", "Protestada"])
       .order("data_vencimento", { ascending: true })
       .range(from, from + pageSize - 1);
     if (error) throw error;
