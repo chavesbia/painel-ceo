@@ -50,7 +50,33 @@ function openAmount(r: InvoiceRow): number {
 function isOpen(r: InvoiceRow): boolean {
   const s = (r.situacao || "").toLowerCase();
   if (s.startsWith("paga")) return false;
+  if (s.startsWith("cancel")) return false;
   return openAmount(r) > 0 && !!r.data_vencimento;
+}
+
+async function fetchAllInvoices(pastStr: string): Promise<InvoiceRow[]> {
+  const pageSize = 1000;
+  let from = 0;
+  const all: InvoiceRow[] = [];
+  // Traz tudo com vencimento >= 1 ano atrás (sem cortar futuro) para KPIs corretos.
+  // O gráfico de fluxo filtra a janela de 30 dias localmente.
+  // Paginado porque PostgREST limita a 1000 por request.
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { data, error } = await supabase
+      .from("invoices")
+      .select("kind,numero,unidade_negocio,entidade,conta_bancaria,valor_parcela,valor_pago,situacao,data_vencimento,data_pagamento")
+      .gte("data_vencimento", pastStr)
+      .order("data_vencimento", { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    const chunk = (data as InvoiceRow[] | null) || [];
+    all.push(...chunk);
+    if (chunk.length < pageSize) break;
+    from += pageSize;
+    if (from > 200000) break; // guarda
+  }
+  return all;
 }
 
 export async function loadDashboard(): Promise<DashboardData> {
@@ -61,13 +87,8 @@ export async function loadDashboard(): Promise<DashboardData> {
   const past = new Date(today);
   past.setDate(past.getDate() - 365);
 
-  const [invRes, impRes, cashRes] = await Promise.all([
-    supabase
-      .from("invoices")
-      .select("kind,numero,unidade_negocio,entidade,conta_bancaria,valor_parcela,valor_pago,situacao,data_vencimento,data_pagamento")
-      .gte("data_vencimento", ymd(past))
-      .lte("data_vencimento", ymd(horizon))
-      .limit(50000),
+  const [rows, impRes, cashRes] = await Promise.all([
+    fetchAllInvoices(ymd(past)),
     supabase.from("imports").select("created_at").order("created_at", { ascending: false }).limit(1),
     supabase
       .from("cash_balances")
@@ -77,7 +98,6 @@ export async function loadDashboard(): Promise<DashboardData> {
       .limit(5000),
   ]);
 
-  const rows = (invRes.data as InvoiceRow[] | null) || [];
   const cashRows = (cashRes.data as CashBalanceRow[] | null) || [];
   const ultima = impRes.data?.[0]?.created_at || null;
 
