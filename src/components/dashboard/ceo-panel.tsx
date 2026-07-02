@@ -1,8 +1,8 @@
 import * as React from "react";
 import {
-  ArrowUpRight,
-
   ArrowDownRight,
+  ArrowUp,
+  ArrowDown,
   AlertTriangle,
   CheckCircle2,
   Info,
@@ -124,12 +124,19 @@ export function CeoPanel() {
           <div className="flex flex-col gap-4">
             <Label>Resultado de Faturas 30 dias</Label>
             <div className="flex flex-wrap items-end gap-4">
-              <h2 className="text-5xl md:text-6xl font-display font-bold tabular-nums tracking-tight text-foreground">
+              <h2 className="text-5xl md:text-6xl font-display font-bold tabular-nums tracking-tight text-accent">
                 {resultado >= 0 ? "+" : ""}{brl(resultado)}
               </h2>
-              <div className={`flex items-center gap-1 text-sm font-semibold pb-2 ${resultado >= 0 ? "text-status-green" : "text-status-red"}`}>
-                {resultado >= 0 ? <ArrowUpRight className="size-4" /> : <ArrowDownRight className="size-4" />}
-                Entradas {brlShort(data.aReceberTotal)} · Saídas {brlShort(data.aPagarTotal)}
+              <div className="flex items-center gap-3 text-sm font-semibold pb-2">
+                <span className="inline-flex items-center gap-1 text-status-green">
+                  <ArrowUp className="size-4" />
+                  Entradas {brlShort(data.aReceberTotal)}
+                </span>
+                <span className="text-muted-foreground">·</span>
+                <span className="inline-flex items-center gap-1 text-status-red">
+                  <ArrowDown className="size-4" />
+                  Saídas {brlShort(data.aPagarTotal)}
+                </span>
               </div>
             </div>
             {fluxoChart.length > 0 && (
@@ -165,17 +172,19 @@ export function CeoPanel() {
           value={brl(data.aReceberTotal)}
           hint={`${data.aReceberVencidosCount} títulos vencidos · ${brlShort(data.aReceberVencidosValor)}`}
           accent="green"
+          direction="up"
         />
         <KpiCard
           label="A Pagar"
           value={brl(data.aPagarTotal)}
           hint={`${data.aPagarVencidosCount} títulos vencidos · ${brlShort(data.aPagarVencidosValor)}`}
           accent="red"
+          direction="down"
         />
         <KpiCard
           label="Resultado Líquido Projetado 30d"
           value={`${resultado >= 0 ? "+" : ""}${brl(resultado)}`}
-          hint={`Entradas ${brlShort(data.aReceberTotal)} · Saídas ${brlShort(data.aPagarTotal)}`}
+          hint={`↑ Entradas ${brlShort(data.aReceberTotal)}  ·  ↓ Saídas ${brlShort(data.aPagarTotal)}`}
           accent="brand"
         />
       </section>
@@ -188,8 +197,8 @@ export function CeoPanel() {
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Movimentos previstos</span>
           </div>
           <div className="mt-5 grid grid-cols-3 gap-4">
-            <MiniStat label="A Receber" value={brlShort(data.hoje.receber)} color="green" />
-            <MiniStat label="A Pagar" value={brlShort(data.hoje.pagar)} color="red" />
+            <MiniStat label="A Receber" value={brlShort(data.hoje.receber)} color="green" direction="up" />
+            <MiniStat label="A Pagar" value={brlShort(data.hoje.pagar)} color="red" direction="down" />
             <MiniStat label="Vencidos" value={String(data.hoje.vencidos)} color="yellow" suffix="títulos" />
           </div>
         </Card>
@@ -199,8 +208,8 @@ export function CeoPanel() {
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">7 dias</span>
           </div>
           <div className="mt-5 grid grid-cols-3 gap-4">
-            <MiniStat label="A Receber" value={brlShort(data.semana.receber)} color="green" />
-            <MiniStat label="A Pagar" value={brlShort(data.semana.pagar)} color="red" />
+            <MiniStat label="A Receber" value={brlShort(data.semana.receber)} color="green" direction="up" />
+            <MiniStat label="A Pagar" value={brlShort(data.semana.pagar)} color="red" direction="down" />
             <MiniStat label="Resultado" value={brlShort(data.semana.receber - data.semana.pagar)} color="brand" />
           </div>
         </Card>
@@ -420,23 +429,34 @@ function KpiCard({
   hint,
   accent,
   extra,
+  direction,
 }: {
   label: string;
   value: string;
   hint: string;
   accent: "green" | "red" | "brand";
   extra?: React.ReactNode;
+  direction?: "up" | "down";
 }) {
   const bar = {
     green: "bg-status-green",
     red: "bg-status-red",
     brand: "bg-accent",
   }[accent];
+  const valueCls = {
+    green: "text-status-green",
+    red: "text-status-red",
+    brand: "text-accent",
+  }[accent];
   return (
     <Card>
       <div className={`h-0.5 w-8 rounded-full ${bar} mb-4`} />
       <Label>{label}</Label>
-      <p className="mt-3 text-3xl font-display font-bold tabular-nums tracking-tight">{value}</p>
+      <p className={`mt-3 text-3xl font-display font-bold tabular-nums tracking-tight flex items-center gap-2 ${valueCls}`}>
+        {direction === "up" && <ArrowUp className="size-6" />}
+        {direction === "down" && <ArrowDown className="size-6" />}
+        <span>{value}</span>
+      </p>
       <p className="mt-2 text-xs text-muted-foreground">{hint}</p>
       {extra}
     </Card>
@@ -448,11 +468,13 @@ function MiniStat({
   value,
   color,
   suffix,
+  direction,
 }: {
   label: string;
   value: string;
   color: "green" | "red" | "yellow" | "brand";
   suffix?: string;
+  direction?: "up" | "down";
 }) {
   const cls = {
     green: "text-status-green",
@@ -463,8 +485,11 @@ function MiniStat({
   return (
     <div>
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</p>
-      <p className={`mt-1.5 text-xl font-display font-semibold tabular-nums ${cls}`}>
-        {value} {suffix && <span className="text-xs text-muted-foreground font-normal">{suffix}</span>}
+      <p className={`mt-1.5 text-xl font-display font-semibold tabular-nums flex items-center gap-1 ${cls}`}>
+        {direction === "up" && <ArrowUp className="size-4" />}
+        {direction === "down" && <ArrowDown className="size-4" />}
+        <span>{value}</span>
+        {suffix && <span className="text-xs text-muted-foreground font-normal ml-1">{suffix}</span>}
       </p>
     </div>
   );
@@ -613,10 +638,10 @@ function CashFlowChart({
           <rect x={tooltipX} y={tooltipY} width={tooltipW} height={tooltipH} rx="8" fill="var(--color-card)" stroke="var(--color-border)" vectorEffect="non-scaling-stroke" />
           <text x={tooltipX + 12} y={tooltipY + 20} className="fill-foreground text-[12px] font-semibold">{active.dia}</text>
           <text x={tooltipX + 12} y={tooltipY + 38} className="fill-muted-foreground text-[11px]">Saldo:</text>
-          <text x={tooltipX + tooltipW - 12} y={tooltipY + 38} textAnchor="end" className={`text-[11px] tabular-nums font-semibold ${active.saldo >= 0 ? "fill-[var(--status-green)]" : "fill-[var(--status-red)]"}`}>{brl(active.saldo)}</text>
-          <text x={tooltipX + 12} y={tooltipY + 54} className="fill-muted-foreground text-[11px]">Entradas:</text>
+          <text x={tooltipX + tooltipW - 12} y={tooltipY + 38} textAnchor="end" className="fill-[var(--brand-blue)] text-[11px] tabular-nums font-semibold">{brl(active.saldo)}</text>
+          <text x={tooltipX + 12} y={tooltipY + 54} className="fill-muted-foreground text-[11px]">↑ Entradas:</text>
           <text x={tooltipX + tooltipW - 12} y={tooltipY + 54} textAnchor="end" className="fill-[var(--status-green)] text-[11px] tabular-nums">{brl(active.entrada)}</text>
-          <text x={tooltipX + 12} y={tooltipY + 70} className="fill-muted-foreground text-[11px]">Saídas:</text>
+          <text x={tooltipX + 12} y={tooltipY + 70} className="fill-muted-foreground text-[11px]">↓ Saídas:</text>
           <text x={tooltipX + tooltipW - 12} y={tooltipY + 70} textAnchor="end" className="fill-[var(--status-red)] text-[11px] tabular-nums">{brl(active.saida)}</text>
         </g>
       )}
