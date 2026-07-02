@@ -1,15 +1,4 @@
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ReferenceLine,
-  ReferenceDot,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
   ArrowUpRight,
   ArrowDownRight,
   AlertTriangle,
@@ -239,59 +228,7 @@ export function CeoPanel() {
             </div>
           </div>
           <div className="mt-6 h-72 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={fluxoChart} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--brand-blue)" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="var(--brand-blue)" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="2 4" stroke="var(--color-border)" vertical={false} />
-                <XAxis
-                  dataKey="dia"
-                  tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }}
-                  tickLine={false}
-                  axisLine={{ stroke: "var(--color-border)" }}
-                  interval={4}
-                />
-                <YAxis
-                  tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(v) => brlShort(v)}
-                  width={70}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--color-card)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                  labelStyle={{ color: "var(--color-muted-foreground)", fontWeight: 600 }}
-                  formatter={(v: number) => [brl(v), "Saldo"]}
-                />
-                <ReferenceLine y={0} stroke="var(--status-red)" strokeDasharray="4 4" />
-                <Area
-                  type="monotone"
-                  dataKey="saldo"
-                  stroke="var(--brand-blue)"
-                  strokeWidth={2}
-                  fill="url(#areaFill)"
-                />
-                {menorSaldoPoint.dia && (
-                  <ReferenceDot
-                    x={menorSaldoPoint.dia}
-                    y={menorSaldoPoint.saldo}
-                    r={6}
-                    fill="var(--status-yellow)"
-                    stroke="var(--color-card)"
-                    strokeWidth={2}
-                  />
-                )}
-              </AreaChart>
-            </ResponsiveContainer>
+            <CashFlowChart data={fluxoChart} minPoint={menorSaldoPoint} />
           </div>
         </Card>
       </section>
@@ -551,6 +488,86 @@ function MiniSparkline({ data }: { data: number[] }) {
         vectorEffect="non-scaling-stroke"
         points={pts}
       />
+    </svg>
+  );
+}
+
+function CashFlowChart({
+  data,
+  minPoint,
+}: {
+  data: { dia: string; saldo: number }[];
+  minPoint: { dia: string; saldo: number };
+}) {
+  if (data.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center rounded-md border border-dashed border-border text-sm text-muted-foreground">
+        Sem vencimentos projetados no período.
+      </div>
+    );
+  }
+
+  const width = 820;
+  const height = 288;
+  const pad = { top: 16, right: 18, bottom: 34, left: 78 };
+  const chartW = width - pad.left - pad.right;
+  const chartH = height - pad.top - pad.bottom;
+  const values = data.map((d) => d.saldo);
+  const rawMin = Math.min(0, ...values);
+  const rawMax = Math.max(0, ...values);
+  const spread = rawMax - rawMin || 1;
+  const min = rawMin - spread * 0.12;
+  const max = rawMax + spread * 0.12;
+  const y = (v: number) => pad.top + ((max - v) / (max - min)) * chartH;
+  const x = (i: number) => pad.left + (data.length === 1 ? 0 : (i / (data.length - 1)) * chartW);
+  const points = data.map((d, i) => ({ ...d, x: x(i), y: y(d.saldo) }));
+  const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const areaPath = `${linePath} L${points[points.length - 1].x.toFixed(1)},${pad.top + chartH} L${points[0].x.toFixed(1)},${pad.top + chartH} Z`;
+  const minDot = points.find((p) => p.dia === minPoint.dia);
+  const tickValues = Array.from({ length: 5 }, (_, i) => min + ((max - min) / 4) * i).reverse();
+  const xTickStep = Math.max(1, Math.ceil(data.length / 6));
+
+  return (
+    <svg className="h-full w-full overflow-visible" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Fluxo de caixa projetado por data de vencimento" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="cashFlowFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--brand-blue)" stopOpacity="0.30" />
+          <stop offset="100%" stopColor="var(--brand-blue)" stopOpacity="0.03" />
+        </linearGradient>
+      </defs>
+      {tickValues.map((tick) => {
+        const yy = y(tick);
+        return (
+          <g key={tick.toFixed(2)}>
+            <line x1={pad.left} x2={width - pad.right} y1={yy} y2={yy} stroke="var(--color-border)" strokeDasharray="2 4" vectorEffect="non-scaling-stroke" />
+            <text x={pad.left - 10} y={yy + 4} textAnchor="end" className="fill-muted-foreground text-[11px] tabular-nums">
+              {brlShort(tick)}
+            </text>
+          </g>
+        );
+      })}
+      {min <= 0 && max >= 0 && (
+        <line x1={pad.left} x2={width - pad.right} y1={y(0)} y2={y(0)} stroke="var(--status-red)" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
+      )}
+      <path d={areaPath} fill="url(#cashFlowFill)" />
+      <path d={linePath} fill="none" stroke="var(--brand-blue)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" />
+      {points.map((p, i) => (
+        <g key={`${p.dia}-${i}`}>
+          <circle cx={p.x} cy={p.y} r="3" fill="var(--brand-blue)" stroke="var(--color-card)" strokeWidth="1.5" vectorEffect="non-scaling-stroke">
+            <title>{`${p.dia}: ${brl(p.saldo)}`}</title>
+          </circle>
+          {i % xTickStep === 0 && (
+            <text x={p.x} y={height - 10} textAnchor="middle" className="fill-muted-foreground text-[11px] tabular-nums">
+              {p.dia}
+            </text>
+          )}
+        </g>
+      ))}
+      {minDot && (
+        <circle cx={minDot.x} cy={minDot.y} r="6" fill="var(--status-yellow)" stroke="var(--color-card)" strokeWidth="2" vectorEffect="non-scaling-stroke">
+          <title>{`Menor saldo: ${brl(minDot.saldo)} em ${minDot.dia}`}</title>
+        </circle>
+      )}
     </svg>
   );
 }
