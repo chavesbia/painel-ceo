@@ -243,8 +243,8 @@ export function CeoPanel() {
               <div key={`${e.cnpj || ""}-${e.nome}`}>
                 <div className="flex justify-between text-sm mb-1.5">
                   <div className="min-w-0">
-                    {e.cnpj && <div className="tabular-nums text-xs text-muted-foreground">{e.cnpj}</div>}
                     <div className="font-medium truncate">{e.nome}</div>
+                    {e.cnpj && <div className="tabular-nums text-xs text-muted-foreground">{e.cnpj}</div>}
                   </div>
                   <span className={`tabular-nums ${e.valor >= 0 ? "text-status-green" : "text-status-red"}`}>{brlShort(e.valor)}</span>
                 </div>
