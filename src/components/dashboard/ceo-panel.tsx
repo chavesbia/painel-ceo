@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Info,
   TrendingUp,
+  Printer,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -116,6 +117,15 @@ export function CeoPanel() {
           </p>
         </div>
         <StatusPill state={semaforoState} label={semaforoLabel} hint={`Resultado 30d ${brlShort(resultado)}`} />
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className="print:hidden inline-flex items-center gap-2 h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted transition-colors"
+          title="Imprimir ou salvar em PDF"
+        >
+          <Printer className="size-4" />
+          Exportar / Imprimir
+        </button>
       </header>
 
       {/* FAIXA 1 — HERO */}
@@ -170,14 +180,14 @@ export function CeoPanel() {
         <KpiCard
           label="A Receber"
           value={brl(data.aReceberTotal)}
-          hint={`${data.aReceberVencidosCount} títulos vencidos · ${brlShort(data.aReceberVencidosValor)}`}
+          hint={`Estoque total em aberto · ${data.aReceberVencidosCount} vencidos (${brlShort(data.aReceberVencidosValor)})`}
           accent="green"
           direction="up"
         />
         <KpiCard
           label="A Pagar"
           value={brl(data.aPagarTotal)}
-          hint={`${data.aPagarVencidosCount} títulos vencidos · ${brlShort(data.aPagarVencidosValor)}`}
+          hint={`Estoque total em aberto · ${data.aPagarVencidosCount} vencidos (${brlShort(data.aPagarVencidosValor)})`}
           accent="red"
           direction="down"
         />
@@ -336,6 +346,53 @@ export function CeoPanel() {
                     <td className="px-2 py-3 tabular-nums text-muted-foreground">{new Date(t.venc + "T00:00:00").toLocaleDateString("pt-BR")}</td>
                     <td className="px-2 py-3 text-right tabular-nums text-status-red font-semibold">{t.dias}</td>
                     <td className="px-2 py-3 text-right tabular-nums font-semibold">{brl(t.valor)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </section>
+
+      {/* TOP 5 CLIENTES EM ATRASO */}
+      <section>
+        <Card>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <Label>Top 5 clientes em atraso</Label>
+              <p className="text-xs text-muted-foreground mt-1">Recebíveis vencidos, ordenados por valor — priorize a cobrança</p>
+            </div>
+            <TrendingUp className="size-4 text-status-green" />
+          </div>
+          <div className="overflow-x-auto -mx-2">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <th className="text-left font-semibold px-2 py-2">Cliente</th>
+                  <th className="text-left font-semibold px-2 py-2">Descrição</th>
+                  <th className="text-left font-semibold px-2 py-2">Empresa</th>
+                  <th className="text-left font-semibold px-2 py-2">Vencimento</th>
+                  <th className="text-right font-semibold px-2 py-2">Dias</th>
+                  <th className="text-right font-semibold px-2 py-2">Valor</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {data.topClientesVencidos.length === 0 && (
+                  <tr><td colSpan={6} className="px-2 py-6 text-center text-muted-foreground">Nenhum recebível vencido 🎉</td></tr>
+                )}
+                {data.topClientesVencidos.map((t, i) => (
+                  <tr key={i} className="hover:bg-muted/50 transition-colors">
+                    <td className="px-2 py-3 font-medium">{t.cliente}</td>
+                    <td className="px-2 py-3 text-muted-foreground max-w-[280px]">
+                      <div className="truncate" title={t.descricao || ""}>{t.descricao || "—"}</div>
+                    </td>
+                    <td className="px-2 py-3 text-muted-foreground">
+                      {t.empresaCnpj && <div className="text-[11px] tabular-nums">{t.empresaCnpj}</div>}
+                      <div>{t.empresaNome}</div>
+                    </td>
+                    <td className="px-2 py-3 tabular-nums text-muted-foreground">{new Date(t.venc + "T00:00:00").toLocaleDateString("pt-BR")}</td>
+                    <td className="px-2 py-3 text-right tabular-nums text-status-yellow font-semibold">{t.dias}</td>
+                    <td className="px-2 py-3 text-right tabular-nums font-semibold text-status-green">{brl(t.valor)}</td>
                   </tr>
                 ))}
               </tbody>
