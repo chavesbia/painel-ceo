@@ -303,9 +303,12 @@ export function CeoPanel() {
           <div className="mt-5 space-y-4">
             {data.empresas.length === 0 && <p className="text-xs text-muted-foreground">Sem dados</p>}
             {data.empresas.map((e) => (
-              <div key={e.nome}>
+              <div key={`${e.cnpj || ""}-${e.nome}`}>
                 <div className="flex justify-between text-sm mb-1.5">
-                  <span className="font-medium truncate">{e.nome}</span>
+                  <div className="min-w-0">
+                    {e.cnpj && <div className="tabular-nums text-xs text-muted-foreground">{e.cnpj}</div>}
+                    <div className="font-medium truncate">{e.nome}</div>
+                  </div>
                   <span className={`tabular-nums ${e.valor >= 0 ? "text-status-green" : "text-status-red"}`}>{brlShort(e.valor)}</span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -321,11 +324,14 @@ export function CeoPanel() {
           <div className="mt-5 space-y-3">
             {data.saldos.length === 0 && <p className="text-xs text-muted-foreground">Sem saldos cadastrados</p>}
             {data.saldos.slice(0, 5).map((saldo) => (
-              <div key={`${saldo.empresa}-${saldo.conta}`} className="rounded-md border border-border bg-muted/25 px-3 py-2.5">
+              <div key={`${saldo.empresaNome}-${saldo.conta}`} className="rounded-md border border-border bg-muted/25 px-3 py-2.5">
                 <div className="flex items-start justify-between gap-3 text-sm">
                   <div className="min-w-0">
                     <p className="font-medium truncate">{saldo.conta}</p>
-                    <p className="text-xs text-muted-foreground truncate">{saldo.empresa} · {new Date(saldo.data + "T00:00:00").toLocaleDateString("pt-BR")}</p>
+                    {saldo.empresaCnpj && (
+                      <p className="text-[11px] text-muted-foreground tabular-nums mt-0.5">{saldo.empresaCnpj}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground truncate">{saldo.empresaNome} · {new Date(saldo.data + "T00:00:00").toLocaleDateString("pt-BR")}</p>
                   </div>
                   <p className={`tabular-nums font-semibold ${saldo.saldo >= 0 ? "text-status-green" : "text-status-red"}`}>{brlShort(saldo.saldo)}</p>
                 </div>
@@ -371,7 +377,10 @@ export function CeoPanel() {
                 {data.topVencidos.map((t, i) => (
                   <tr key={i} className="hover:bg-muted/50 transition-colors">
                     <td className="px-2 py-3 font-medium">{t.fornecedor}</td>
-                    <td className="px-2 py-3 text-muted-foreground">{t.empresa}</td>
+                    <td className="px-2 py-3 text-muted-foreground">
+                      {t.empresaCnpj && <div className="text-[11px] tabular-nums">{t.empresaCnpj}</div>}
+                      <div>{t.empresaNome}</div>
+                    </td>
                     <td className="px-2 py-3 tabular-nums text-muted-foreground">{new Date(t.venc + "T00:00:00").toLocaleDateString("pt-BR")}</td>
                     <td className="px-2 py-3 text-right tabular-nums text-status-red font-semibold">{t.dias}</td>
                     <td className="px-2 py-3 text-right tabular-nums font-semibold">{brl(t.valor)}</td>
