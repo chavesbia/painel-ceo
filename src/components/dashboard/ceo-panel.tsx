@@ -206,15 +206,9 @@ export function CeoPanel() {
             <Label>Hoje · {new Date().toLocaleDateString("pt-BR")}</Label>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Movimentos previstos</span>
           </div>
-          <div className="mt-5 grid grid-cols-3 gap-4">
+          <div className="mt-5 grid grid-cols-2 gap-4">
             <MiniStat label="A Receber" value={brlShort(data.hoje.receber)} color="green" direction="up" />
             <MiniStat label="A Pagar" value={brlShort(data.hoje.pagar)} color="red" direction="down" />
-            <MiniStat
-              label="Vencidos"
-              value={brlShort(data.hoje.vencidosValor)}
-              color="yellow"
-              suffix={`${data.hoje.vencidos} títulos`}
-            />
           </div>
         </Card>
         <Card>
