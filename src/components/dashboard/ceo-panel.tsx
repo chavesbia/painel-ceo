@@ -209,7 +209,12 @@ export function CeoPanel() {
           <div className="mt-5 grid grid-cols-3 gap-4">
             <MiniStat label="A Receber" value={brlShort(data.hoje.receber)} color="green" direction="up" />
             <MiniStat label="A Pagar" value={brlShort(data.hoje.pagar)} color="red" direction="down" />
-            <MiniStat label="Vencidos" value={String(data.hoje.vencidos)} color="yellow" suffix="títulos" />
+            <MiniStat
+              label="Vencidos"
+              value={brlShort(data.hoje.vencidosValor)}
+              color="yellow"
+              suffix={`${data.hoje.vencidos} títulos`}
+            />
           </div>
         </Card>
         <Card>
