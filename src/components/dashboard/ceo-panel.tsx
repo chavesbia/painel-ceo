@@ -348,8 +348,8 @@ export function CeoPanel() {
         <Card>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <Label>5 maiores títulos a pagar vencidos</Label>
-              <p className="text-xs text-muted-foreground mt-1">Priorize regularização por valor e dias em atraso</p>
+              <Label>Top 5 contas a pagar em atraso</Label>
+              <p className="text-xs text-muted-foreground mt-1">Boletos/faturas já vencidos, ordenados pelo maior valor em aberto — priorize a regularização</p>
             </div>
             <TrendingUp className="size-4 text-muted-foreground" />
           </div>
