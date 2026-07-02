@@ -10,7 +10,7 @@ export type DashboardData = {
   aPagarTotal: number;
   aPagarVencidosCount: number;
   aPagarVencidosValor: number;
-  hoje: { receber: number; pagar: number; vencidos: number };
+  hoje: { receber: number; pagar: number; vencidos: number; vencidosValor: number };
   semana: { receber: number; pagar: number };
   fluxo: { dia: string; label: string; entrada: number; saida: number; saldo: number }[];
   empresas: { cnpj: string | null; nome: string; valor: number; pct: number }[];
@@ -131,7 +131,7 @@ export async function loadDashboard(): Promise<DashboardData> {
       saldoBancarioTotal: 0,
       aReceberTotal: 0, aReceberVencidosCount: 0, aReceberVencidosValor: 0,
       aPagarTotal: 0, aPagarVencidosCount: 0, aPagarVencidosValor: 0,
-      hoje: { receber: 0, pagar: 0, vencidos: 0 },
+      hoje: { receber: 0, pagar: 0, vencidos: 0, vencidosValor: 0 },
       semana: { receber: 0, pagar: 0 },
       fluxo: [], empresas: [], bancos: [], saldos: [], topVencidos: [], topClientesVencidos: [],
     };
@@ -153,6 +153,9 @@ export async function loadDashboard(): Promise<DashboardData> {
     receber: recv.filter((r) => r.data_vencimento === todayStr).reduce((s, r) => s + openAmount(r), 0),
     pagar: pay.filter((r) => r.data_vencimento === todayStr).reduce((s, r) => s + openAmount(r), 0),
     vencidos: recvVenc.length + payVenc.length,
+    vencidosValor:
+      recvVenc.reduce((s, r) => s + openAmount(r), 0) +
+      payVenc.reduce((s, r) => s + openAmount(r), 0),
   };
   const semana = {
     receber: recv.filter((r) => r.data_vencimento! >= todayStr && r.data_vencimento! <= weekStr).reduce((s, r) => s + openAmount(r), 0),
@@ -241,7 +244,7 @@ export async function loadDashboard(): Promise<DashboardData> {
         valor: openAmount(r),
       };
     })
-    .sort((a, b) => b.valor - a.valor)
+    .sort((a, b) => b.dias - a.dias)
     .slice(0, 5);
 
   return {
