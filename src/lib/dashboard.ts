@@ -19,6 +19,9 @@ export type DashboardData = {
   topVencidos: {
     fornecedor: string; descricao: string | null; empresaCnpj: string | null; empresaNome: string; venc: string; dias: number; valor: number;
   }[];
+  topClientesVencidos: {
+    cliente: string; descricao: string | null; empresaCnpj: string | null; empresaNome: string; venc: string; dias: number; valor: number;
+  }[];
 };
 
 type InvoiceRow = {
@@ -130,7 +133,7 @@ export async function loadDashboard(): Promise<DashboardData> {
       aPagarTotal: 0, aPagarVencidosCount: 0, aPagarVencidosValor: 0,
       hoje: { receber: 0, pagar: 0, vencidos: 0 },
       semana: { receber: 0, pagar: 0 },
-      fluxo: [], empresas: [], bancos: [], saldos: [], topVencidos: [],
+      fluxo: [], empresas: [], bancos: [], saldos: [], topVencidos: [], topClientesVencidos: [],
     };
   }
 
@@ -225,6 +228,22 @@ export async function loadDashboard(): Promise<DashboardData> {
     .sort((a, b) => b.dias - a.dias)
     .slice(0, 5);
 
+  const topClientesVencidos = recvVenc
+    .map((r) => {
+      const info = companyInfo(r.unidade_negocio);
+      return {
+        cliente: shortName(r.entidade) || "-",
+        descricao: r.descricao?.trim() || null,
+        empresaCnpj: info.cnpj,
+        empresaNome: info.nome,
+        venc: r.data_vencimento!,
+        dias: Math.floor((today.getTime() - new Date(r.data_vencimento! + "T00:00:00").getTime()) / 86400000),
+        valor: openAmount(r),
+      };
+    })
+    .sort((a, b) => b.valor - a.valor)
+    .slice(0, 5);
+
   return {
     hasData: true,
     ultimaImportacao: ultima,
@@ -234,7 +253,7 @@ export async function loadDashboard(): Promise<DashboardData> {
     aPagarTotal, aPagarVencidosCount: payVenc.length,
     aPagarVencidosValor: payVenc.reduce((s, r) => s + openAmount(r), 0),
     hoje, semana, fluxo,
-    empresas: empresasWithPct, bancos: bancosWithPct, saldos, topVencidos,
+    empresas: empresasWithPct, bancos: bancosWithPct, saldos, topVencidos, topClientesVencidos,
   };
 }
 

@@ -3,11 +3,7 @@ import type { ReactNode } from "react";
 import {
   LayoutDashboard,
   Landmark,
-  LineChart,
-  ArrowDownCircle,
-  ArrowUpCircle,
   Upload,
-  Settings,
   ChevronDown,
   Users as UsersIcon,
   LogOut,
@@ -29,12 +25,8 @@ type NavItem = {
 const NAV: NavItem[] = [
   { to: "/", label: "Painel do CEO", icon: LayoutDashboard, group: "Executivo", requires: "viewer" },
   { to: "/saldos", label: "Saldos", icon: Landmark, group: "Operação", requires: "operator" },
-  { to: "/fluxo-de-caixa", label: "Fluxo de Caixa", icon: LineChart, group: "Operação", disabled: true, requires: "operator" },
-  { to: "/contas-a-pagar", label: "Contas a Pagar", icon: ArrowUpCircle, group: "Operação", disabled: true, requires: "operator" },
-  { to: "/contas-a-receber", label: "Contas a Receber", icon: ArrowDownCircle, group: "Operação", disabled: true, requires: "operator" },
   { to: "/importacoes", label: "Importações", icon: Upload, group: "Sistema", requires: "operator" },
   { to: "/usuarios", label: "Usuários", icon: UsersIcon, group: "Administração", requires: "admin" },
-  { to: "/configuracoes", label: "Configurações", icon: Settings, group: "Sistema", disabled: true, requires: "admin" },
 ];
 
 const GROUPS: NavItem["group"][] = ["Executivo", "Operação", "Sistema", "Administração"];
