@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Landmark,
   Upload,
-  ChevronDown,
   Users as UsersIcon,
   LogOut,
 } from "lucide-react";
@@ -141,22 +140,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              className="hidden sm:flex items-center gap-2 h-9 px-3 rounded-md border border-border bg-card text-sm hover:bg-muted transition-colors"
-            >
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Empresa</span>
-              <span className="font-medium">Grupo Consolidado</span>
-              <ChevronDown className="size-4 text-muted-foreground" />
-            </button>
-            <button
-              type="button"
-              className="hidden sm:flex items-center gap-2 h-9 px-3 rounded-md border border-border bg-card text-sm hover:bg-muted transition-colors"
-            >
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Projeção</span>
-              <span className="font-medium">30 dias</span>
-              <ChevronDown className="size-4 text-muted-foreground" />
-            </button>
             <div className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold">
               {initials(me?.full_name || me?.username || "?")}
             </div>
