@@ -177,7 +177,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   // Empresas
   const empMap = new Map<string, number>();
   [...recv, ...pay].forEach((r) => {
-    const nome = shortName(r.unidade_negocio) || "Não informado";
+    const nome = companyLabel(r.unidade_negocio);
     const delta = r.kind === "receivable" ? openAmount(r) : -openAmount(r);
     empMap.set(nome, (empMap.get(nome) || 0) + delta);
   });
@@ -205,7 +205,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   const topVencidos = payVenc
     .map((r) => ({
       fornecedor: shortName(r.entidade) || "-",
-      empresa: shortName(r.unidade_negocio) || "-",
+      empresa: companyLabel(r.unidade_negocio),
       venc: r.data_vencimento!,
       dias: Math.floor((today.getTime() - new Date(r.data_vencimento! + "T00:00:00").getTime()) / 86400000),
       valor: openAmount(r),
@@ -232,4 +232,38 @@ function shortName(v: string | null | undefined): string | null {
   if (v.includes(" | ")) return v.split(" | ")[1]?.trim() || v.trim();
   if (v.includes(" - ")) return v.split(" - ")[0]?.trim();
   return v.trim();
+}
+
+// Converte "PREVER ALPHA ESTETICA E ASSESSORIA" → "Prever Alpha Estetica e Assessoria"
+// Mantém siglas curtas (<=3, ex.: S/A) em caixa alta.
+function titleCase(input: string): string {
+  const lowers = new Set(["de", "da", "do", "das", "dos", "e", "em", "para", "com", "a", "o"]);
+  return input
+    .toLowerCase()
+    .split(/(\s+|-|\/)/)
+    .map((part, idx) => {
+      if (/^\s+$/.test(part) || part === "-" || part === "/") return part;
+      if (lowers.has(part) && idx !== 0) return part;
+      // Preserva parênteses: "(matriz)" → "(Matriz)"
+      return part.replace(/([a-záéíóúâêôãõç])([a-záéíóúâêôãõç]*)/gi, (_, first: string, rest: string) => first.toUpperCase() + rest);
+    })
+    .join("");
+}
+
+const CNPJ_BY_NAME: { key: string; cnpj: string }[] = [
+  { key: "prever alpha", cnpj: "37.260.594/0001-80" },
+  { key: "prever centro medico", cnpj: "96.492.707/0001-31" },
+  { key: "prever medical group", cnpj: "28.309.721/0001-05" },
+  { key: "prevermed medicina ocupacional (filial)", cnpj: "46.638.275/0002-37" },
+  { key: "prevermed medicina ocupacional", cnpj: "46.638.275/0001-56" },
+  { key: "prevermed", cnpj: "46.638.275/0001-56" },
+];
+
+function companyLabel(v: string | null | undefined): string {
+  const raw = shortName(v);
+  if (!raw) return "Não informado";
+  const nome = titleCase(raw);
+  const norm = nome.toLowerCase();
+  const match = CNPJ_BY_NAME.find((c) => norm.includes(c.key));
+  return match ? `${match.cnpj} — ${nome}` : nome;
 }
