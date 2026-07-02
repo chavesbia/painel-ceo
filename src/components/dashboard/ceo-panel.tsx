@@ -54,7 +54,7 @@ export function CeoPanel() {
 
   const resultado = data.aReceberTotal - data.aPagarTotal;
   const saldoAtual = data.saldoBancarioTotal;
-  const fluxoChart = data.fluxo.map((f) => ({ dia: f.label, saldo: f.saldo }));
+  const fluxoChart = data.fluxo.map((f) => ({ dia: f.label, saldo: f.saldo, entrada: f.entrada, saida: f.saida }));
   const menorSaldoPoint = fluxoChart.length
     ? fluxoChart.reduce((min, p) => (p.saldo < min.saldo ? p : min), fluxoChart[0])
     : { dia: "", saldo: 0 };
