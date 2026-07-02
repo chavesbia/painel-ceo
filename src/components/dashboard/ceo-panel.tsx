@@ -355,7 +355,7 @@ export function CeoPanel() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <Label>Top 5 contas a pagar em atraso</Label>
-              <p className="text-xs text-muted-foreground mt-1">Boletos/faturas já vencidos, ordenados pelo maior valor em aberto — priorize a regularização</p>
+              <p className="text-xs text-muted-foreground mt-1">Boletos/faturas já vencidos, ordenados por dias em atraso — priorize a regularização</p>
             </div>
             <TrendingUp className="size-4 text-muted-foreground" />
           </div>
@@ -364,6 +364,7 @@ export function CeoPanel() {
               <thead>
                 <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   <th className="text-left font-semibold px-2 py-2">Fornecedor</th>
+                  <th className="text-left font-semibold px-2 py-2">Descrição</th>
                   <th className="text-left font-semibold px-2 py-2">Empresa</th>
                   <th className="text-left font-semibold px-2 py-2">Vencimento</th>
                   <th className="text-right font-semibold px-2 py-2">Dias</th>
@@ -372,11 +373,14 @@ export function CeoPanel() {
               </thead>
               <tbody className="divide-y divide-border">
                 {data.topVencidos.length === 0 && (
-                  <tr><td colSpan={5} className="px-2 py-6 text-center text-muted-foreground">Nenhum título vencido 🎉</td></tr>
+                  <tr><td colSpan={6} className="px-2 py-6 text-center text-muted-foreground">Nenhum título vencido 🎉</td></tr>
                 )}
                 {data.topVencidos.map((t, i) => (
                   <tr key={i} className="hover:bg-muted/50 transition-colors">
                     <td className="px-2 py-3 font-medium">{t.fornecedor}</td>
+                    <td className="px-2 py-3 text-muted-foreground max-w-[280px]">
+                      <div className="truncate" title={t.descricao || ""}>{t.descricao || "—"}</div>
+                    </td>
                     <td className="px-2 py-3 text-muted-foreground">
                       {t.empresaCnpj && <div className="text-[11px] tabular-nums">{t.empresaCnpj}</div>}
                       <div>{t.empresaNome}</div>
