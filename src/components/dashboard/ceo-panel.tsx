@@ -211,7 +211,7 @@ export function CeoPanel() {
             <div>
               <h3 className="text-lg font-display font-semibold">Fluxo de Caixa Projetado</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Saldo acumulado por vencimento (30 dias) · saldo bancário inicial incluso
+                Saldo acumulado dia a dia: saldo bancário atual + recebimentos previstos − pagamentos previstos (30 dias). Toque nos pontos para ver a data e o valor.
               </p>
             </div>
             <div className="flex gap-1 p-1 rounded-md bg-muted">
