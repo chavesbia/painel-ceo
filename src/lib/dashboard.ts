@@ -13,11 +13,11 @@ export type DashboardData = {
   hoje: { receber: number; pagar: number; vencidos: number };
   semana: { receber: number; pagar: number };
   fluxo: { dia: string; label: string; entrada: number; saida: number; saldo: number }[];
-  empresas: { nome: string; valor: number; pct: number }[];
+  empresas: { cnpj: string | null; nome: string; valor: number; pct: number }[];
   bancos: { nome: string; valor: number; pct: number }[];
-  saldos: { empresa: string; conta: string; saldo: number; data: string }[];
+  saldos: { empresaCnpj: string | null; empresaNome: string; conta: string; saldo: number; data: string }[];
   topVencidos: {
-    fornecedor: string; empresa: string; venc: string; dias: number; valor: number;
+    fornecedor: string; empresaCnpj: string | null; empresaNome: string; venc: string; dias: number; valor: number;
   }[];
 };
 
@@ -107,12 +107,16 @@ export async function loadDashboard(): Promise<DashboardData> {
     if (!latestCash.has(key)) latestCash.set(key, row);
   });
   const saldos = Array.from(latestCash.values())
-    .map((row) => ({
-      empresa: row.company_name,
-      conta: row.account_name,
-      saldo: Number(row.balance) || 0,
-      data: row.balance_date,
-    }))
+    .map((row) => {
+      const info = companyInfo(row.company_name);
+      return {
+        empresaCnpj: info.cnpj,
+        empresaNome: info.nome,
+        conta: row.account_name,
+        saldo: Number(row.balance) || 0,
+        data: row.balance_date,
+      };
+    })
     .sort((a, b) => Math.abs(b.saldo) - Math.abs(a.saldo));
   const saldoBancarioTotal = saldos.reduce((sum, row) => sum + row.saldo, 0);
 
@@ -175,14 +179,16 @@ export async function loadDashboard(): Promise<DashboardData> {
   });
 
   // Empresas
-  const empMap = new Map<string, number>();
+  const empMap = new Map<string, { cnpj: string | null; nome: string; valor: number }>();
   [...recv, ...pay].forEach((r) => {
-    const nome = companyLabel(r.unidade_negocio);
+    const info = companyInfo(r.unidade_negocio);
+    const key = `${info.cnpj || ""}|${info.nome}`;
     const delta = r.kind === "receivable" ? openAmount(r) : -openAmount(r);
-    empMap.set(nome, (empMap.get(nome) || 0) + delta);
+    const cur = empMap.get(key) || { cnpj: info.cnpj, nome: info.nome, valor: 0 };
+    cur.valor += delta;
+    empMap.set(key, cur);
   });
-  const empresas = Array.from(empMap.entries())
-    .map(([nome, valor]) => ({ nome, valor }))
+  const empresas = Array.from(empMap.values())
     .sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor))
     .slice(0, 5);
   const empTotal = empresas.reduce((s, e) => s + Math.abs(e.valor), 0) || 1;
@@ -203,13 +209,17 @@ export async function loadDashboard(): Promise<DashboardData> {
   const bancosWithPct = bancos.map((b) => ({ ...b, pct: Math.round((b.valor / bTotal) * 100) }));
 
   const topVencidos = payVenc
-    .map((r) => ({
-      fornecedor: shortName(r.entidade) || "-",
-      empresa: companyLabel(r.unidade_negocio),
-      venc: r.data_vencimento!,
-      dias: Math.floor((today.getTime() - new Date(r.data_vencimento! + "T00:00:00").getTime()) / 86400000),
-      valor: openAmount(r),
-    }))
+    .map((r) => {
+      const info = companyInfo(r.unidade_negocio);
+      return {
+        fornecedor: shortName(r.entidade) || "-",
+        empresaCnpj: info.cnpj,
+        empresaNome: info.nome,
+        venc: r.data_vencimento!,
+        dias: Math.floor((today.getTime() - new Date(r.data_vencimento! + "T00:00:00").getTime()) / 86400000),
+        valor: openAmount(r),
+      };
+    })
     .sort((a, b) => b.valor - a.valor)
     .slice(0, 5);
 
@@ -259,11 +269,11 @@ const CNPJ_BY_NAME: { key: string; cnpj: string }[] = [
   { key: "prevermed", cnpj: "46.638.275/0001-56" },
 ];
 
-function companyLabel(v: string | null | undefined): string {
+function companyInfo(v: string | null | undefined): { cnpj: string | null; nome: string } {
   const raw = shortName(v);
-  if (!raw) return "Não informado";
+  if (!raw) return { cnpj: null, nome: "Não informado" };
   const nome = titleCase(raw);
   const norm = nome.toLowerCase();
   const match = CNPJ_BY_NAME.find((c) => norm.includes(c.key));
-  return match ? `${match.cnpj} — ${nome}` : nome;
+  return { cnpj: match ? match.cnpj : null, nome };
 }
