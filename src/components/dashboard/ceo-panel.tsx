@@ -633,6 +633,7 @@ function KpiCard({
   accent,
   extra,
   direction,
+  delta,
 }: {
   label: string;
   value: string;
@@ -640,6 +641,7 @@ function KpiCard({
   accent: "green" | "red" | "brand";
   extra?: React.ReactNode;
   direction?: "up" | "down";
+  delta?: { abs: number; pct: number | null; baseDate: string; goodWhen: "up" | "down" } | null;
 }) {
   const bar = {
     green: "bg-status-green",
@@ -660,9 +662,52 @@ function KpiCard({
         {direction === "down" && <ArrowDown className="size-6" />}
         <span>{value}</span>
       </p>
+      {delta && (
+        <div className="mt-1.5">
+          <DeltaChip abs={delta.abs} pct={delta.pct} baseDate={delta.baseDate} goodWhen={delta.goodWhen} />
+        </div>
+      )}
       <p className="mt-2 text-xs text-muted-foreground">{hint}</p>
       {extra}
     </Card>
+  );
+}
+
+function DeltaChip({
+  abs,
+  pct,
+  baseDate,
+  goodWhen,
+  onDark,
+}: {
+  abs: number;
+  pct: number | null;
+  baseDate: string;
+  goodWhen: "up" | "down";
+  onDark?: boolean;
+}) {
+  const isZero = Math.abs(abs) < 0.005;
+  const isUp = abs > 0;
+  const good = isZero ? true : (goodWhen === "up" ? isUp : !isUp);
+  const cls = isZero
+    ? (onDark ? "text-primary-foreground/70" : "text-muted-foreground")
+    : good
+      ? "text-status-green"
+      : "text-status-red";
+  const Icon = isZero ? null : isUp ? ArrowUp : ArrowDown;
+  const pctTxt = pct == null ? "—" : `${pct > 0 ? "+" : ""}${pct.toFixed(1).replace(".", ",")}%`;
+  const baseFmt = new Date(baseDate + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-[11px] font-semibold tabular-nums ${cls}`}
+      title={`Comparado ao snapshot de ${baseFmt} — variação absoluta ${brl(abs)}`}
+    >
+      {Icon && <Icon className="size-3" />}
+      <span>{pctTxt}</span>
+      <span className={`font-normal ${onDark ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+        vs. {baseFmt}
+      </span>
+    </span>
   );
 }
 
