@@ -152,7 +152,7 @@ export function CeoPanel() {
           <div className="flex flex-col gap-4">
             <Label>Resultado de Faturas 30 dias</Label>
             <div className="flex flex-wrap items-end gap-4">
-              <h2 className="text-5xl md:text-6xl font-display font-bold tabular-nums tracking-tight text-accent">
+              <h2 className="text-4xl md:text-5xl font-display font-bold tabular-nums tracking-tight text-accent">
                 {resultado >= 0 ? "+" : ""}{brl(resultado)}
               </h2>
               <div className="flex items-center gap-3 text-sm font-semibold pb-2">
@@ -177,14 +177,14 @@ export function CeoPanel() {
           <div className="flex flex-col justify-between h-full gap-6">
             <div>
               <Label className="text-primary-foreground/70">Menor saldo projetado (30d)</Label>
-              <p className="mt-3 text-3xl font-display font-bold tabular-nums">
+              <p className="mt-3 text-2xl font-display font-bold tabular-nums">
                 {brlShort(menorSaldoPoint.saldo)}
               </p>
               <p className="text-sm text-primary-foreground/75 mt-1">em {menorSaldoPoint.dia || "—"}</p>
             </div>
             <div className="border-t border-white/15 pt-4">
               <Label className="text-primary-foreground/70">Saldo bancário inicial</Label>
-              <p className="mt-2 text-xl font-display font-semibold tabular-nums">
+              <p className="mt-2 text-lg font-display font-semibold tabular-nums">
                 {brl(saldoAtual)}
                 <span className="ml-2 text-[10px] font-normal opacity-70 uppercase tracking-wider">Saldos cadastrados</span>
               </p>
@@ -268,7 +268,7 @@ export function CeoPanel() {
             {data.saldos.length === 0 && <p className="text-xs text-muted-foreground">Sem saldos cadastrados</p>}
             {data.saldos.slice(0, 5).map((saldo) => (
               <div key={`${saldo.empresaNome}-${saldo.conta}`} className="rounded-md border border-border bg-muted/25 px-3 py-2.5">
-                <div className="flex items-start justify-between gap-3 text-sm">
+                <div className="flex items-start justify-between gap-3 text-[13px]">
                   <div className="min-w-0">
                     <p className="font-medium truncate">{saldo.conta}</p>
                     {saldo.empresaCnpj && (
@@ -347,7 +347,7 @@ export function CeoPanel() {
                   className="shrink-0 basis-[260px] snap-start space-y-2 rounded-md border border-border bg-muted/20 p-3 lg:basis-auto lg:shrink"
                 >
                   <div className="min-w-0">
-                    <div className="font-medium text-sm truncate">{e.nome}</div>
+                    <div className="font-medium text-[13px] truncate">{e.nome}</div>
                     {e.cnpj && <div className="tabular-nums text-[11px] text-muted-foreground">{e.cnpj}</div>}
                   </div>
 
@@ -404,7 +404,7 @@ export function CeoPanel() {
             <SortToggle value={pagarSort} onChange={setPagarSort} />
           </div>
           <div className="overflow-x-auto -mx-2">
-            <table className="w-full text-sm">
+            <table className="w-full text-[13px]">
               <thead>
                 <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   <th className="text-left font-semibold px-2 py-2">Fornecedor</th>
@@ -465,7 +465,7 @@ export function CeoPanel() {
           </div>
 
           <div className="overflow-x-auto -mx-2">
-            <table className="w-full text-sm">
+            <table className="w-full text-[13px]">
               <thead>
                 <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   <th className="text-left font-semibold px-2 py-2">Cliente</th>
@@ -486,7 +486,7 @@ export function CeoPanel() {
                   .map((c, i) => (
                   <tr key={i} className="hover:bg-muted/50 transition-colors">
                     <td className="px-2 py-3 font-medium">{c.cliente}</td>
-                    <td className="px-2 py-3 text-muted-foreground text-xs">
+                    <td className="px-2 py-3 text-muted-foreground text-[11px]">
                       {c.empresas.join(" · ")}
                     </td>
                     <td className="px-2 py-3 text-right tabular-nums text-muted-foreground">{c.qtd}</td>
@@ -657,10 +657,10 @@ function KpiCard({
     <Card>
       <div className={`h-0.5 w-8 rounded-full ${bar} mb-4`} />
       <Label>{label}</Label>
-      <p className={`mt-3 text-3xl font-display font-bold tabular-nums tracking-tight flex items-center gap-2 ${valueCls}`}>
-        {direction === "up" && <ArrowUp className="size-6" />}
-        {direction === "down" && <ArrowDown className="size-6" />}
-        <span>{value}</span>
+      <p className={`mt-3 text-2xl font-display font-bold tabular-nums tracking-tight flex items-center gap-1.5 whitespace-nowrap ${valueCls}`}>
+        {direction === "up" && <ArrowUp className="size-5 shrink-0" />}
+        {direction === "down" && <ArrowDown className="size-5 shrink-0" />}
+        <span className="truncate">{value}</span>
       </p>
       {delta && (
         <div className="mt-1.5">
@@ -733,10 +733,10 @@ function MiniStat({
   return (
     <div>
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</p>
-      <p className={`mt-1.5 text-xl font-display font-semibold tabular-nums flex items-center gap-1 ${cls}`}>
-        {direction === "up" && <ArrowUp className="size-4" />}
-        {direction === "down" && <ArrowDown className="size-4" />}
-        <span>{value}</span>
+      <p className={`mt-1.5 text-lg font-display font-semibold tabular-nums flex items-center gap-1 whitespace-nowrap ${cls}`}>
+        {direction === "up" && <ArrowUp className="size-3.5 shrink-0" />}
+        {direction === "down" && <ArrowDown className="size-3.5 shrink-0" />}
+        <span className="truncate">{value}</span>
         {suffix && <span className="text-xs text-muted-foreground font-normal ml-1">{suffix}</span>}
       </p>
     </div>
