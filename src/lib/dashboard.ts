@@ -191,29 +191,65 @@ export async function loadDashboard(): Promise<DashboardData> {
     pagar: pay.filter((r) => r.data_vencimento! >= todayStr && r.data_vencimento! <= weekStr).reduce((s, r) => s + openAmount(r), 0),
   };
 
-  // Fluxo projetado 180d — saldo começa com os saldos bancários cadastrados.
-  // O componente filtra a janela (7/15/30/60/90/180d).
-  const buckets = new Map<string, { entrada: number; saida: number }>();
-  for (let i = 0; i < 180; i++) {
-    const d = new Date(today); d.setDate(d.getDate() + i);
-    buckets.set(ymd(d), { entrada: 0, saida: 0 });
-  }
-  recv.filter((r) => r.data_vencimento! >= todayStr).forEach((r) => {
-    const b = buckets.get(r.data_vencimento!); if (b) b.entrada += openAmount(r);
+  // Fluxo projetado 180d — dois cenários:
+  //  • Otimista: todo recebível vencido entra hoje pelo valor total.
+  //  • Realista: recebíveis vencidos entram hoje aplicando taxa de recuperação
+  //    por faixa de aging (quanto mais antigo, menor a chance de receber).
+  // Em ambos, contas a pagar vencidas saem hoje (pior caso p/ o caixa).
+  const RECOVERY = { a30: 0.9, a60: 0.6, a90: 0.3, mais: 0.1 };
+  const overduePagarHoje = payVenc.reduce((s, r) => s + openAmount(r), 0);
+  let overdueReceberOtimista = 0;
+  let overdueReceberRealista = 0;
+  recvVenc.forEach((r) => {
+    const dias = Math.floor((today.getTime() - new Date(r.data_vencimento! + "T00:00:00").getTime()) / 86400000);
+    const rate = dias <= 30 ? RECOVERY.a30 : dias <= 60 ? RECOVERY.a60 : dias <= 90 ? RECOVERY.a90 : RECOVERY.mais;
+    const amt = openAmount(r);
+    overdueReceberOtimista += amt;
+    overdueReceberRealista += amt * rate;
   });
-  pay.filter((r) => r.data_vencimento! >= todayStr).forEach((r) => {
-    const b = buckets.get(r.data_vencimento!); if (b) b.saida += openAmount(r);
-  });
-  let saldo = saldoBancarioTotal;
-  const fluxo = Array.from(buckets.entries()).map(([d, v]) => {
-    saldo += v.entrada - v.saida;
-    const dt = new Date(d + "T00:00:00");
-    return {
-      dia: d,
-      label: dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
-      entrada: v.entrada, saida: v.saida, saldo,
-    };
-  });
+
+  const makeBuckets = () => {
+    const b = new Map<string, { entrada: number; saida: number }>();
+    for (let i = 0; i < 180; i++) {
+      const d = new Date(today); d.setDate(d.getDate() + i);
+      b.set(ymd(d), { entrada: 0, saida: 0 });
+    }
+    recv.filter((r) => r.data_vencimento! >= todayStr).forEach((r) => {
+      const bk = b.get(r.data_vencimento!); if (bk) bk.entrada += openAmount(r);
+    });
+    pay.filter((r) => r.data_vencimento! >= todayStr).forEach((r) => {
+      const bk = b.get(r.data_vencimento!); if (bk) bk.saida += openAmount(r);
+    });
+    return b;
+  };
+
+  const bucketsOtim = makeBuckets();
+  const bucketsReal = makeBuckets();
+  const todayBOtim = bucketsOtim.get(todayStr);
+  const todayBReal = bucketsReal.get(todayStr);
+  if (todayBOtim) { todayBOtim.entrada += overdueReceberOtimista; todayBOtim.saida += overduePagarHoje; }
+  if (todayBReal) { todayBReal.entrada += overdueReceberRealista; todayBReal.saida += overduePagarHoje; }
+
+  const buildFluxo = (buckets: Map<string, { entrada: number; saida: number }>) => {
+    let s = saldoBancarioTotal;
+    return Array.from(buckets.entries()).map(([d, v]) => {
+      s += v.entrada - v.saida;
+      const dt = new Date(d + "T00:00:00");
+      return {
+        dia: d,
+        label: dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+        entrada: v.entrada, saida: v.saida, saldo: s,
+      };
+    });
+  };
+  const fluxo = buildFluxo(bucketsOtim);
+  const fluxoRealista = buildFluxo(bucketsReal);
+  const recuperacao = {
+    exposicaoVencida: overdueReceberOtimista,
+    recuperacaoEsperada: overdueReceberRealista,
+    perdaEsperada: overdueReceberOtimista - overdueReceberRealista,
+    taxas: RECOVERY,
+  };
 
   // Empresas — separa entrada (a receber) e saída (a pagar) por CNPJ.
   const empMap = new Map<string, { cnpj: string | null; nome: string; receber: number; pagar: number }>();
