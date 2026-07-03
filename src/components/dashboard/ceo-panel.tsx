@@ -36,6 +36,7 @@ const BANK_COLORS = [
 /* ------------------------------------------------------------------ */
 
 export function CeoPanel() {
+  const [fluxoPeriodo, setFluxoPeriodo] = React.useState<7 | 15 | 30 | 60 | 90 | 180>(30);
   const { data, error } = useQuery<DashboardData>({
     queryKey: ["dashboard"],
     queryFn: loadDashboard,
@@ -57,7 +58,9 @@ export function CeoPanel() {
 
   const resultado = data.aReceberTotal - data.aPagarTotal;
   const saldoAtual = data.saldoBancarioTotal;
-  const fluxoChart = data.fluxo.map((f) => ({ dia: f.label, saldo: f.saldo, entrada: f.entrada, saida: f.saida }));
+  const fluxoChart = data.fluxo
+    .slice(0, fluxoPeriodo)
+    .map((f) => ({ dia: f.label, saldo: f.saldo, entrada: f.entrada, saida: f.saida }));
   const menorSaldoPoint = fluxoChart.length
     ? fluxoChart.reduce((min, p) => (p.saldo < min.saldo ? p : min), fluxoChart[0])
     : { dia: "", saldo: 0 };
@@ -235,14 +238,16 @@ export function CeoPanel() {
               </p>
             </div>
             <div className="flex gap-1 p-1 rounded-md bg-muted">
-              {["7d", "15d", "30d", "60d", "90d", "180d"].map((p) => (
+              {([7, 15, 30, 60, 90, 180] as const).map((p) => (
                 <button
                   key={p}
+                  type="button"
+                  onClick={() => setFluxoPeriodo(p)}
                   className={`px-3 py-1 text-xs font-medium rounded-sm transition-colors ${
-                    p === "30d" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    p === fluxoPeriodo ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {p}
+                  {p}d
                 </button>
               ))}
             </div>
