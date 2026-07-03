@@ -347,7 +347,7 @@ export function CeoPanel() {
                   className="shrink-0 basis-[260px] snap-start space-y-2 rounded-md border border-border bg-muted/20 p-3 lg:basis-auto lg:shrink"
                 >
                   <div className="min-w-0">
-                    <div className="font-medium text-sm truncate">{e.nome}</div>
+                    <div className="font-medium text-[13px] truncate">{e.nome}</div>
                     {e.cnpj && <div className="tabular-nums text-[11px] text-muted-foreground">{e.cnpj}</div>}
                   </div>
 
