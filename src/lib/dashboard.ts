@@ -283,13 +283,16 @@ function titleCase(input: string): string {
     .join("");
 }
 
-const CNPJ_BY_NAME: { key: string; cnpj: string }[] = [
-  { key: "prever alpha", cnpj: "37.260.594/0001-80" },
-  { key: "prever centro medico", cnpj: "96.492.707/0001-31" },
-  { key: "prever medical group", cnpj: "28.309.721/0001-05" },
-  { key: "prevermed medicina ocupacional (filial)", cnpj: "46.638.275/0002-37" },
-  { key: "prevermed medicina ocupacional", cnpj: "46.638.275/0001-56" },
-  { key: "prevermed", cnpj: "46.638.275/0001-56" },
+// Mapeia trechos do nome (em minúsculas) para CNPJ e nome canônico de exibição.
+// A ordem importa: entradas mais específicas devem vir antes das genéricas.
+const CNPJ_BY_NAME: { key: string; cnpj: string; display?: string }[] = [
+  { key: "prever alpha", cnpj: "37.260.594/0001-80", display: "Prever Alpha Estetica e Assessoria" },
+  { key: "prever centro medico", cnpj: "96.492.707/0001-31", display: "Prever Centro Medico" },
+  { key: "prever medical group", cnpj: "28.309.721/0001-05", display: "Prever Medical Group" },
+  { key: "prevermed medicina ocupacional (filial)", cnpj: "46.638.275/0002-37", display: "Prevermed Medicina Ocupacional (Filial)" },
+  { key: "prevermed medicina ocupacional", cnpj: "46.638.275/0001-56", display: "Prevermed Medicina Ocupacional" },
+  // "Prevermed" (sem sufixo) é o nome fantasia da Prever Medical Group.
+  { key: "prevermed", cnpj: "28.309.721/0001-05", display: "Prever Medical Group" },
 ];
 
 function companyInfo(v: string | null | undefined): { cnpj: string | null; nome: string } {
@@ -298,5 +301,5 @@ function companyInfo(v: string | null | undefined): { cnpj: string | null; nome:
   const nome = titleCase(raw);
   const norm = nome.toLowerCase();
   const match = CNPJ_BY_NAME.find((c) => norm.includes(c.key));
-  return { cnpj: match ? match.cnpj : null, nome };
+  return { cnpj: match ? match.cnpj : null, nome: match?.display || nome };
 }
