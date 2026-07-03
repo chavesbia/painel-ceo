@@ -31,6 +31,14 @@ export type DashboardData = {
     empresas: string[];
     aging: { a30: number; a60: number; a90: number; mais: number };
   }[];
+  deltas: {
+    baseDate: string;
+    saldoBancario: { abs: number; pct: number | null };
+    aReceber: { abs: number; pct: number | null };
+    aPagar: { abs: number; pct: number | null };
+    vencidosValor: { abs: number; pct: number | null };
+    vencidosCount: { abs: number; pct: number | null };
+  } | null;
 };
 
 type InvoiceRow = {
@@ -145,6 +153,7 @@ export async function loadDashboard(): Promise<DashboardData> {
       fluxo: [], empresas: [], bancos: [], saldos: [], topVencidos: [], topClientesVencidos: [],
       agingRecv: { a30: 0, a60: 0, a90: 0, mais: 0, total: 0 },
       clientesInadimplentes: [],
+      deltas: null,
     };
   }
 
@@ -291,6 +300,20 @@ export async function loadDashboard(): Promise<DashboardData> {
     }))
     .sort((a, b) => b.valor - a.valor);
 
+  // Snapshot diário (idempotente) + variação vs. snapshot mais próximo de ~30 dias atrás.
+  const vencidosValor =
+    recvVenc.reduce((s, r) => s + openAmount(r), 0) +
+    payVenc.reduce((s, r) => s + openAmount(r), 0);
+  const vencidosCount = recvVenc.length + payVenc.length;
+  const deltas = await computeSnapshotAndDeltas({
+    todayStr,
+    saldoBancario: saldoBancarioTotal,
+    aReceber: aReceberTotal,
+    aPagar: aPagarTotal,
+    vencidosValor,
+    vencidosCount,
+  });
+
   return {
     hasData: true,
     ultimaImportacao: ultima,
@@ -302,6 +325,79 @@ export async function loadDashboard(): Promise<DashboardData> {
     hoje, semana, fluxo,
     empresas: empresasWithPct, bancos: bancosWithPct, saldos, topVencidos, topClientesVencidos,
     agingRecv, clientesInadimplentes,
+    deltas,
+  };
+}
+
+type SnapshotRow = {
+  snapshot_date: string;
+  saldo_bancario: number;
+  a_receber: number;
+  a_pagar: number;
+  vencidos_valor: number;
+  vencidos_count: number;
+};
+
+async function computeSnapshotAndDeltas(current: {
+  todayStr: string;
+  saldoBancario: number;
+  aReceber: number;
+  aPagar: number;
+  vencidosValor: number;
+  vencidosCount: number;
+}): Promise<DashboardData["deltas"]> {
+  const targetPrev = new Date(current.todayStr + "T00:00:00");
+  targetPrev.setDate(targetPrev.getDate() - 30);
+  const targetPrevStr = ymd(targetPrev);
+
+  // Grava snapshot de hoje (ignora conflito de unicidade — 1 por dia).
+  try {
+    await supabase.from("dashboard_snapshots").insert({
+      snapshot_date: current.todayStr,
+      saldo_bancario: current.saldoBancario,
+      a_receber: current.aReceber,
+      a_pagar: current.aPagar,
+      vencidos_valor: current.vencidosValor,
+      vencidos_count: current.vencidosCount,
+    });
+  } catch {
+    // silencioso: se falhar (conflito ou permissão), ainda seguimos com o cálculo do delta.
+  }
+
+  // Snapshot base: o mais recente com data <= (hoje - 30d). Se não houver,
+  // pega o mais antigo disponível — assim já mostramos algum comparativo.
+  const { data: prevRows } = await supabase
+    .from("dashboard_snapshots")
+    .select("snapshot_date,saldo_bancario,a_receber,a_pagar,vencidos_valor,vencidos_count")
+    .lte("snapshot_date", targetPrevStr)
+    .order("snapshot_date", { ascending: false })
+    .limit(1);
+
+  let base = (prevRows as SnapshotRow[] | null)?.[0];
+  if (!base) {
+    const { data: oldest } = await supabase
+      .from("dashboard_snapshots")
+      .select("snapshot_date,saldo_bancario,a_receber,a_pagar,vencidos_valor,vencidos_count")
+      .lt("snapshot_date", current.todayStr)
+      .order("snapshot_date", { ascending: true })
+      .limit(1);
+    base = (oldest as SnapshotRow[] | null)?.[0];
+  }
+  if (!base) return null;
+
+  const diff = (cur: number, prev: number) => {
+    const abs = cur - prev;
+    const pct = prev === 0 ? null : (abs / Math.abs(prev)) * 100;
+    return { abs, pct };
+  };
+
+  return {
+    baseDate: base.snapshot_date,
+    saldoBancario: diff(current.saldoBancario, Number(base.saldo_bancario) || 0),
+    aReceber: diff(current.aReceber, Number(base.a_receber) || 0),
+    aPagar: diff(current.aPagar, Number(base.a_pagar) || 0),
+    vencidosValor: diff(current.vencidosValor, Number(base.vencidos_valor) || 0),
+    vencidosCount: diff(current.vencidosCount, Number(base.vencidos_count) || 0),
   };
 }
 

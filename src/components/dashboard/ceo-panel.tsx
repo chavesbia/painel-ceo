@@ -188,19 +188,29 @@ export function CeoPanel() {
                 {brl(saldoAtual)}
                 <span className="ml-2 text-[10px] font-normal opacity-70 uppercase tracking-wider">Saldos cadastrados</span>
               </p>
+              {data.deltas && (
+                <DeltaChip
+                  abs={data.deltas.saldoBancario.abs}
+                  pct={data.deltas.saldoBancario.pct}
+                  baseDate={data.deltas.baseDate}
+                  goodWhen="up"
+                  onDark
+                />
+              )}
             </div>
           </div>
         </Card>
       </section>
 
-      {/* FAIXA 2 — 3 KPIs */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* FAIXA 2 — KPIs principais */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KpiCard
           label="A Receber"
           value={brl(data.aReceberTotal)}
           hint="Total em aberto, somando todos os vencimentos (passados e futuros)."
           accent="green"
           direction="up"
+          delta={data.deltas ? { ...data.deltas.aReceber, baseDate: data.deltas.baseDate, goodWhen: "up" } : null}
         />
         <KpiCard
           label="A Pagar"
@@ -208,6 +218,14 @@ export function CeoPanel() {
           hint="Total em aberto, somando todos os vencimentos (passados e futuros)."
           accent="red"
           direction="down"
+          delta={data.deltas ? { ...data.deltas.aPagar, baseDate: data.deltas.baseDate, goodWhen: "down" } : null}
+        />
+        <KpiCard
+          label="Vencidos (a receber + a pagar)"
+          value={brl(data.aReceberVencidosValor + data.aPagarVencidosValor)}
+          hint={`${data.aReceberVencidosCount + data.aPagarVencidosCount} títulos vencidos no total.`}
+          accent="red"
+          delta={data.deltas ? { ...data.deltas.vencidosValor, baseDate: data.deltas.baseDate, goodWhen: "down" } : null}
         />
         <KpiCard
           label="Resultado Líquido Projetado 30d"
@@ -615,6 +633,7 @@ function KpiCard({
   accent,
   extra,
   direction,
+  delta,
 }: {
   label: string;
   value: string;
@@ -622,6 +641,7 @@ function KpiCard({
   accent: "green" | "red" | "brand";
   extra?: React.ReactNode;
   direction?: "up" | "down";
+  delta?: { abs: number; pct: number | null; baseDate: string; goodWhen: "up" | "down" } | null;
 }) {
   const bar = {
     green: "bg-status-green",
@@ -642,9 +662,52 @@ function KpiCard({
         {direction === "down" && <ArrowDown className="size-6" />}
         <span>{value}</span>
       </p>
+      {delta && (
+        <div className="mt-1.5">
+          <DeltaChip abs={delta.abs} pct={delta.pct} baseDate={delta.baseDate} goodWhen={delta.goodWhen} />
+        </div>
+      )}
       <p className="mt-2 text-xs text-muted-foreground">{hint}</p>
       {extra}
     </Card>
+  );
+}
+
+function DeltaChip({
+  abs,
+  pct,
+  baseDate,
+  goodWhen,
+  onDark,
+}: {
+  abs: number;
+  pct: number | null;
+  baseDate: string;
+  goodWhen: "up" | "down";
+  onDark?: boolean;
+}) {
+  const isZero = Math.abs(abs) < 0.005;
+  const isUp = abs > 0;
+  const good = isZero ? true : (goodWhen === "up" ? isUp : !isUp);
+  const cls = isZero
+    ? (onDark ? "text-primary-foreground/70" : "text-muted-foreground")
+    : good
+      ? "text-status-green"
+      : "text-status-red";
+  const Icon = isZero ? null : isUp ? ArrowUp : ArrowDown;
+  const pctTxt = pct == null ? "—" : `${pct > 0 ? "+" : ""}${pct.toFixed(1).replace(".", ",")}%`;
+  const baseFmt = new Date(baseDate + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-[11px] font-semibold tabular-nums ${cls}`}
+      title={`Comparado ao snapshot de ${baseFmt} — variação absoluta ${brl(abs)}`}
+    >
+      {Icon && <Icon className="size-3" />}
+      <span>{pctTxt}</span>
+      <span className={`font-normal ${onDark ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+        vs. {baseFmt}
+      </span>
+    </span>
   );
 }
 
