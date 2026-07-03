@@ -50,6 +50,39 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_snapshots: {
+        Row: {
+          a_pagar: number
+          a_receber: number
+          created_at: string
+          id: string
+          saldo_bancario: number
+          snapshot_date: string
+          vencidos_count: number
+          vencidos_valor: number
+        }
+        Insert: {
+          a_pagar?: number
+          a_receber?: number
+          created_at?: string
+          id?: string
+          saldo_bancario?: number
+          snapshot_date: string
+          vencidos_count?: number
+          vencidos_valor?: number
+        }
+        Update: {
+          a_pagar?: number
+          a_receber?: number
+          created_at?: string
+          id?: string
+          saldo_bancario?: number
+          snapshot_date?: string
+          vencidos_count?: number
+          vencidos_valor?: number
+        }
+        Relationships: []
+      }
       imports: {
         Row: {
           created_at: string
