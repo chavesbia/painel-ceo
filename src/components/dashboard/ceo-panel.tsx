@@ -198,14 +198,14 @@ export function CeoPanel() {
         <KpiCard
           label="A Receber"
           value={brl(data.aReceberTotal)}
-          hint={`Valor total em aberto · ${data.aReceberVencidosCount} vencidos (${brlShort(data.aReceberVencidosValor)})`}
+          hint={`Total em aberto (todos os vencimentos). Dentro desse total, ${data.aReceberVencidosCount} títulos já venceram e somam ${brlShort(data.aReceberVencidosValor)}.`}
           accent="green"
           direction="up"
         />
         <KpiCard
           label="A Pagar"
           value={brl(data.aPagarTotal)}
-          hint={`Valor total em aberto · ${data.aPagarVencidosCount} vencidos (${brlShort(data.aPagarVencidosValor)})`}
+          hint={`Total em aberto (todos os vencimentos). Dentro desse total, ${data.aPagarVencidosCount} contas já venceram e somam ${brlShort(data.aPagarVencidosValor)}.`}
           accent="red"
           direction="down"
         />
