@@ -535,6 +535,28 @@ export function CeoPanel() {
         </Card>
       </section>
 
+      {/* CONCENTRAÇÃO DE RISCO */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ConcentracaoCard
+          titulo="Concentração — A Receber"
+          descricao="Quanto do total a receber depende de cada cliente. Um único nome com peso alto = risco de caixa se atrasar."
+          itens={data.concentracao.receber}
+          total={data.concentracao.totais.receber}
+          top5Pct={data.concentracao.top5Pct.receber}
+          hhi={data.concentracao.hhi.receber}
+          tone="green"
+        />
+        <ConcentracaoCard
+          titulo="Concentração — A Pagar"
+          descricao="Quanto do total a pagar concentra em cada fornecedor. Peso alto = poder de barganha do fornecedor sobre você."
+          itens={data.concentracao.pagar}
+          total={data.concentracao.totais.pagar}
+          top5Pct={data.concentracao.top5Pct.pagar}
+          hhi={data.concentracao.hhi.pagar}
+          tone="red"
+        />
+      </section>
+
       <footer className="text-[11px] text-muted-foreground pt-2 pb-6 flex flex-wrap items-center gap-2">
         <Info className="size-3.5" />
         Empresa CNPJ 37.260.594/0002-60 é excluída globalmente. O fluxo considera os saldos bancários cadastrados.
