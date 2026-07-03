@@ -81,9 +81,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Painel executivo de inteligência financeira do Grupo PreverMed — visão consolidada de caixa, contas a pagar, contas a receber e fluxo projetado." },
       { name: "author", content: "Grupo PreverMed" },
       { property: "og:title", content: "Painel do CEO | PreverMed" },
-      { property: "og:description", content: "Inteligência financeira consolidada do Grupo PreverMed." },
+      { property: "og:description", content: "Painel executivo de inteligência financeira do Grupo PreverMed — visão consolidada de caixa, contas a pagar, contas a receber e fluxo projetado." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Painel do CEO | PreverMed" },
+      { name: "twitter:description", content: "Painel executivo de inteligência financeira do Grupo PreverMed — visão consolidada de caixa, contas a pagar, contas a receber e fluxo projetado." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e7168498-fec2-4d25-b703-44cdf85f984e/id-preview-f77c8b07--2a03d560-c51d-4d6c-b524-d3883ad24ad9.lovable.app-1783093299248.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e7168498-fec2-4d25-b703-44cdf85f984e/id-preview-f77c8b07--2a03d560-c51d-4d6c-b524-d3883ad24ad9.lovable.app-1783093299248.png" },
     ],
     links: [
       {
