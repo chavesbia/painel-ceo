@@ -229,8 +229,7 @@ export async function loadDashboard(): Promise<DashboardData> {
         valor: openAmount(r),
       };
     })
-    .sort((a, b) => b.dias - a.dias)
-    .slice(0, 5);
+    .sort((a, b) => b.valor - a.valor);
 
   const topClientesVencidos = recvVenc
     .map((r) => {
@@ -245,8 +244,7 @@ export async function loadDashboard(): Promise<DashboardData> {
         valor: openAmount(r),
       };
     })
-    .sort((a, b) => b.dias - a.dias)
-    .slice(0, 5);
+    .sort((a, b) => b.valor - a.valor);
 
   return {
     hasData: true,

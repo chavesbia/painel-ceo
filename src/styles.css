@@ -158,3 +158,30 @@
     color: var(--color-foreground);
   }
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm;
+  }
+  html, body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  /* Esconde chrome do app (sidebar, header do shell) */
+  aside, nav, header[data-app-header], [data-app-sidebar], .print\:hidden {
+    display: none !important;
+  }
+  /* Cards limpos sem sombra pesada */
+  .shadow, [class*="shadow-"] {
+    box-shadow: none !important;
+  }
+  /* Evita quebra ruim */
+  section, .rounded-xl {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  table { page-break-inside: auto; }
+  tr    { page-break-inside: avoid; page-break-after: auto; }
+  a[href]::after { content: ""; }
+}
