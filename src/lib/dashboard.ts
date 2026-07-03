@@ -169,6 +169,12 @@ export async function loadDashboard(): Promise<DashboardData> {
       empresas: [], bancos: [], saldos: [], topVencidos: [], topClientesVencidos: [],
       agingRecv: { a30: 0, a60: 0, a90: 0, mais: 0, total: 0 },
       clientesInadimplentes: [],
+      concentracao: {
+        totais: { receber: 0, pagar: 0 },
+        receber: [], pagar: [],
+        hhi: { receber: 0, pagar: 0 },
+        top5Pct: { receber: 0, pagar: 0 },
+      },
       deltas: null,
     };
   }
