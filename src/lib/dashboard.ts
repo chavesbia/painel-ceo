@@ -298,6 +298,12 @@ const CNPJ_BY_NAME: { key: string; cnpj: string; display?: string }[] = [
 function companyInfo(v: string | null | undefined): { cnpj: string | null; nome: string } {
   const raw = shortName(v);
   if (!raw) return { cnpj: null, nome: "Não informado" };
+  // Casa por CNPJ quando o campo vier apenas com o número (ex.: cash_balances.company_name = "28.309.721/0001-05").
+  const cnpjMatch = raw.match(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/);
+  if (cnpjMatch) {
+    const byCnpj = CNPJ_BY_NAME.find((c) => c.cnpj === cnpjMatch[0]);
+    if (byCnpj) return { cnpj: byCnpj.cnpj, nome: byCnpj.display || titleCase(raw) };
+  }
   const nome = titleCase(raw);
   const norm = nome.toLowerCase();
   const match = CNPJ_BY_NAME.find((c) => norm.includes(c.key));
