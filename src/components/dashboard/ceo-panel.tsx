@@ -404,7 +404,7 @@ export function CeoPanel() {
             <SortToggle value={pagarSort} onChange={setPagarSort} />
           </div>
           <div className="overflow-x-auto -mx-2">
-            <table className="w-full text-sm">
+            <table className="w-full text-[13px]">
               <thead>
                 <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   <th className="text-left font-semibold px-2 py-2">Fornecedor</th>
@@ -465,7 +465,7 @@ export function CeoPanel() {
           </div>
 
           <div className="overflow-x-auto -mx-2">
-            <table className="w-full text-sm">
+            <table className="w-full text-[13px]">
               <thead>
                 <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   <th className="text-left font-semibold px-2 py-2">Cliente</th>
@@ -486,7 +486,7 @@ export function CeoPanel() {
                   .map((c, i) => (
                   <tr key={i} className="hover:bg-muted/50 transition-colors">
                     <td className="px-2 py-3 font-medium">{c.cliente}</td>
-                    <td className="px-2 py-3 text-muted-foreground text-xs">
+                    <td className="px-2 py-3 text-muted-foreground text-[11px]">
                       {c.empresas.join(" · ")}
                     </td>
                     <td className="px-2 py-3 text-right tabular-nums text-muted-foreground">{c.qtd}</td>
