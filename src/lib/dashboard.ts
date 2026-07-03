@@ -13,6 +13,13 @@ export type DashboardData = {
   hoje: { receber: number; pagar: number; vencidos: number; vencidosValor: number };
   semana: { receber: number; pagar: number };
   fluxo: { dia: string; label: string; entrada: number; saida: number; saldo: number }[];
+  fluxoRealista: { dia: string; label: string; entrada: number; saida: number; saldo: number }[];
+  recuperacao: {
+    exposicaoVencida: number;   // total de recebíveis vencidos (valor de face)
+    recuperacaoEsperada: number; // após aplicar % por faixa
+    perdaEsperada: number;       // exposicao - recuperacao
+    taxas: { a30: number; a60: number; a90: number; mais: number };
+  };
   empresas: { cnpj: string | null; nome: string; receber: number; pagar: number; valor: number; pct: number }[];
   bancos: { nome: string; valor: number; pct: number }[];
   saldos: { empresaCnpj: string | null; empresaNome: string; conta: string; saldo: number; data: string }[];
@@ -150,7 +157,9 @@ export async function loadDashboard(): Promise<DashboardData> {
       aPagarTotal: 0, aPagarVencidosCount: 0, aPagarVencidosValor: 0,
       hoje: { receber: 0, pagar: 0, vencidos: 0, vencidosValor: 0 },
       semana: { receber: 0, pagar: 0 },
-      fluxo: [], empresas: [], bancos: [], saldos: [], topVencidos: [], topClientesVencidos: [],
+      fluxo: [], fluxoRealista: [],
+      recuperacao: { exposicaoVencida: 0, recuperacaoEsperada: 0, perdaEsperada: 0, taxas: { a30: 0.9, a60: 0.6, a90: 0.3, mais: 0.1 } },
+      empresas: [], bancos: [], saldos: [], topVencidos: [], topClientesVencidos: [],
       agingRecv: { a30: 0, a60: 0, a90: 0, mais: 0, total: 0 },
       clientesInadimplentes: [],
       deltas: null,
