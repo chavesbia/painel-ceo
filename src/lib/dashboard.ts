@@ -38,6 +38,13 @@ export type DashboardData = {
     empresas: string[];
     aging: { a30: number; a60: number; a90: number; mais: number };
   }[];
+  concentracao: {
+    totais: { receber: number; pagar: number };
+    receber: { nome: string; valor: number; pct: number; qtd: number }[];
+    pagar: { nome: string; valor: number; pct: number; qtd: number }[];
+    hhi: { receber: number; pagar: number }; // 0..10000 (Herfindahl)
+    top5Pct: { receber: number; pagar: number };
+  };
   deltas: {
     baseDate: string;
     saldoBancario: { abs: number; pct: number | null };
