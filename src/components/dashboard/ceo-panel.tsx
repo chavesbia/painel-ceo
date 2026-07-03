@@ -37,6 +37,7 @@ const BANK_COLORS = [
 
 export function CeoPanel() {
   const [fluxoPeriodo, setFluxoPeriodo] = React.useState<7 | 15 | 30 | 60 | 90 | 180>(30);
+  const [fluxoCenario, setFluxoCenario] = React.useState<"otimista" | "realista">("realista");
   const [pagarSort, setPagarSort] = React.useState<"valor" | "dias">("valor");
   const [clientesSort, setClientesSort] = React.useState<"valor" | "dias">("valor");
   const { data, error } = useQuery<DashboardData>({
@@ -60,7 +61,8 @@ export function CeoPanel() {
 
   const resultado = data.aReceberTotal - data.aPagarTotal;
   const saldoAtual = data.saldoBancarioTotal;
-  const fluxoChart = data.fluxo
+  const fluxoSerie = fluxoCenario === "realista" ? data.fluxoRealista : data.fluxo;
+  const fluxoChart = fluxoSerie
     .slice(0, fluxoPeriodo)
     .map((f) => ({ dia: f.label, saldo: f.saldo, entrada: f.entrada, saida: f.saida }));
   const menorSaldoPoint = fluxoChart.length
