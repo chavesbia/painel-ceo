@@ -87,7 +87,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const horizon = new Date(today);
-  horizon.setDate(horizon.getDate() + 30);
+  horizon.setDate(horizon.getDate() + 180);
   const past = new Date(today);
   past.setDate(past.getDate() - 365);
 
@@ -162,9 +162,10 @@ export async function loadDashboard(): Promise<DashboardData> {
     pagar: pay.filter((r) => r.data_vencimento! >= todayStr && r.data_vencimento! <= weekStr).reduce((s, r) => s + openAmount(r), 0),
   };
 
-  // Fluxo projetado 30d — saldo começa com os saldos bancários cadastrados.
+  // Fluxo projetado 180d — saldo começa com os saldos bancários cadastrados.
+  // O componente filtra a janela (7/15/30/60/90/180d).
   const buckets = new Map<string, { entrada: number; saida: number }>();
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 180; i++) {
     const d = new Date(today); d.setDate(d.getDate() + i);
     buckets.set(ymd(d), { entrada: 0, saida: 0 });
   }
