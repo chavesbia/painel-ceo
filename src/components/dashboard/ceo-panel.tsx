@@ -37,6 +37,8 @@ const BANK_COLORS = [
 
 export function CeoPanel() {
   const [fluxoPeriodo, setFluxoPeriodo] = React.useState<7 | 15 | 30 | 60 | 90 | 180>(30);
+  const [pagarSort, setPagarSort] = React.useState<"valor" | "dias">("valor");
+  const [clientesSort, setClientesSort] = React.useState<"valor" | "dias">("valor");
   const { data, error } = useQuery<DashboardData>({
     queryKey: ["dashboard"],
     queryFn: loadDashboard,
@@ -106,6 +108,19 @@ export function CeoPanel() {
 
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-[1440px] mx-auto">
+      {/* Cabeçalho de impressão (visível apenas ao imprimir/exportar PDF) */}
+      <div className="hidden print:block print:mb-6">
+        <div className="flex items-center justify-between border-b border-border pb-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">PreverMed · Grupo Consolidado</p>
+            <h1 className="text-2xl font-display font-bold">Painel do CEO — Relatório Financeiro</h1>
+          </div>
+          <div className="text-right text-xs text-muted-foreground">
+            <p>Gerado em {new Date().toLocaleString("pt-BR")}</p>
+            <p>Última importação: {ultimaFmt}</p>
+          </div>
+        </div>
+      </div>
       {/* HEADER */}
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -183,14 +198,14 @@ export function CeoPanel() {
         <KpiCard
           label="A Receber"
           value={brl(data.aReceberTotal)}
-          hint={`Estoque total em aberto · ${data.aReceberVencidosCount} vencidos (${brlShort(data.aReceberVencidosValor)})`}
+          hint={`Valor total em aberto · ${data.aReceberVencidosCount} vencidos (${brlShort(data.aReceberVencidosValor)})`}
           accent="green"
           direction="up"
         />
         <KpiCard
           label="A Pagar"
           value={brl(data.aPagarTotal)}
-          hint={`Estoque total em aberto · ${data.aPagarVencidosCount} vencidos (${brlShort(data.aPagarVencidosValor)})`}
+          hint={`Valor total em aberto · ${data.aPagarVencidosCount} vencidos (${brlShort(data.aPagarVencidosValor)})`}
           accent="red"
           direction="down"
         />
@@ -234,10 +249,10 @@ export function CeoPanel() {
             <div>
               <h3 className="text-lg font-display font-semibold">Fluxo de Caixa Projetado</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Saldo acumulado dia a dia: saldo bancário atual + recebimentos previstos − pagamentos previstos (30 dias). Toque nos pontos para ver a data e o valor.
+                Saldo acumulado dia a dia: saldo bancário atual + recebimentos previstos − pagamentos previstos ({fluxoPeriodo} dias). Toque nos pontos para ver a data e o valor.
               </p>
             </div>
-            <div className="flex gap-1 p-1 rounded-md bg-muted">
+            <div className="flex flex-wrap gap-1 p-1 rounded-md bg-muted print:hidden">
               {([7, 15, 30, 60, 90, 180] as const).map((p) => (
                 <button
                   key={p}
@@ -314,12 +329,14 @@ export function CeoPanel() {
       {/* TOP 5 VENCIDOS */}
       <section>
         <Card>
-          <div className="flex items-center justify-between mb-4">
-            <div>
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+            <div className="min-w-0">
               <Label>Top 5 contas a pagar em atraso</Label>
-              <p className="text-xs text-muted-foreground mt-1">Boletos/faturas já vencidos, ordenados por dias em atraso — priorize a regularização</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Boletos/faturas já vencidos, ordenados por {pagarSort === "valor" ? "valor (maior → menor)" : "dias em atraso (mais antigos primeiro)"} — priorize a regularização
+              </p>
             </div>
-            <TrendingUp className="size-4 text-muted-foreground" />
+            <SortToggle value={pagarSort} onChange={setPagarSort} />
           </div>
           <div className="overflow-x-auto -mx-2">
             <table className="w-full text-sm">
@@ -337,7 +354,10 @@ export function CeoPanel() {
                 {data.topVencidos.length === 0 && (
                   <tr><td colSpan={6} className="px-2 py-6 text-center text-muted-foreground">Nenhum título vencido 🎉</td></tr>
                 )}
-                {data.topVencidos.map((t, i) => (
+                {[...data.topVencidos]
+                  .sort((a, b) => (pagarSort === "valor" ? b.valor - a.valor : b.dias - a.dias))
+                  .slice(0, 5)
+                  .map((t, i) => (
                   <tr key={i} className="hover:bg-muted/50 transition-colors">
                     <td className="px-2 py-3 font-medium">{t.fornecedor}</td>
                     <td className="px-2 py-3 text-muted-foreground max-w-[280px]">
@@ -361,12 +381,14 @@ export function CeoPanel() {
       {/* TOP 5 CLIENTES EM ATRASO */}
       <section>
         <Card>
-          <div className="flex items-center justify-between mb-4">
-            <div>
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+            <div className="min-w-0">
               <Label>Top 5 clientes em atraso</Label>
-              <p className="text-xs text-muted-foreground mt-1">Recebíveis vencidos, ordenados por valor — priorize a cobrança</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Recebíveis vencidos, ordenados por {clientesSort === "valor" ? "valor (maior → menor)" : "dias em atraso (mais antigos primeiro)"} — priorize a cobrança
+              </p>
             </div>
-            <TrendingUp className="size-4 text-status-green" />
+            <SortToggle value={clientesSort} onChange={setClientesSort} />
           </div>
           <div className="overflow-x-auto -mx-2">
             <table className="w-full text-sm">
@@ -384,7 +406,10 @@ export function CeoPanel() {
                 {data.topClientesVencidos.length === 0 && (
                   <tr><td colSpan={6} className="px-2 py-6 text-center text-muted-foreground">Nenhum recebível vencido 🎉</td></tr>
                 )}
-                {data.topClientesVencidos.map((t, i) => (
+                {[...data.topClientesVencidos]
+                  .sort((a, b) => (clientesSort === "valor" ? b.valor - a.valor : b.dias - a.dias))
+                  .slice(0, 5)
+                  .map((t, i) => (
                   <tr key={i} className="hover:bg-muted/50 transition-colors">
                     <td className="px-2 py-3 font-medium">{t.cliente}</td>
                     <td className="px-2 py-3 text-muted-foreground max-w-[280px]">
