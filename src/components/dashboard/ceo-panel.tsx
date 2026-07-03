@@ -801,3 +801,28 @@ function AlertRow({ tipo, titulo, detalhe }: { tipo: "green" | "yellow" | "red";
     </div>
   );
 }
+
+function SortToggle({
+  value,
+  onChange,
+}: {
+  value: "valor" | "dias";
+  onChange: (v: "valor" | "dias") => void;
+}) {
+  return (
+    <div className="flex gap-1 p-1 rounded-md bg-muted print:hidden">
+      {(["valor", "dias"] as const).map((k) => (
+        <button
+          key={k}
+          type="button"
+          onClick={() => onChange(k)}
+          className={`px-3 py-1 text-xs font-medium rounded-sm transition-colors ${
+            value === k ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {k === "valor" ? "Valor" : "Dias"}
+        </button>
+      ))}
+    </div>
+  );
+}
