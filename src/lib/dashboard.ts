@@ -22,6 +22,15 @@ export type DashboardData = {
   topClientesVencidos: {
     cliente: string; descricao: string | null; empresaCnpj: string | null; empresaNome: string; venc: string; dias: number; valor: number;
   }[];
+  agingRecv: { a30: number; a60: number; a90: number; mais: number; total: number };
+  clientesInadimplentes: {
+    cliente: string;
+    qtd: number;
+    valor: number;
+    diasMax: number;
+    empresas: string[];
+    aging: { a30: number; a60: number; a90: number; mais: number };
+  }[];
 };
 
 type InvoiceRow = {
