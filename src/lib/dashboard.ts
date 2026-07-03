@@ -22,6 +22,15 @@ export type DashboardData = {
   topClientesVencidos: {
     cliente: string; descricao: string | null; empresaCnpj: string | null; empresaNome: string; venc: string; dias: number; valor: number;
   }[];
+  agingRecv: { a30: number; a60: number; a90: number; mais: number; total: number };
+  clientesInadimplentes: {
+    cliente: string;
+    qtd: number;
+    valor: number;
+    diasMax: number;
+    empresas: string[];
+    aging: { a30: number; a60: number; a90: number; mais: number };
+  }[];
 };
 
 type InvoiceRow = {
@@ -134,6 +143,8 @@ export async function loadDashboard(): Promise<DashboardData> {
       hoje: { receber: 0, pagar: 0, vencidos: 0, vencidosValor: 0 },
       semana: { receber: 0, pagar: 0 },
       fluxo: [], empresas: [], bancos: [], saldos: [], topVencidos: [], topClientesVencidos: [],
+      agingRecv: { a30: 0, a60: 0, a90: 0, mais: 0, total: 0 },
+      clientesInadimplentes: [],
     };
   }
 
@@ -246,6 +257,40 @@ export async function loadDashboard(): Promise<DashboardData> {
     })
     .sort((a, b) => b.valor - a.valor);
 
+  // Aging de recebíveis vencidos + agrupamento por cliente
+  const agingRecv = { a30: 0, a60: 0, a90: 0, mais: 0, total: 0 };
+  const clienteMap = new Map<string, {
+    cliente: string; qtd: number; valor: number; diasMax: number;
+    empresas: Set<string>; aging: { a30: number; a60: number; a90: number; mais: number };
+  }>();
+  topClientesVencidos.forEach((t) => {
+    agingRecv.total += t.valor;
+    let bucket: "a30" | "a60" | "a90" | "mais";
+    if (t.dias <= 30) bucket = "a30";
+    else if (t.dias <= 60) bucket = "a60";
+    else if (t.dias <= 90) bucket = "a90";
+    else bucket = "mais";
+    agingRecv[bucket] += t.valor;
+    const key = t.cliente.toLowerCase();
+    const cur = clienteMap.get(key) || {
+      cliente: t.cliente, qtd: 0, valor: 0, diasMax: 0,
+      empresas: new Set<string>(),
+      aging: { a30: 0, a60: 0, a90: 0, mais: 0 },
+    };
+    cur.qtd += 1;
+    cur.valor += t.valor;
+    cur.diasMax = Math.max(cur.diasMax, t.dias);
+    cur.empresas.add(t.empresaNome);
+    cur.aging[bucket] += t.valor;
+    clienteMap.set(key, cur);
+  });
+  const clientesInadimplentes = Array.from(clienteMap.values())
+    .map((c) => ({
+      cliente: c.cliente, qtd: c.qtd, valor: c.valor, diasMax: c.diasMax,
+      empresas: Array.from(c.empresas), aging: c.aging,
+    }))
+    .sort((a, b) => b.valor - a.valor);
+
   return {
     hasData: true,
     ultimaImportacao: ultima,
@@ -256,6 +301,7 @@ export async function loadDashboard(): Promise<DashboardData> {
     aPagarVencidosValor: payVenc.reduce((s, r) => s + openAmount(r), 0),
     hoje, semana, fluxo,
     empresas: empresasWithPct, bancos: bancosWithPct, saldos, topVencidos, topClientesVencidos,
+    agingRecv, clientesInadimplentes,
   };
 }
 
