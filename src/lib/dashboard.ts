@@ -153,6 +153,7 @@ export async function loadDashboard(): Promise<DashboardData> {
       fluxo: [], empresas: [], bancos: [], saldos: [], topVencidos: [], topClientesVencidos: [],
       agingRecv: { a30: 0, a60: 0, a90: 0, mais: 0, total: 0 },
       clientesInadimplentes: [],
+      deltas: null,
     };
   }
 
