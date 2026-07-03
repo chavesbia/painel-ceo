@@ -37,6 +37,7 @@ const BANK_COLORS = [
 
 export function CeoPanel() {
   const [fluxoPeriodo, setFluxoPeriodo] = React.useState<7 | 15 | 30 | 60 | 90 | 180>(30);
+  const [fluxoCenario, setFluxoCenario] = React.useState<"otimista" | "realista">("realista");
   const [pagarSort, setPagarSort] = React.useState<"valor" | "dias">("valor");
   const [clientesSort, setClientesSort] = React.useState<"valor" | "dias">("valor");
   const { data, error } = useQuery<DashboardData>({
@@ -60,7 +61,8 @@ export function CeoPanel() {
 
   const resultado = data.aReceberTotal - data.aPagarTotal;
   const saldoAtual = data.saldoBancarioTotal;
-  const fluxoChart = data.fluxo
+  const fluxoSerie = fluxoCenario === "realista" ? data.fluxoRealista : data.fluxo;
+  const fluxoChart = fluxoSerie
     .slice(0, fluxoPeriodo)
     .map((f) => ({ dia: f.label, saldo: f.saldo, entrada: f.entrada, saida: f.saida }));
   const menorSaldoPoint = fluxoChart.length
@@ -299,24 +301,56 @@ export function CeoPanel() {
             <div>
               <h3 className="text-lg font-display font-semibold">Fluxo de Caixa Projetado</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Saldo acumulado dia a dia: saldo bancário atual + recebimentos previstos − pagamentos previstos ({fluxoPeriodo} dias). Toque nos pontos para ver a data e o valor.
+                Saldo acumulado dia a dia ({fluxoPeriodo} dias). Contas vencidas entram/saem hoje. No cenário <strong>realista</strong>, recebíveis vencidos aplicam taxa de recuperação por aging (30d 90% · 60d 60% · 90d 30% · +90d 10%).
               </p>
             </div>
-            <div className="flex flex-wrap gap-1 p-1 rounded-md bg-muted print:hidden">
-              {([7, 15, 30, 60, 90, 180] as const).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setFluxoPeriodo(p)}
-                  className={`px-3 py-1 text-xs font-medium rounded-sm transition-colors ${
-                    p === fluxoPeriodo ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {p}d
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-2 print:hidden">
+              <div className="flex gap-1 p-1 rounded-md bg-muted">
+                {(["realista", "otimista"] as const).map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setFluxoCenario(c)}
+                    className={`px-3 py-1 text-xs font-medium rounded-sm capitalize transition-colors ${
+                      c === fluxoCenario ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-1 p-1 rounded-md bg-muted">
+                {([7, 15, 30, 60, 90, 180] as const).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setFluxoPeriodo(p)}
+                    className={`px-3 py-1 text-xs font-medium rounded-sm transition-colors ${
+                      p === fluxoPeriodo ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {p}d
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
+          {data.recuperacao.exposicaoVencida > 0 && (
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+              <div className="rounded-md border border-border bg-muted/25 px-3 py-2">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Exposição vencida</p>
+                <p className="mt-0.5 tabular-nums font-semibold">{brlShort(data.recuperacao.exposicaoVencida)}</p>
+              </div>
+              <div className="rounded-md border border-status-green/30 bg-status-green/5 px-3 py-2">
+                <p className="text-[10px] uppercase tracking-wider text-status-green font-semibold">Recuperação esperada</p>
+                <p className="mt-0.5 tabular-nums font-semibold text-status-green">{brlShort(data.recuperacao.recuperacaoEsperada)}</p>
+              </div>
+              <div className="rounded-md border border-status-red/30 bg-status-red/5 px-3 py-2">
+                <p className="text-[10px] uppercase tracking-wider text-status-red font-semibold">Perda esperada</p>
+                <p className="mt-0.5 tabular-nums font-semibold text-status-red">{brlShort(data.recuperacao.perdaEsperada)}</p>
+              </div>
+            </div>
+          )}
           <div className="mt-6 h-72 w-full">
             <CashFlowChart data={fluxoChart} minPoint={menorSaldoPoint} />
           </div>
