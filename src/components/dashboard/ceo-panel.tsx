@@ -276,23 +276,53 @@ export function CeoPanel() {
       {/* FAIXA 5 — EMPRESAS / BANCOS / ALERTAS */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card>
-          <Label>Exposição por Empresa (líquido)</Label>
-          <div className="mt-5 space-y-4">
+          <Label>Posição por Empresa (a receber × a pagar)</Label>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Compara, por CNPJ, o total em aberto a receber e a pagar. Resultado = Receber − Pagar (verde = sobra, vermelho = falta).
+          </p>
+          <div className="mt-5 space-y-5">
             {data.empresas.length === 0 && <p className="text-xs text-muted-foreground">Sem dados</p>}
-            {data.empresas.map((e) => (
-              <div key={`${e.cnpj || ""}-${e.nome}`}>
-                <div className="flex justify-between text-sm mb-1.5">
+            {data.empresas.map((e) => {
+              const max = Math.max(e.receber, e.pagar, 1);
+              const rPct = (e.receber / max) * 100;
+              const pPct = (e.pagar / max) * 100;
+              return (
+                <div key={`${e.cnpj || ""}-${e.nome}`} className="space-y-2">
                   <div className="min-w-0">
-                    <div className="font-medium truncate">{e.nome}</div>
-                    {e.cnpj && <div className="tabular-nums text-xs text-muted-foreground">{e.cnpj}</div>}
+                    <div className="font-medium text-sm truncate">{e.nome}</div>
+                    {e.cnpj && <div className="tabular-nums text-[11px] text-muted-foreground">{e.cnpj}</div>}
                   </div>
-                  <span className={`tabular-nums ${e.valor >= 0 ? "text-status-green" : "text-status-red"}`}>{brlShort(e.valor)}</span>
+
+                  <div className="space-y-1.5">
+                    <div>
+                      <div className="flex justify-between text-[11px] mb-0.5">
+                        <span className="text-muted-foreground">Entrada (a receber)</span>
+                        <span className="tabular-nums text-status-green">{brlShort(e.receber)}</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full rounded-full bg-status-green" style={{ width: `${rPct}%` }} />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-[11px] mb-0.5">
+                        <span className="text-muted-foreground">Saída (a pagar)</span>
+                        <span className="tabular-nums text-status-red">{brlShort(e.pagar)}</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full rounded-full bg-status-red" style={{ width: `${pPct}%` }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={`flex justify-between items-center text-xs pt-1.5 border-t border-border/60`}>
+                    <span className="text-muted-foreground">Resultado</span>
+                    <span className={`tabular-nums font-semibold ${e.valor >= 0 ? "text-status-green" : "text-status-red"}`}>
+                      {e.valor >= 0 ? "+" : ""}{brlShort(e.valor)}
+                    </span>
+                  </div>
                 </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full ${e.valor >= 0 ? "bg-accent" : "bg-status-red"}`} style={{ width: `${e.pct}%` }} />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
 
