@@ -430,45 +430,51 @@ export function CeoPanel() {
         <Card>
           <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
             <div className="min-w-0">
-              <Label>Top 5 clientes em atraso</Label>
+              <Label>Inadimplência de Clientes</Label>
               <p className="text-xs text-muted-foreground mt-1">
-                Recebíveis vencidos, ordenados por {clientesSort === "valor" ? "valor (maior → menor)" : "dias em atraso (mais antigos primeiro)"} — priorize a cobrança
+                Recebíveis vencidos agrupados por cliente. Quanto mais dias em atraso, menor a chance de receber sem negociação — priorize contato nos blocos vermelhos.
               </p>
             </div>
             <SortToggle value={clientesSort} onChange={setClientesSort} />
           </div>
+
+          {/* Aging summary */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+            <AgingBucket label="1 a 30 dias" valor={data.agingRecv.a30} total={data.agingRecv.total} tone="yellow" hint="Cobrança amigável" />
+            <AgingBucket label="31 a 60 dias" valor={data.agingRecv.a60} total={data.agingRecv.total} tone="orange" hint="Atenção" />
+            <AgingBucket label="61 a 90 dias" valor={data.agingRecv.a90} total={data.agingRecv.total} tone="red" hint="Risco elevado" />
+            <AgingBucket label="Mais de 90 dias" valor={data.agingRecv.mais} total={data.agingRecv.total} tone="darkred" hint="Provável perda / renegociar" />
+          </div>
+
           <div className="overflow-x-auto -mx-2">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   <th className="text-left font-semibold px-2 py-2">Cliente</th>
-                  <th className="text-left font-semibold px-2 py-2">Descrição</th>
-                  <th className="text-left font-semibold px-2 py-2">Empresa</th>
-                  <th className="text-left font-semibold px-2 py-2">Vencimento</th>
-                  <th className="text-right font-semibold px-2 py-2">Dias</th>
-                  <th className="text-right font-semibold px-2 py-2">Valor</th>
+                  <th className="text-left font-semibold px-2 py-2">Empresa(s)</th>
+                  <th className="text-right font-semibold px-2 py-2">Títulos</th>
+                  <th className="text-right font-semibold px-2 py-2">+ Antigo</th>
+                  <th className="text-left font-semibold px-2 py-2 min-w-[200px]">Aging</th>
+                  <th className="text-right font-semibold px-2 py-2">Total vencido</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {data.topClientesVencidos.length === 0 && (
+                {data.clientesInadimplentes.length === 0 && (
                   <tr><td colSpan={6} className="px-2 py-6 text-center text-muted-foreground">Nenhum recebível vencido 🎉</td></tr>
                 )}
-                {[...data.topClientesVencidos]
-                  .sort((a, b) => (clientesSort === "valor" ? b.valor - a.valor : b.dias - a.dias))
+                {[...data.clientesInadimplentes]
+                  .sort((a, b) => (clientesSort === "valor" ? b.valor - a.valor : b.diasMax - a.diasMax))
                   .slice(0, 5)
-                  .map((t, i) => (
+                  .map((c, i) => (
                   <tr key={i} className="hover:bg-muted/50 transition-colors">
-                    <td className="px-2 py-3 font-medium">{t.cliente}</td>
-                    <td className="px-2 py-3 text-muted-foreground max-w-[280px]">
-                      <div className="truncate" title={t.descricao || ""}>{t.descricao || "—"}</div>
+                    <td className="px-2 py-3 font-medium">{c.cliente}</td>
+                    <td className="px-2 py-3 text-muted-foreground text-xs">
+                      {c.empresas.join(" · ")}
                     </td>
-                    <td className="px-2 py-3 text-muted-foreground">
-                      {t.empresaCnpj && <div className="text-[11px] tabular-nums">{t.empresaCnpj}</div>}
-                      <div>{t.empresaNome}</div>
-                    </td>
-                    <td className="px-2 py-3 tabular-nums text-muted-foreground">{new Date(t.venc + "T00:00:00").toLocaleDateString("pt-BR")}</td>
-                    <td className="px-2 py-3 text-right tabular-nums text-status-yellow font-semibold">{t.dias}</td>
-                    <td className="px-2 py-3 text-right tabular-nums font-semibold text-status-green">{brl(t.valor)}</td>
+                    <td className="px-2 py-3 text-right tabular-nums text-muted-foreground">{c.qtd}</td>
+                    <td className="px-2 py-3 text-right tabular-nums font-semibold text-status-red">{c.diasMax}d</td>
+                    <td className="px-2 py-3"><AgingBar aging={c.aging} total={c.valor} /></td>
+                    <td className="px-2 py-3 text-right tabular-nums font-semibold text-status-green">{brl(c.valor)}</td>
                   </tr>
                 ))}
               </tbody>
