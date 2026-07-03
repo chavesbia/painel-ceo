@@ -13,7 +13,7 @@ export type DashboardData = {
   hoje: { receber: number; pagar: number; vencidos: number; vencidosValor: number };
   semana: { receber: number; pagar: number };
   fluxo: { dia: string; label: string; entrada: number; saida: number; saldo: number }[];
-  empresas: { cnpj: string | null; nome: string; valor: number; pct: number }[];
+  empresas: { cnpj: string | null; nome: string; receber: number; pagar: number; valor: number; pct: number }[];
   bancos: { nome: string; valor: number; pct: number }[];
   saldos: { empresaCnpj: string | null; empresaNome: string; conta: string; saldo: number; data: string }[];
   topVencidos: {
@@ -186,21 +186,22 @@ export async function loadDashboard(): Promise<DashboardData> {
     };
   });
 
-  // Empresas
-  const empMap = new Map<string, { cnpj: string | null; nome: string; valor: number }>();
+  // Empresas — separa entrada (a receber) e saída (a pagar) por CNPJ.
+  const empMap = new Map<string, { cnpj: string | null; nome: string; receber: number; pagar: number }>();
   [...recv, ...pay].forEach((r) => {
     const info = companyInfo(r.unidade_negocio);
     const key = `${info.cnpj || ""}|${info.nome}`;
-    const delta = r.kind === "receivable" ? openAmount(r) : -openAmount(r);
-    const cur = empMap.get(key) || { cnpj: info.cnpj, nome: info.nome, valor: 0 };
-    cur.valor += delta;
+    const cur = empMap.get(key) || { cnpj: info.cnpj, nome: info.nome, receber: 0, pagar: 0 };
+    if (r.kind === "receivable") cur.receber += openAmount(r);
+    else cur.pagar += openAmount(r);
     empMap.set(key, cur);
   });
-  const empresas = Array.from(empMap.values())
-    .sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor))
+  const empresasRaw = Array.from(empMap.values())
+    .map((e) => ({ ...e, valor: e.receber - e.pagar }))
+    .sort((a, b) => (Math.abs(b.receber) + Math.abs(b.pagar)) - (Math.abs(a.receber) + Math.abs(a.pagar)))
     .slice(0, 5);
-  const empTotal = empresas.reduce((s, e) => s + Math.abs(e.valor), 0) || 1;
-  const empresasWithPct = empresas.map((e) => ({ ...e, pct: Math.round((Math.abs(e.valor) / empTotal) * 100) }));
+  const empMaxBar = Math.max(1, ...empresasRaw.map((e) => Math.max(e.receber, e.pagar)));
+  const empresasWithPct = empresasRaw.map((e) => ({ ...e, pct: Math.round((Math.max(e.receber, e.pagar) / empMaxBar) * 100) }));
 
   // Bancos (por conta de pagamento)
   const bancoMap = new Map<string, number>();
