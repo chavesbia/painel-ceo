@@ -31,6 +31,14 @@ export type DashboardData = {
     empresas: string[];
     aging: { a30: number; a60: number; a90: number; mais: number };
   }[];
+  deltas: {
+    baseDate: string;
+    saldoBancario: { abs: number; pct: number | null };
+    aReceber: { abs: number; pct: number | null };
+    aPagar: { abs: number; pct: number | null };
+    vencidosValor: { abs: number; pct: number | null };
+    vencidosCount: { abs: number; pct: number | null };
+  } | null;
 };
 
 type InvoiceRow = {
