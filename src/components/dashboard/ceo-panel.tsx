@@ -538,6 +538,52 @@ function Label({ children, className = "" }: { children: React.ReactNode; classN
   );
 }
 
+function AgingBucket({
+  label, valor, total, tone, hint,
+}: {
+  label: string; valor: number; total: number;
+  tone: "yellow" | "orange" | "red" | "darkred"; hint: string;
+}) {
+  const pct = total > 0 ? Math.round((valor / total) * 100) : 0;
+  const bg = {
+    yellow: "bg-status-yellow",
+    orange: "bg-orange-500",
+    red: "bg-status-red",
+    darkred: "bg-red-800",
+  }[tone];
+  const text = {
+    yellow: "text-status-yellow",
+    orange: "text-orange-600",
+    red: "text-status-red",
+    darkred: "text-red-800",
+  }[tone];
+  return (
+    <div className="rounded-md border border-border bg-muted/25 p-3">
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</p>
+      <p className={`mt-1.5 text-lg font-display font-bold tabular-nums ${text}`}>{brlShort(valor)}</p>
+      <div className="mt-1.5 h-1.5 bg-muted rounded-full overflow-hidden">
+        <div className={`h-full ${bg}`} style={{ width: `${pct}%` }} />
+      </div>
+      <p className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+        <span>{hint}</span><span className="tabular-nums">{pct}%</span>
+      </p>
+    </div>
+  );
+}
+
+function AgingBar({ aging, total }: { aging: { a30: number; a60: number; a90: number; mais: number }; total: number }) {
+  if (total <= 0) return <div className="h-2 bg-muted rounded-full" />;
+  const seg = (v: number) => `${(v / total) * 100}%`;
+  return (
+    <div className="flex h-2 w-full rounded-full overflow-hidden bg-muted" title={`≤30d ${brlShort(aging.a30)} · 31-60d ${brlShort(aging.a60)} · 61-90d ${brlShort(aging.a90)} · +90d ${brlShort(aging.mais)}`}>
+      {aging.a30 > 0 && <div className="bg-status-yellow" style={{ width: seg(aging.a30) }} />}
+      {aging.a60 > 0 && <div className="bg-orange-500" style={{ width: seg(aging.a60) }} />}
+      {aging.a90 > 0 && <div className="bg-status-red" style={{ width: seg(aging.a90) }} />}
+      {aging.mais > 0 && <div className="bg-red-800" style={{ width: seg(aging.mais) }} />}
+    </div>
+  );
+}
+
 function StatusPill({ state, label, hint }: { state: "green" | "yellow" | "red"; label: string; hint: string }) {
   const cls = {
     green: "bg-status-green/10 text-status-green",
