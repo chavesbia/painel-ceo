@@ -535,6 +535,28 @@ export function CeoPanel() {
         </Card>
       </section>
 
+      {/* CONCENTRAÇÃO DE RISCO */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ConcentracaoCard
+          titulo="Concentração — A Receber"
+          descricao="Quanto do total a receber depende de cada cliente. Um único nome com peso alto = risco de caixa se atrasar."
+          itens={data.concentracao.receber}
+          total={data.concentracao.totais.receber}
+          top5Pct={data.concentracao.top5Pct.receber}
+          hhi={data.concentracao.hhi.receber}
+          tone="green"
+        />
+        <ConcentracaoCard
+          titulo="Concentração — A Pagar"
+          descricao="Quanto do total a pagar concentra em cada fornecedor. Peso alto = poder de barganha do fornecedor sobre você."
+          itens={data.concentracao.pagar}
+          total={data.concentracao.totais.pagar}
+          top5Pct={data.concentracao.top5Pct.pagar}
+          hhi={data.concentracao.hhi.pagar}
+          tone="red"
+        />
+      </section>
+
       <footer className="text-[11px] text-muted-foreground pt-2 pb-6 flex flex-wrap items-center gap-2">
         <Info className="size-3.5" />
         Empresa CNPJ 37.260.594/0002-60 é excluída globalmente. O fluxo considera os saldos bancários cadastrados.
@@ -633,6 +655,69 @@ function AgingBar({ aging, total }: { aging: { a30: number; a60: number; a90: nu
       {aging.a90 > 0 && <div className="bg-status-red" style={{ width: seg(aging.a90) }} />}
       {aging.mais > 0 && <div className="bg-red-800" style={{ width: seg(aging.mais) }} />}
     </div>
+  );
+}
+
+function ConcentracaoCard({
+  titulo, descricao, itens, total, top5Pct, hhi, tone,
+}: {
+  titulo: string;
+  descricao: string;
+  itens: { nome: string; valor: number; pct: number; qtd: number }[];
+  total: number;
+  top5Pct: number;
+  hhi: number;
+  tone: "green" | "red";
+}) {
+  // HHI: <1500 baixa · 1500-2500 moderada · >2500 alta concentração (parâmetro clássico)
+  const nivel = hhi > 2500 ? { label: "Alta", cls: "text-status-red" }
+              : hhi > 1500 ? { label: "Moderada", cls: "text-status-yellow" }
+              : { label: "Baixa", cls: "text-status-green" };
+  const barCls = tone === "green" ? "bg-status-green" : "bg-status-red";
+  const valorCls = tone === "green" ? "text-status-green" : "text-status-red";
+  return (
+    <Card>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <Label>{titulo}</Label>
+          <p className="text-xs text-muted-foreground mt-1 max-w-md">{descricao}</p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="text-right">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Top 5</p>
+            <p className="text-sm font-display font-bold tabular-nums">{top5Pct.toFixed(0)}%</p>
+          </div>
+          <div className="text-right border-l border-border pl-3">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Concentração</p>
+            <p className={`text-sm font-display font-bold ${nivel.cls}`}>{nivel.label}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-2">
+        {itens.length === 0 && <p className="text-xs text-muted-foreground">Sem dados</p>}
+        {itens.map((it, i) => (
+          <div key={i} className="grid grid-cols-[1.25rem_1fr_auto] gap-2 items-center">
+            <span className="text-[10px] tabular-nums text-muted-foreground text-right">{i + 1}.</span>
+            <div className="min-w-0">
+              <div className="flex justify-between text-[12px] mb-1 gap-2">
+                <span className="truncate font-medium" title={it.nome}>{it.nome}</span>
+                <span className="tabular-nums text-muted-foreground shrink-0">
+                  {it.qtd} {it.qtd === 1 ? "título" : "títulos"}
+                </span>
+              </div>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div className={`h-full rounded-full ${barCls}`} style={{ width: `${Math.min(100, it.pct)}%` }} />
+              </div>
+            </div>
+            <div className="text-right shrink-0 min-w-[92px]">
+              <div className={`text-[12px] tabular-nums font-semibold ${valorCls}`}>{brlShort(it.valor)}</div>
+              <div className="text-[10px] tabular-nums text-muted-foreground">{it.pct.toFixed(1)}%</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }
 

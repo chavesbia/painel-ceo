@@ -38,6 +38,13 @@ export type DashboardData = {
     empresas: string[];
     aging: { a30: number; a60: number; a90: number; mais: number };
   }[];
+  concentracao: {
+    totais: { receber: number; pagar: number };
+    receber: { nome: string; valor: number; pct: number; qtd: number }[];
+    pagar: { nome: string; valor: number; pct: number; qtd: number }[];
+    hhi: { receber: number; pagar: number }; // 0..10000 (Herfindahl)
+    top5Pct: { receber: number; pagar: number };
+  };
   deltas: {
     baseDate: string;
     saldoBancario: { abs: number; pct: number | null };
@@ -162,6 +169,12 @@ export async function loadDashboard(): Promise<DashboardData> {
       empresas: [], bancos: [], saldos: [], topVencidos: [], topClientesVencidos: [],
       agingRecv: { a30: 0, a60: 0, a90: 0, mais: 0, total: 0 },
       clientesInadimplentes: [],
+      concentracao: {
+        totais: { receber: 0, pagar: 0 },
+        receber: [], pagar: [],
+        hhi: { receber: 0, pagar: 0 },
+        top5Pct: { receber: 0, pagar: 0 },
+      },
       deltas: null,
     };
   }
@@ -345,6 +358,40 @@ export async function loadDashboard(): Promise<DashboardData> {
     }))
     .sort((a, b) => b.valor - a.valor);
 
+  // Concentração de risco — agrega por entidade (cliente/fornecedor) do a receber e a pagar.
+  const aggregateBy = (rowsIn: InvoiceRow[]) => {
+    const m = new Map<string, { nome: string; valor: number; qtd: number }>();
+    rowsIn.forEach((r) => {
+      const nome = shortName(r.entidade) || "—";
+      const key = nome.toLowerCase();
+      const cur = m.get(key) || { nome, valor: 0, qtd: 0 };
+      cur.valor += openAmount(r);
+      cur.qtd += 1;
+      m.set(key, cur);
+    });
+    return Array.from(m.values()).sort((a, b) => b.valor - a.valor);
+  };
+  const aggRecv = aggregateBy(recv);
+  const aggPay = aggregateBy(pay);
+  const totalRecvConc = aggRecv.reduce((s, x) => s + x.valor, 0);
+  const totalPayConc = aggPay.reduce((s, x) => s + x.valor, 0);
+  const withPct = (arr: { nome: string; valor: number; qtd: number }[], total: number) =>
+    arr.map((x) => ({ ...x, pct: total > 0 ? (x.valor / total) * 100 : 0 }));
+  const receberConc = withPct(aggRecv, totalRecvConc).slice(0, 10);
+  const pagarConc = withPct(aggPay, totalPayConc).slice(0, 10);
+  const hhi = (arr: { valor: number }[], total: number) => {
+    if (total <= 0) return 0;
+    return Math.round(arr.reduce((s, x) => s + Math.pow((x.valor / total) * 100, 2), 0));
+  };
+  const top5Sum = (arr: { pct: number }[]) => arr.slice(0, 5).reduce((s, x) => s + x.pct, 0);
+  const concentracao = {
+    totais: { receber: totalRecvConc, pagar: totalPayConc },
+    receber: receberConc,
+    pagar: pagarConc,
+    hhi: { receber: hhi(aggRecv, totalRecvConc), pagar: hhi(aggPay, totalPayConc) },
+    top5Pct: { receber: top5Sum(withPct(aggRecv, totalRecvConc)), pagar: top5Sum(withPct(aggPay, totalPayConc)) },
+  };
+
   // Snapshot diário (idempotente) + variação vs. snapshot mais próximo de ~30 dias atrás.
   const vencidosValor =
     recvVenc.reduce((s, r) => s + openAmount(r), 0) +
@@ -370,6 +417,7 @@ export async function loadDashboard(): Promise<DashboardData> {
     hoje, semana, fluxo, fluxoRealista, recuperacao,
     empresas: empresasWithPct, bancos: bancosWithPct, saldos, topVencidos, topClientesVencidos,
     agingRecv, clientesInadimplentes,
+    concentracao,
     deltas,
   };
 }
