@@ -198,8 +198,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   });
   const empresasRaw = Array.from(empMap.values())
     .map((e) => ({ ...e, valor: e.receber - e.pagar }))
-    .sort((a, b) => (Math.abs(b.receber) + Math.abs(b.pagar)) - (Math.abs(a.receber) + Math.abs(a.pagar)))
-    .slice(0, 5);
+    .sort((a, b) => (Math.abs(b.receber) + Math.abs(b.pagar)) - (Math.abs(a.receber) + Math.abs(a.pagar)));
   const empMaxBar = Math.max(1, ...empresasRaw.map((e) => Math.max(e.receber, e.pagar)));
   const empresasWithPct = empresasRaw.map((e) => ({ ...e, pct: Math.round((Math.max(e.receber, e.pagar) / empMaxBar) * 100) }));
 
