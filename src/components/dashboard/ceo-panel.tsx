@@ -268,7 +268,7 @@ export function CeoPanel() {
             {data.saldos.length === 0 && <p className="text-xs text-muted-foreground">Sem saldos cadastrados</p>}
             {data.saldos.slice(0, 5).map((saldo) => (
               <div key={`${saldo.empresaNome}-${saldo.conta}`} className="rounded-md border border-border bg-muted/25 px-3 py-2.5">
-                <div className="flex items-start justify-between gap-3 text-sm">
+                <div className="flex items-start justify-between gap-3 text-[13px]">
                   <div className="min-w-0">
                     <p className="font-medium truncate">{saldo.conta}</p>
                     {saldo.empresaCnpj && (
