@@ -312,14 +312,22 @@ export function CeoPanel() {
           <p className="mt-1 text-[11px] text-muted-foreground">
             Compara, por CNPJ, o total em aberto a receber e a pagar. Resultado = Receber − Pagar (verde = sobra, vermelho = falta).
           </p>
-          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            {data.empresas.length === 0 && <p className="text-xs text-muted-foreground">Sem dados</p>}
-            {data.empresas.map((e) => {
+          {data.empresas.length === 0 && (
+            <p className="mt-5 text-xs text-muted-foreground">Sem dados</p>
+          )}
+          {data.empresas.length > 0 && (
+            <div
+              className="mt-5 flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 lg:grid lg:grid-cols-5 lg:overflow-visible lg:snap-none print:grid print:grid-cols-5"
+            >
+              {data.empresas.map((e) => {
               const max = Math.max(e.receber, e.pagar, 1);
               const rPct = (e.receber / max) * 100;
               const pPct = (e.pagar / max) * 100;
               return (
-                <div key={`${e.cnpj || ""}-${e.nome}`} className="space-y-2 rounded-md border border-border bg-muted/20 p-3">
+                <div
+                  key={`${e.cnpj || ""}-${e.nome}`}
+                  className="shrink-0 basis-[260px] snap-start space-y-2 rounded-md border border-border bg-muted/20 p-3 lg:basis-auto lg:shrink"
+                >
                   <div className="min-w-0">
                     <div className="font-medium text-sm truncate">{e.nome}</div>
                     {e.cnpj && <div className="tabular-nums text-[11px] text-muted-foreground">{e.cnpj}</div>}
@@ -354,8 +362,14 @@ export function CeoPanel() {
                   </div>
                 </div>
               );
-            })}
-          </div>
+              })}
+            </div>
+          )}
+          {data.empresas.length > 5 && (
+            <p className="mt-2 text-[11px] text-muted-foreground lg:hidden">
+              Deslize para o lado para ver as demais empresas →
+            </p>
+          )}
         </Card>
       </section>
 
