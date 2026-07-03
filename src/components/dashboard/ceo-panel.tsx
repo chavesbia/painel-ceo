@@ -242,7 +242,39 @@ export function CeoPanel() {
         </Card>
       </section>
 
-      {/* FAIXA 4 — FLUXO DE CAIXA PROJETADO */}
+      {/* FAIXA 4 — SALDOS / ALERTAS (acima do fluxo) */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <Label>Saldos por Conta Bancária</Label>
+          <div className="mt-5 space-y-3">
+            {data.saldos.length === 0 && <p className="text-xs text-muted-foreground">Sem saldos cadastrados</p>}
+            {data.saldos.slice(0, 5).map((saldo) => (
+              <div key={`${saldo.empresaNome}-${saldo.conta}`} className="rounded-md border border-border bg-muted/25 px-3 py-2.5">
+                <div className="flex items-start justify-between gap-3 text-sm">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{saldo.conta}</p>
+                    {saldo.empresaCnpj && (
+                      <p className="text-[11px] text-muted-foreground tabular-nums mt-0.5">{saldo.empresaCnpj}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground truncate">{saldo.empresaNome} · {new Date(saldo.data + "T00:00:00").toLocaleDateString("pt-BR")}</p>
+                  </div>
+                  <p className={`tabular-nums font-semibold ${saldo.saldo >= 0 ? "text-status-green" : "text-status-red"}`}>{brlShort(saldo.saldo)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card>
+          <Label>Alertas</Label>
+          <div className="mt-4 space-y-3">
+            {alertas.length === 0 && <p className="text-xs text-muted-foreground">Nenhum alerta ativo.</p>}
+            {alertas.map((a, i) => <AlertRow key={i} {...a} />)}
+          </div>
+        </Card>
+      </section>
+
+      {/* FAIXA 5 — FLUXO DE CAIXA PROJETADO */}
       <section>
         <Card>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -273,21 +305,21 @@ export function CeoPanel() {
         </Card>
       </section>
 
-      {/* FAIXA 5 — EMPRESAS / BANCOS / ALERTAS */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* FAIXA 6 — POSIÇÃO POR EMPRESA (horizontal, abaixo do fluxo) */}
+      <section>
         <Card>
           <Label>Posição por Empresa (a receber × a pagar)</Label>
           <p className="mt-1 text-[11px] text-muted-foreground">
             Compara, por CNPJ, o total em aberto a receber e a pagar. Resultado = Receber − Pagar (verde = sobra, vermelho = falta).
           </p>
-          <div className="mt-5 space-y-5">
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {data.empresas.length === 0 && <p className="text-xs text-muted-foreground">Sem dados</p>}
             {data.empresas.map((e) => {
               const max = Math.max(e.receber, e.pagar, 1);
               const rPct = (e.receber / max) * 100;
               const pPct = (e.pagar / max) * 100;
               return (
-                <div key={`${e.cnpj || ""}-${e.nome}`} className="space-y-2">
+                <div key={`${e.cnpj || ""}-${e.nome}`} className="space-y-2 rounded-md border border-border bg-muted/20 p-3">
                   <div className="min-w-0">
                     <div className="font-medium text-sm truncate">{e.nome}</div>
                     {e.cnpj && <div className="tabular-nums text-[11px] text-muted-foreground">{e.cnpj}</div>}
@@ -323,35 +355,6 @@ export function CeoPanel() {
                 </div>
               );
             })}
-          </div>
-        </Card>
-
-        <Card>
-          <Label>Saldos por Conta Bancária</Label>
-          <div className="mt-5 space-y-3">
-            {data.saldos.length === 0 && <p className="text-xs text-muted-foreground">Sem saldos cadastrados</p>}
-            {data.saldos.slice(0, 5).map((saldo) => (
-              <div key={`${saldo.empresaNome}-${saldo.conta}`} className="rounded-md border border-border bg-muted/25 px-3 py-2.5">
-                <div className="flex items-start justify-between gap-3 text-sm">
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">{saldo.conta}</p>
-                    {saldo.empresaCnpj && (
-                      <p className="text-[11px] text-muted-foreground tabular-nums mt-0.5">{saldo.empresaCnpj}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground truncate">{saldo.empresaNome} · {new Date(saldo.data + "T00:00:00").toLocaleDateString("pt-BR")}</p>
-                  </div>
-                  <p className={`tabular-nums font-semibold ${saldo.saldo >= 0 ? "text-status-green" : "text-status-red"}`}>{brlShort(saldo.saldo)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <Card>
-          <Label>Alertas</Label>
-          <div className="mt-4 space-y-3">
-            {alertas.length === 0 && <p className="text-xs text-muted-foreground">Nenhum alerta ativo.</p>}
-            {alertas.map((a, i) => <AlertRow key={i} {...a} />)}
           </div>
         </Card>
       </section>
