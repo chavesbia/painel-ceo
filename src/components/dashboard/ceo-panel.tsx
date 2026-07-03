@@ -188,19 +188,29 @@ export function CeoPanel() {
                 {brl(saldoAtual)}
                 <span className="ml-2 text-[10px] font-normal opacity-70 uppercase tracking-wider">Saldos cadastrados</span>
               </p>
+              {data.deltas && (
+                <DeltaChip
+                  abs={data.deltas.saldoBancario.abs}
+                  pct={data.deltas.saldoBancario.pct}
+                  baseDate={data.deltas.baseDate}
+                  goodWhen="up"
+                  onDark
+                />
+              )}
             </div>
           </div>
         </Card>
       </section>
 
-      {/* FAIXA 2 — 3 KPIs */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* FAIXA 2 — KPIs principais */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KpiCard
           label="A Receber"
           value={brl(data.aReceberTotal)}
           hint="Total em aberto, somando todos os vencimentos (passados e futuros)."
           accent="green"
           direction="up"
+          delta={data.deltas ? { ...data.deltas.aReceber, baseDate: data.deltas.baseDate, goodWhen: "up" } : null}
         />
         <KpiCard
           label="A Pagar"
@@ -208,6 +218,14 @@ export function CeoPanel() {
           hint="Total em aberto, somando todos os vencimentos (passados e futuros)."
           accent="red"
           direction="down"
+          delta={data.deltas ? { ...data.deltas.aPagar, baseDate: data.deltas.baseDate, goodWhen: "down" } : null}
+        />
+        <KpiCard
+          label="Vencidos (a receber + a pagar)"
+          value={brl(data.aReceberVencidosValor + data.aPagarVencidosValor)}
+          hint={`${data.aReceberVencidosCount + data.aPagarVencidosCount} títulos vencidos no total.`}
+          accent="red"
+          delta={data.deltas ? { ...data.deltas.vencidosValor, baseDate: data.deltas.baseDate, goodWhen: "down" } : null}
         />
         <KpiCard
           label="Resultado Líquido Projetado 30d"
