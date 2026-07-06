@@ -107,6 +107,13 @@ export function csvToInvoices(
     const unidade = (line[col.un] || "").trim();
     if (!numero) { skipped++; continue; }
     if (unidade.includes(EXCLUDED_CNPJ)) { skipped++; continue; }
+    // Regra para Faturas a Receber: só considerar registros com Nº da Nota contendo "Autorizada"
+    // e com "Criado por" preenchido. Caso contrário, ignorar.
+    if (kind === "receivable") {
+      const numeroNota = (line[col.nn] || "").trim();
+      const criadoPor = (line[col.cp] || "").trim();
+      if (!/autorizada/i.test(numeroNota) || !criadoPor) { skipped++; continue; }
+    }
     rows.push({
       kind,
       numero,
