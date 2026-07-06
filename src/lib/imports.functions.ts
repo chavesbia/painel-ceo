@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const RowSchema = z.object({
   kind: z.enum(["receivable", "payable"]),
@@ -71,4 +72,26 @@ export const importInvoices = createServerFn({ method: "POST" })
       .eq("id", imp.id);
 
     return { importId: imp.id, imported, skipped: data.skipped, total: data.total };
+  });
+
+export const deleteImport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { data: isOp } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "operator",
+    });
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isOp && !isAdmin) throw new Error("Sem permissão para excluir importações");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: invErr } = await supabaseAdmin.from("invoices").delete().eq("import_id", data.id);
+    if (invErr) throw new Error(invErr.message);
+    const { error: impErr } = await supabaseAdmin.from("imports").delete().eq("id", data.id);
+    if (impErr) throw new Error(impErr.message);
+    return { ok: true };
   });
