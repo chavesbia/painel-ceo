@@ -298,8 +298,8 @@ export async function loadDashboard(): Promise<DashboardData> {
     .map((r) => {
       const info = companyInfo(r.unidade_negocio);
       return {
-        fornecedor: shortName(r.entidade) || "-",
-        descricao: r.descricao?.trim() || null,
+        fornecedor: (shortName(r.entidade) || "-").toUpperCase(),
+        descricao: r.descricao?.trim() ? r.descricao.trim().toUpperCase() : null,
         empresaCnpj: info.cnpj,
         empresaNome: info.nome,
         venc: r.data_vencimento!,
@@ -313,8 +313,8 @@ export async function loadDashboard(): Promise<DashboardData> {
     .map((r) => {
       const info = companyInfo(r.unidade_negocio);
       return {
-        cliente: shortName(r.entidade) || "-",
-        descricao: r.descricao?.trim() || null,
+        cliente: (shortName(r.entidade) || "-").toUpperCase(),
+        descricao: r.descricao?.trim() ? r.descricao.trim().toUpperCase() : null,
         empresaCnpj: info.cnpj,
         empresaNome: info.nome,
         venc: r.data_vencimento!,
@@ -362,7 +362,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   const aggregateBy = (rowsIn: InvoiceRow[]) => {
     const m = new Map<string, { nome: string; valor: number; qtd: number }>();
     rowsIn.forEach((r) => {
-      const nome = shortName(r.entidade) || "—";
+      const nome = (shortName(r.entidade) || "—").toUpperCase();
       const key = nome.toLowerCase();
       const cur = m.get(key) || { nome, valor: 0, qtd: 0 };
       cur.valor += openAmount(r);
