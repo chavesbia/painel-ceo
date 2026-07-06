@@ -4,10 +4,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { AppShell } from "@/components/app-shell";
 import { csvToInvoices } from "@/lib/csv";
-import { importInvoices } from "@/lib/imports.functions";
+import { importInvoices, deleteImport } from "@/lib/imports.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/lib/auth";
-import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, Lock } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, Lock, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/importacoes")({
   component: () => (
@@ -33,6 +33,7 @@ function ImportPage() {
   const [status, setStatus] = useState<null | { kind: "info" | "ok" | "err"; msg: string }>(null);
   const [busy, setBusy] = useState(false);
   const doImport = useServerFn(importInvoices);
+  const doDelete = useServerFn(deleteImport);
   const qc = useQueryClient();
 
   const load = async () => {
@@ -42,6 +43,21 @@ function ImportPage() {
   useEffect(() => { void load(); }, []);
 
   const canWrite = !!me?.isOperator;
+
+  const handleDelete = async (id: string, filename: string) => {
+    if (!canWrite) return;
+    if (!confirm(`Excluir a importação "${filename}"? Todos os registros dela serão removidos.`)) return;
+    setBusy(true);
+    setStatus({ kind: "info", msg: `Excluindo ${filename}…` });
+    try {
+      await doDelete({ data: { id } });
+      setStatus({ kind: "ok", msg: `Importação "${filename}" excluída.` });
+      void load();
+      void qc.invalidateQueries({ queryKey: ["dashboard"] });
+    } catch (e) {
+      setStatus({ kind: "err", msg: e instanceof Error ? e.message : "Erro ao excluir" });
+    } finally { setBusy(false); }
+  };
 
   const handleFile = async (file: File, kind: "receivable" | "payable") => {
     if (!canWrite) return;
@@ -107,11 +123,12 @@ function ImportPage() {
                 <th className="text-right font-semibold px-4 py-2.5">Importados</th>
                 <th className="text-right font-semibold px-4 py-2.5">Ignorados</th>
                 <th className="text-right font-semibold px-4 py-2.5">Total</th>
+                <th className="text-right font-semibold px-4 py-2.5">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {history.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">Nenhuma importação registrada.</td></tr>
+                <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Nenhuma importação registrada.</td></tr>
               )}
               {history.map((h) => (
                 <tr key={h.id}>
@@ -121,6 +138,17 @@ function ImportPage() {
                   <td className="px-4 py-3 text-right tabular-nums font-semibold text-status-green">{h.rows_imported}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{h.rows_skipped}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{h.rows_total}</td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(h.id, h.filename)}
+                      disabled={busy || !canWrite}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-status-red/30 bg-status-red/5 text-status-red px-2.5 py-1 text-xs font-medium hover:bg-status-red/10 disabled:opacity-40 disabled:pointer-events-none"
+                      title="Excluir importação e seus registros"
+                    >
+                      <Trash2 className="size-3.5" /> Excluir
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
