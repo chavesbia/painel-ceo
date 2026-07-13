@@ -323,6 +323,70 @@ export function CeoPanel() {
         </Card>
       </section>
 
+      {/* FAIXA 3.5 — RUNWAY + NECESSIDADE DE CAPITAL DE GIRO */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <div className="flex items-center justify-between">
+            <Label info="Estimativa de quantos dias o saldo bancário atual cobre, considerando a média diária de saídas previstas nos próximos 90 dias (cenário realista). Não considera novas entradas — é o pior caso se o caixa parar de receber hoje.">
+              Runway de Caixa
+            </Label>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Pior caso · 90d</span>
+          </div>
+          <div className="mt-5 flex flex-wrap items-end gap-4">
+            <p
+              className={`text-4xl font-display font-bold tabular-nums leading-none ${
+                runwayTone === "green" ? "text-status-green" : runwayTone === "yellow" ? "text-status-yellow" : "text-status-red"
+              }`}
+            >
+              {runwayDias === null ? "∞" : `${runwayDias} dias`}
+            </p>
+            <p className="text-xs text-muted-foreground pb-1">
+              Saída média/dia <span className="tabular-nums font-semibold text-foreground">{brlShort(avgDailySaida)}</span>
+            </p>
+          </div>
+          <p className="mt-3 text-[11px] text-muted-foreground leading-snug">
+            Com o saldo atual de <span className="tabular-nums font-semibold text-foreground">{brlShort(saldoAtual)}</span>, o caixa cobre {runwayDias === null ? "as saídas previstas (sem gastos projetados)." : `aproximadamente ${runwayDias} dias de pagamentos.`}
+          </p>
+        </Card>
+
+        <Card>
+          <div className="flex items-center justify-between">
+            <Label info="Quanto falta para fechar o mês corrente: soma das saídas previstas até o último dia do mês, menos as entradas previstas (com taxa de recuperação de vencidos), menos o saldo bancário atual. Se positivo, é o valor que precisa ser captado ou negociado.">
+              Necessidade de Capital de Giro
+            </Label>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Até {fimMesLabel}</span>
+          </div>
+          <div className="mt-5 flex flex-wrap items-end gap-4">
+            {necessidadeMes > 0 ? (
+              <p className="text-4xl font-display font-bold tabular-nums leading-none text-status-red whitespace-nowrap">
+                {brl(necessidadeMes)}
+              </p>
+            ) : (
+              <p className="text-4xl font-display font-bold tabular-nums leading-none text-status-green whitespace-nowrap">
+                +{brl(saldoFimMes)}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground pb-1">
+              {necessidadeMes > 0 ? "Faltam para fechar o mês" : "Sobra prevista no fim do mês"}
+            </p>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-2 text-[11px]">
+            <div className="rounded-md border border-border bg-muted/25 px-2 py-1.5">
+              <p className="uppercase tracking-wider text-muted-foreground font-semibold text-[9px]">Saldo hoje</p>
+              <p className="tabular-nums font-semibold mt-0.5">{brlShort(saldoAtual)}</p>
+            </div>
+            <div className="rounded-md border border-status-green/30 bg-status-green/5 px-2 py-1.5">
+              <p className="uppercase tracking-wider text-status-green font-semibold text-[9px]">Entradas</p>
+              <p className="tabular-nums font-semibold mt-0.5 text-status-green">{brlShort(entradaMes)}</p>
+            </div>
+            <div className="rounded-md border border-status-red/30 bg-status-red/5 px-2 py-1.5">
+              <p className="uppercase tracking-wider text-status-red font-semibold text-[9px]">Saídas</p>
+              <p className="tabular-nums font-semibold mt-0.5 text-status-red">{brlShort(saidaMes)}</p>
+            </div>
+          </div>
+        </Card>
+      </section>
+
       {/* FAIXA 4 — SALDOS / ALERTAS (acima do fluxo) */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
