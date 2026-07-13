@@ -76,7 +76,25 @@ export function csvToInvoices(
   const grid = parseCsv(text);
   if (grid.length < 2) return { rows: [], skipped: 0, total: 0 };
   const header = grid[0].map((h) => h.trim());
-  const idx = (name: string) => header.findIndex((h) => h.toLowerCase() === name.toLowerCase());
+  // Normaliza cabeçalhos: remove BOM, acentos, aspas, pontos e espaços extras.
+  const norm = (s: string) =>
+    s
+      .replace(/^\uFEFF/, "")
+      .replace(/["']/g, "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  const normHeader = header.map(norm);
+  const idx = (name: string) => {
+    const target = norm(name);
+    let i = normHeader.indexOf(target);
+    if (i >= 0) return i;
+    // fallback: match por "começa com" para tolerar sufixos como "Nº (Fatura)"
+    i = normHeader.findIndex((h) => h.startsWith(target));
+    return i;
+  };
   const col = {
     un: idx("Unidade de Negócio"),
     num: idx("Nº"),
@@ -98,6 +116,11 @@ export function csvToInvoices(
     dca: idx("Data do Cadastro"),
     cp: idx("Criado por"),
   };
+  if (col.num < 0) {
+    throw new Error(
+      `Cabeçalho "Nº" não encontrado no CSV. Colunas detectadas: ${header.join(" | ")}`,
+    );
+  }
   const rows: ParsedInvoiceRow[] = [];
   let skipped = 0;
   const total = grid.length - 1;
