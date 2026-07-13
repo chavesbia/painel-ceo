@@ -97,19 +97,37 @@ export const markPasswordChanged = createServerFn({ method: "POST" })
   });
 
 export const seedInitialUsers = createServerFn({ method: "POST" })
-  .handler(async () => {
+  .inputValidator((d: unknown) =>
+    z.object({ setupToken: z.string().min(1) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const expected = process.env.SETUP_TOKEN;
+    if (!expected) {
+      throw new Error("Setup desabilitado: defina a variável de ambiente SETUP_TOKEN no backend para habilitar o setup inicial.");
+    }
+    const a = Buffer.from(data.setupToken);
+    const b = Buffer.from(expected);
+    if (a.length !== b.length) throw new Error("Token de setup inválido.");
+    const { timingSafeEqual } = await import("crypto");
+    if (!timingSafeEqual(a, b)) throw new Error("Token de setup inválido.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { count } = await supabaseAdmin.from("profiles").select("*", { count: "exact", head: true });
     if ((count ?? 0) > 0) return { seeded: false as const, reason: "already-initialized" };
+    const genPassword = () => {
+      const { randomBytes } = require("crypto") as typeof import("crypto");
+      return randomBytes(12).toString("base64url");
+    };
     const seed = [
       { username: "beatriz.chaves", full_name: "Beatriz Chaves", role: "admin" as const },
       { username: "bruna.araujo", full_name: "Bruna Araujo", role: "operator" as const },
       { username: "patricia.guimaraes", full_name: "Patricia Guimaraes", role: "viewer" as const },
     ];
+    const credentials: { username: string; password: string }[] = [];
     for (const u of seed) {
+      const password = genPassword();
       const { data, error } = await supabaseAdmin.auth.admin.createUser({
         email: emailFor(u.username),
-        password: "prevermed",
+        password,
         email_confirm: true,
         user_metadata: { username: u.username, full_name: u.full_name, must_change_password: true },
       });
@@ -119,6 +137,7 @@ export const seedInitialUsers = createServerFn({ method: "POST" })
       });
       const { error: rerr } = await supabaseAdmin.from("user_roles").insert({ user_id: data.user.id, role: u.role });
       if (rerr) throw new Error(`role ${u.username}: ${rerr.message}`);
+      credentials.push({ username: u.username, password });
     }
-    return { seeded: true as const };
+    return { seeded: true as const, credentials };
   });
