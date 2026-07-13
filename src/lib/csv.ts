@@ -72,9 +72,9 @@ export type ParsedInvoiceRow = {
 export function csvToInvoices(
   text: string,
   kind: "receivable" | "payable",
-): { rows: ParsedInvoiceRow[]; skipped: number; total: number } {
+): { rows: ParsedInvoiceRow[]; skipped: number; total: number; skippedRows: SkippedRow[] } {
   const grid = parseCsv(text);
-  if (grid.length < 2) return { rows: [], skipped: 0, total: 0 };
+  if (grid.length < 2) return { rows: [], skipped: 0, total: 0, skippedRows: [] };
   const header = grid[0].map((h) => h.trim());
   // Normaliza cabeçalhos: remove BOM, acentos, aspas, pontos e espaços extras.
   const norm = (s: string) =>
@@ -124,25 +124,40 @@ export function csvToInvoices(
   const rows: ParsedInvoiceRow[] = [];
   const seenImportKeys = new Set<string>();
   let skipped = 0;
+  const skippedRows: SkippedRow[] = [];
   const total = grid.length - 1;
   for (let r = 1; r < grid.length; r++) {
     const line = grid[r];
     const numero = (line[col.num] || "").trim();
     const unidade = (line[col.un] || "").trim();
-    if (!numero) { skipped++; continue; }
-    if (unidade.includes(EXCLUDED_CNPJ)) { skipped++; continue; }
+    const pushSkip = (motivo: string) => {
+      skipped++;
+      skippedRows.push({
+        linha: r + 1,
+        motivo,
+        numero,
+        unidade_negocio: unidade,
+        entidade: (line[col.ent] || "").trim(),
+        numero_nota: col.nn >= 0 ? (line[col.nn] || "").trim() : "",
+        criado_por: col.cp >= 0 ? (line[col.cp] || "").trim() : "",
+        data_vencimento: col.dv >= 0 ? (line[col.dv] || "").trim() : "",
+      });
+    };
+    if (!numero) { pushSkip('Campo "Nº" vazio'); continue; }
+    if (unidade.includes(EXCLUDED_CNPJ)) { pushSkip(`Unidade de Negócio excluída (CNPJ ${EXCLUDED_CNPJ})`); continue; }
     // Regra para Faturas a Receber: só considerar registros com Nº da Nota contendo "Autorizada"
     // e com "Criado por" preenchido. Caso contrário, ignorar.
     if (kind === "receivable") {
       const numeroNota = (line[col.nn] || "").trim();
       const criadoPor = (line[col.cp] || "").trim();
-      if (!/autorizada/i.test(numeroNota) || !criadoPor) { skipped++; continue; }
+      if (!/autorizada/i.test(numeroNota)) { pushSkip('"Nº da Nota" não contém "Autorizada"'); continue; }
+      if (!criadoPor) { pushSkip('"Criado por" vazio'); continue; }
     }
     const entidadeDoc = extractDoc(line[col.ent]);
     const dataVencimento = parseBrDate(line[col.dv]);
     if (entidadeDoc && dataVencimento) {
       const importKey = `${kind}||${numero}||${entidadeDoc}||${dataVencimento}`;
-      if (seenImportKeys.has(importKey)) { skipped++; continue; }
+      if (seenImportKeys.has(importKey)) { pushSkip("Duplicado no CSV (tipo+nº+entidade+vencimento)"); continue; }
       seenImportKeys.add(importKey);
     }
     rows.push({
@@ -169,5 +184,29 @@ export function csvToInvoices(
       criado_por: (line[col.cp] || "").trim() || null,
     });
   }
-  return { rows, skipped, total };
+  return { rows, skipped, total, skippedRows };
+}
+
+export type SkippedRow = {
+  linha: number;
+  motivo: string;
+  numero: string;
+  unidade_negocio: string;
+  entidade: string;
+  numero_nota: string;
+  criado_por: string;
+  data_vencimento: string;
+};
+
+export function skippedRowsToCsv(rows: SkippedRow[]): string {
+  const headers = ["Linha", "Motivo", "Nº", "Unidade de Negócio", "Entidade", "Nº da Nota", "Criado por", "Data Vencimento"];
+  const esc = (v: string | number) => {
+    const s = String(v ?? "");
+    return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [headers.join(";")];
+  for (const r of rows) {
+    lines.push([r.linha, r.motivo, r.numero, r.unidade_negocio, r.entidade, r.numero_nota, r.criado_por, r.data_vencimento].map(esc).join(";"));
+  }
+  return "\uFEFF" + lines.join("\r\n");
 }
