@@ -122,6 +122,7 @@ export function csvToInvoices(
     );
   }
   const rows: ParsedInvoiceRow[] = [];
+  const seenImportKeys = new Set<string>();
   let skipped = 0;
   const total = grid.length - 1;
   for (let r = 1; r < grid.length; r++) {
@@ -137,18 +138,25 @@ export function csvToInvoices(
       const criadoPor = (line[col.cp] || "").trim();
       if (!/autorizada/i.test(numeroNota) || !criadoPor) { skipped++; continue; }
     }
+    const entidadeDoc = extractDoc(line[col.ent]);
+    const dataVencimento = parseBrDate(line[col.dv]);
+    if (entidadeDoc && dataVencimento) {
+      const importKey = `${kind}||${numero}||${entidadeDoc}||${dataVencimento}`;
+      if (seenImportKeys.has(importKey)) { skipped++; continue; }
+      seenImportKeys.add(importKey);
+    }
     rows.push({
       kind,
       numero,
       unidade_negocio: unidade || null,
       entidade: (line[col.ent] || "").trim() || null,
-      entidade_doc: extractDoc(line[col.ent]),
+      entidade_doc: entidadeDoc,
       valor_parcela: parseBrl(line[col.vp]),
       valor_pago: col.vpago >= 0 ? parseBrl(line[col.vpago]) : 0,
       total_fatura: line[col.tot] ? parseBrl(line[col.tot]) : null,
       situacao: (line[col.sit] || "").trim() || null,
       data_competencia: parseBrDate(line[col.dc]),
-      data_vencimento: parseBrDate(line[col.dv]),
+      data_vencimento: dataVencimento,
       data_pagamento: parseBrDate(line[col.dp]),
       forma_pagamento: (line[col.fp] || "").trim() || null,
       conta_bancaria: (line[col.cb] || "").trim() || null,

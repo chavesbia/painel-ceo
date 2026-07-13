@@ -52,22 +52,32 @@ export const importInvoices = createServerFn({ method: "POST" })
       .single();
     if (impErr || !imp) throw new Error(impErr?.message || "Falha ao criar import");
 
-    const withImport = data.rows.map((r) => ({ ...r, import_id: imp.id }));
+    const cleanText = (v: string | null | undefined) => {
+      const s = (v ?? "").toString().replace(/^\uFEFF/, "").replace(/\s+/g, " ").trim();
+      return s || null;
+    };
+
+    const withImport = data.rows.map((r) => ({
+      ...r,
+      import_id: imp.id,
+      numero: cleanText(r.numero) || "",
+      entidade_doc: cleanText(r.entidade_doc),
+      data_vencimento: cleanText(r.data_vencimento),
+    }));
 
     // Deduplicate rows on the same conflict key (kind,numero,entidade_doc,data_vencimento).
     // Postgres rejects upsert when a single batch contains two rows that match the same target row.
     // Normalizamos com trim para evitar duplicidades por espaços e mantemos NULLs distintos
     // (o índice único do Postgres também trata NULLs como distintos).
-    const norm = (v: string | null | undefined) => (v ?? "").toString().trim();
     const seen = new Map<string, typeof withImport[number]>();
-    for (const r of withImport) {
-      const numero = norm(r.numero);
-      const doc = norm(r.entidade_doc);
-      const venc = norm(r.data_vencimento);
+    for (const [rowIndex, r] of withImport.entries()) {
+      const numero = r.numero;
+      const doc = r.entidade_doc || "";
+      const venc = r.data_vencimento || "";
       // Se doc ou venc forem vazios, o Postgres considera cada linha única — geramos chave única no Map.
-      const nullMarker = !doc || !venc ? `__u${Math.random().toString(36).slice(2)}__` : "";
+      const nullMarker = !doc || !venc ? `__row${rowIndex}__` : "";
       const key = `${r.kind}||${numero}||${doc}||${venc}||${nullMarker}`;
-      seen.set(key, { ...r, numero, entidade_doc: doc || null });
+      seen.set(key, { ...r, numero, entidade_doc: doc || null, data_vencimento: venc || null });
     }
     const deduped = Array.from(seen.values());
 
@@ -80,13 +90,15 @@ export const importInvoices = createServerFn({ method: "POST" })
         .from("invoices")
         .upsert(slice, { onConflict: "kind,numero,entidade_doc,data_vencimento" });
       if (error) {
+        const errorText = [error.message, error.details, error.hint, error.code].filter(Boolean).join(" ");
         // Fallback: se ainda houver colisão no lote, reprocessa linha a linha.
-        if (/affect row a second time|ON CONFLICT DO UPDATE/i.test(error.message)) {
+        if (/affect row a second time|ON CONFLICT DO UPDATE/i.test(errorText)) {
           for (const row of slice) {
             const { error: e2 } = await supabaseAdmin
               .from("invoices")
               .upsert([row], { onConflict: "kind,numero,entidade_doc,data_vencimento" });
-            if (!e2) imported += 1;
+            if (e2) throw new Error(`Erro no registro ${row.numero}: ${e2.message}`);
+            imported += 1;
           }
         } else {
           throw new Error(`Erro no lote ${i}: ${error.message}`);
