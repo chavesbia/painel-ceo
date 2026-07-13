@@ -70,6 +70,28 @@ export function CeoPanel() {
     : { dia: "", saldo: 0 };
   const bancos = data.bancos.map((b, i) => ({ ...b, cor: BANK_COLORS[i % BANK_COLORS.length] }));
 
+  // Runway de caixa — quantos dias o saldo bancário cobre, usando a média
+  // diária de saídas previstas nos próximos 90 dias (cenário realista).
+  const proj90 = data.fluxoRealista.slice(0, 90);
+  const totalSaida90 = proj90.reduce((s, d) => s + d.saida, 0);
+  const avgDailySaida = totalSaida90 > 0 ? totalSaida90 / 90 : 0;
+  const runwayDias = avgDailySaida > 0 ? Math.floor(saldoAtual / avgDailySaida) : null;
+  const runwayTone: "green" | "yellow" | "red" =
+    runwayDias === null ? "green" : runwayDias >= 60 ? "green" : runwayDias >= 30 ? "yellow" : "red";
+
+  // Necessidade de capital de giro do mês (restante do mês corrente):
+  // saídas previstas − entradas previstas (com taxa de recuperação) − saldo atual.
+  // Se o resultado for positivo, é o quanto falta captar/negociar para fechar o mês.
+  const hojeRef = new Date(); hojeRef.setHours(0, 0, 0, 0);
+  const fimMes = new Date(hojeRef.getFullYear(), hojeRef.getMonth() + 1, 0);
+  const fimMesStr = fimMes.toISOString().slice(0, 10);
+  const doMes = data.fluxoRealista.filter((d) => d.dia <= fimMesStr);
+  const entradaMes = doMes.reduce((s, d) => s + d.entrada, 0);
+  const saidaMes = doMes.reduce((s, d) => s + d.saida, 0);
+  const saldoFimMes = saldoAtual + entradaMes - saidaMes;
+  const necessidadeMes = Math.max(0, -saldoFimMes);
+  const fimMesLabel = fimMes.toLocaleDateString("pt-BR", { day: "2-digit", month: "long" });
+
   const alertas: { tipo: "green" | "yellow" | "red"; titulo: string; detalhe: string }[] = [];
   if (data.aPagarVencidosCount > 0) {
     alertas.push({
@@ -297,6 +319,70 @@ export function CeoPanel() {
             <MiniStat label="A Receber" value={brlShort(data.semana.receber)} color="green" direction="up" />
             <MiniStat label="A Pagar" value={brlShort(data.semana.pagar)} color="red" direction="down" />
             <MiniStat label="Resultado" value={brlShort(data.semana.receber - data.semana.pagar)} color="brand" />
+          </div>
+        </Card>
+      </section>
+
+      {/* FAIXA 3.5 — RUNWAY + NECESSIDADE DE CAPITAL DE GIRO */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <div className="flex items-center justify-between">
+            <Label info="Estimativa de quantos dias o saldo bancário atual cobre, considerando a média diária de saídas previstas nos próximos 90 dias (cenário realista). Não considera novas entradas — é o pior caso se o caixa parar de receber hoje.">
+              Runway de Caixa
+            </Label>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Pior caso · 90d</span>
+          </div>
+          <div className="mt-5 flex flex-wrap items-end gap-4">
+            <p
+              className={`text-4xl font-display font-bold tabular-nums leading-none ${
+                runwayTone === "green" ? "text-status-green" : runwayTone === "yellow" ? "text-status-yellow" : "text-status-red"
+              }`}
+            >
+              {runwayDias === null ? "∞" : `${runwayDias} dias`}
+            </p>
+            <p className="text-xs text-muted-foreground pb-1">
+              Saída média/dia <span className="tabular-nums font-semibold text-foreground">{brlShort(avgDailySaida)}</span>
+            </p>
+          </div>
+          <p className="mt-3 text-[11px] text-muted-foreground leading-snug">
+            Com o saldo atual de <span className="tabular-nums font-semibold text-foreground">{brlShort(saldoAtual)}</span>, o caixa cobre {runwayDias === null ? "as saídas previstas (sem gastos projetados)." : `aproximadamente ${runwayDias} dias de pagamentos.`}
+          </p>
+        </Card>
+
+        <Card>
+          <div className="flex items-center justify-between">
+            <Label info="Quanto falta para fechar o mês corrente: soma das saídas previstas até o último dia do mês, menos as entradas previstas (com taxa de recuperação de vencidos), menos o saldo bancário atual. Se positivo, é o valor que precisa ser captado ou negociado.">
+              Necessidade de Capital de Giro
+            </Label>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Até {fimMesLabel}</span>
+          </div>
+          <div className="mt-5 flex flex-wrap items-end gap-4">
+            {necessidadeMes > 0 ? (
+              <p className="text-4xl font-display font-bold tabular-nums leading-none text-status-red whitespace-nowrap">
+                {brl(necessidadeMes)}
+              </p>
+            ) : (
+              <p className="text-4xl font-display font-bold tabular-nums leading-none text-status-green whitespace-nowrap">
+                +{brl(saldoFimMes)}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground pb-1">
+              {necessidadeMes > 0 ? "Faltam para fechar o mês" : "Sobra prevista no fim do mês"}
+            </p>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-2 text-[11px]">
+            <div className="rounded-md border border-border bg-muted/25 px-2 py-1.5">
+              <p className="uppercase tracking-wider text-muted-foreground font-semibold text-[9px]">Saldo hoje</p>
+              <p className="tabular-nums font-semibold mt-0.5">{brlShort(saldoAtual)}</p>
+            </div>
+            <div className="rounded-md border border-status-green/30 bg-status-green/5 px-2 py-1.5">
+              <p className="uppercase tracking-wider text-status-green font-semibold text-[9px]">Entradas</p>
+              <p className="tabular-nums font-semibold mt-0.5 text-status-green">{brlShort(entradaMes)}</p>
+            </div>
+            <div className="rounded-md border border-status-red/30 bg-status-red/5 px-2 py-1.5">
+              <p className="uppercase tracking-wider text-status-red font-semibold text-[9px]">Saídas</p>
+              <p className="tabular-nums font-semibold mt-0.5 text-status-red">{brlShort(saidaMes)}</p>
+            </div>
           </div>
         </Card>
       </section>
