@@ -70,6 +70,28 @@ export function CeoPanel() {
     : { dia: "", saldo: 0 };
   const bancos = data.bancos.map((b, i) => ({ ...b, cor: BANK_COLORS[i % BANK_COLORS.length] }));
 
+  // Runway de caixa — quantos dias o saldo bancário cobre, usando a média
+  // diária de saídas previstas nos próximos 90 dias (cenário realista).
+  const proj90 = data.fluxoRealista.slice(0, 90);
+  const totalSaida90 = proj90.reduce((s, d) => s + d.saida, 0);
+  const avgDailySaida = totalSaida90 > 0 ? totalSaida90 / 90 : 0;
+  const runwayDias = avgDailySaida > 0 ? Math.floor(saldoAtual / avgDailySaida) : null;
+  const runwayTone: "green" | "yellow" | "red" =
+    runwayDias === null ? "green" : runwayDias >= 60 ? "green" : runwayDias >= 30 ? "yellow" : "red";
+
+  // Necessidade de capital de giro do mês (restante do mês corrente):
+  // saídas previstas − entradas previstas (com taxa de recuperação) − saldo atual.
+  // Se o resultado for positivo, é o quanto falta captar/negociar para fechar o mês.
+  const hojeRef = new Date(); hojeRef.setHours(0, 0, 0, 0);
+  const fimMes = new Date(hojeRef.getFullYear(), hojeRef.getMonth() + 1, 0);
+  const fimMesStr = fimMes.toISOString().slice(0, 10);
+  const doMes = data.fluxoRealista.filter((d) => d.dia <= fimMesStr);
+  const entradaMes = doMes.reduce((s, d) => s + d.entrada, 0);
+  const saidaMes = doMes.reduce((s, d) => s + d.saida, 0);
+  const saldoFimMes = saldoAtual + entradaMes - saidaMes;
+  const necessidadeMes = Math.max(0, -saldoFimMes);
+  const fimMesLabel = fimMes.toLocaleDateString("pt-BR", { day: "2-digit", month: "long" });
+
   const alertas: { tipo: "green" | "yellow" | "red"; titulo: string; detalhe: string }[] = [];
   if (data.aPagarVencidosCount > 0) {
     alertas.push({
