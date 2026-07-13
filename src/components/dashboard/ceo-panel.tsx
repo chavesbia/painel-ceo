@@ -61,6 +61,12 @@ export function CeoPanel() {
   if (!data.hasData) return <EmptyState ultima={data.ultimaImportacao} />;
 
   const resultado = data.aReceberTotal - data.aPagarTotal;
+  // Resultado por janela: soma entradas/saídas do fluxo (valor de face, cenário
+  // otimista) até o horizonte selecionado. Inclui vencidos aplicados em D0.
+  const janela = data.fluxo.slice(0, resultadoPeriodo);
+  const entradasJanela = janela.reduce((s, d) => s + d.entrada, 0);
+  const saidasJanela = janela.reduce((s, d) => s + d.saida, 0);
+  const resultadoJanela = entradasJanela - saidasJanela;
   const saldoAtual = data.saldoBancarioTotal;
   const fluxoSerie = fluxoCenario === "realista" ? data.fluxoRealista : data.fluxo;
   const fluxoChart = fluxoSerie
@@ -166,20 +172,38 @@ export function CeoPanel() {
       <section className="grid grid-cols-12 gap-6">
         <Card className="col-span-12 lg:col-span-8">
           <div className="flex flex-col gap-4">
-            <Label info="Diferença entre o total a receber e o total a pagar no horizonte de 30 dias. Positivo = sobra prevista; negativo = necessidade de caixa. Baseado nas faturas em aberto importadas do ERP.">Resultado de Faturas 30 dias</Label>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Label info="Diferença entre entradas (a receber) e saídas (a pagar) previstas no período selecionado, com base nas faturas em aberto importadas do ERP. Vencidos entram/saem em D0. Positivo = sobra prevista; negativo = necessidade de caixa.">
+                Resultado de Faturas em Aberto
+              </Label>
+              <div className="flex flex-wrap gap-1 p-1 rounded-md bg-muted">
+                {([7, 15, 30, 60, 90, 180] as const).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setResultadoPeriodo(p)}
+                    className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-colors ${
+                      p === resultadoPeriodo ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {p}d
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="flex flex-wrap items-end gap-4">
-              <h2 className="text-4xl md:text-5xl font-display font-bold tabular-nums tracking-tight text-accent">
-                {resultado >= 0 ? "+" : ""}{brl(resultado)}
+              <h2 className={`text-4xl md:text-5xl font-display font-bold tabular-nums tracking-tight ${resultadoJanela >= 0 ? "text-status-green" : "text-status-red"}`}>
+                {resultadoJanela >= 0 ? "+" : ""}{brl(resultadoJanela)}
               </h2>
               <div className="flex items-center gap-3 text-sm font-semibold pb-2">
                 <span className="inline-flex items-center gap-1 text-status-green">
                   <ArrowUp className="size-4" />
-                  Entradas {brlShort(data.aReceberTotal)}
+                  Entradas {brlShort(entradasJanela)}
                 </span>
                 <span className="text-muted-foreground">·</span>
                 <span className="inline-flex items-center gap-1 text-status-red">
                   <ArrowDown className="size-4" />
-                  Saídas {brlShort(data.aPagarTotal)}
+                  Saídas {brlShort(saidasJanela)}
                 </span>
               </div>
             </div>
