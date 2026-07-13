@@ -70,15 +70,6 @@ export function CeoPanel() {
     : { dia: "", saldo: 0 };
   const bancos = data.bancos.map((b, i) => ({ ...b, cor: BANK_COLORS[i % BANK_COLORS.length] }));
 
-  // Runway de caixa — quantos dias o saldo bancário cobre, usando a média
-  // diária de saídas previstas nos próximos 90 dias (cenário realista).
-  const proj90 = data.fluxoRealista.slice(0, 90);
-  const totalSaida90 = proj90.reduce((s, d) => s + d.saida, 0);
-  const avgDailySaida = totalSaida90 > 0 ? totalSaida90 / 90 : 0;
-  const runwayDias = avgDailySaida > 0 ? Math.floor(saldoAtual / avgDailySaida) : null;
-  const runwayTone: "green" | "yellow" | "red" =
-    runwayDias === null ? "green" : runwayDias >= 60 ? "green" : runwayDias >= 30 ? "yellow" : "red";
-
   // Necessidade de capital de giro do mês (restante do mês corrente):
   // saídas previstas − entradas previstas (com taxa de recuperação) − saldo atual.
   // Se o resultado for positivo, é o quanto falta captar/negociar para fechar o mês.
@@ -323,32 +314,8 @@ export function CeoPanel() {
         </Card>
       </section>
 
-      {/* FAIXA 3.5 — RUNWAY + NECESSIDADE DE CAPITAL DE GIRO */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <div className="flex items-center justify-between">
-            <Label info="Estimativa de quantos dias o saldo bancário atual cobre, considerando a média diária de saídas previstas nos próximos 90 dias (cenário realista). Não considera novas entradas — é o pior caso se o caixa parar de receber hoje.">
-              Runway de Caixa
-            </Label>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Pior caso · 90d</span>
-          </div>
-          <div className="mt-5 flex flex-wrap items-end gap-4">
-            <p
-              className={`text-4xl font-display font-bold tabular-nums leading-none ${
-                runwayTone === "green" ? "text-status-green" : runwayTone === "yellow" ? "text-status-yellow" : "text-status-red"
-              }`}
-            >
-              {runwayDias === null ? "∞" : `${runwayDias} dias`}
-            </p>
-            <p className="text-xs text-muted-foreground pb-1">
-              Saída média/dia <span className="tabular-nums font-semibold text-foreground">{brlShort(avgDailySaida)}</span>
-            </p>
-          </div>
-          <p className="mt-3 text-[11px] text-muted-foreground leading-snug">
-            Com o saldo atual de <span className="tabular-nums font-semibold text-foreground">{brlShort(saldoAtual)}</span>, o caixa cobre {runwayDias === null ? "as saídas previstas (sem gastos projetados)." : `aproximadamente ${runwayDias} dias de pagamentos.`}
-          </p>
-        </Card>
-
+      {/* FAIXA 3.5 — NECESSIDADE DE CAPITAL DE GIRO */}
+      <section className="grid grid-cols-1 gap-6">
         <Card>
           <div className="flex items-center justify-between">
             <Label info="Quanto falta para fechar o mês corrente: soma das saídas previstas até o último dia do mês, menos as entradas previstas (com taxa de recuperação de vencidos), menos o saldo bancário atual. Se positivo, é o valor que precisa ser captado ou negociado.">
