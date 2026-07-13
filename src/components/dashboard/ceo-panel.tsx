@@ -156,7 +156,7 @@ export function CeoPanel() {
             Fonte: ERP · última importação em {ultimaFmt}
           </p>
         </div>
-        <StatusPill state={semaforoState} label={semaforoLabel} hint={`Resultado 30d ${brlShort(resultado)}`} />
+        <StatusPill state={semaforoState} label={semaforoLabel} hint={`Resultado em aberto ${brlShort(resultado)}`} />
         <button
           type="button"
           onClick={() => window.print()}
