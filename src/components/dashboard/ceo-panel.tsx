@@ -229,23 +229,23 @@ export function CeoPanel() {
           <Label info="Detalhamento dos títulos vencidos separados por tipo. A receber = clientes em atraso (dinheiro que ainda não entrou). A pagar = contas em atraso com fornecedores (risco de juros/multas/protesto).">
             Vencidos
           </Label>
-          <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="mt-3 space-y-3">
             <div>
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
                 <ArrowUp className="size-3 text-status-green" /> A receber
               </p>
-              <p className="mt-1 text-base md:text-lg font-display font-bold tabular-nums leading-tight text-status-green break-words">
+              <p className="mt-1 text-lg font-display font-bold tabular-nums leading-tight text-status-green whitespace-nowrap">
                 {brl(data.aReceberVencidosValor)}
               </p>
               <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
                 {data.aReceberVencidosCount} {data.aReceberVencidosCount === 1 ? "título" : "títulos"}
               </p>
             </div>
-            <div className="border-l border-border pl-3">
+            <div className="pt-3 border-t border-border">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
                 <ArrowDown className="size-3 text-status-red" /> A pagar
               </p>
-              <p className="mt-1 text-base md:text-lg font-display font-bold tabular-nums leading-tight text-status-red break-words">
+              <p className="mt-1 text-lg font-display font-bold tabular-nums leading-tight text-status-red whitespace-nowrap">
                 {brl(data.aPagarVencidosValor)}
               </p>
               <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
