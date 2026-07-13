@@ -611,11 +611,55 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
   );
 }
 
-function Label({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function Label({ children, className = "", info, infoOnDark }: { children: React.ReactNode; className?: string; info?: string; infoOnDark?: boolean }) {
   return (
     <span className={`inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] font-semibold text-muted-foreground ${className}`}>
       <span>{children}</span>
       {info && <InfoTooltip text={info} onDark={infoOnDark} />}
+    </span>
+  );
+}
+
+function InfoTooltip({ text, onDark }: { text: string; onDark?: boolean }) {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef<HTMLSpanElement | null>(null);
+  React.useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent | TouchEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("touchstart", onDoc);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("touchstart", onDoc);
+    };
+  }, [open]);
+  const btnCls = onDark
+    ? "border-white/30 bg-white/10 text-primary-foreground hover:bg-white/20"
+    : "border-border bg-muted text-muted-foreground hover:bg-muted-foreground/10 hover:text-foreground";
+  return (
+    <span ref={ref} className="relative inline-flex print:hidden normal-case tracking-normal">
+      <button
+        type="button"
+        aria-label="Mais informações"
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        className={`inline-flex items-center justify-center size-4 rounded-full border text-[10px] font-bold italic leading-none transition-colors ${btnCls}`}
+      >
+        i
+      </button>
+      {open && (
+        <span
+          role="tooltip"
+          className="absolute left-1/2 top-full z-50 mt-2 w-64 -translate-x-1/2 rounded-md border border-border bg-card px-3 py-2 text-[11px] font-normal leading-snug text-foreground shadow-lg"
+        >
+          {text}
+        </span>
+      )}
     </span>
   );
 }
