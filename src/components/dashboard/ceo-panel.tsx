@@ -224,14 +224,49 @@ export function CeoPanel() {
           direction="down"
           delta={data.deltas ? { ...data.deltas.aPagar, baseDate: data.deltas.baseDate, goodWhen: "down" } : null}
         />
-        <KpiCard
-          label="Vencidos (a receber + a pagar)"
-          value={brl(data.aReceberVencidosValor + data.aPagarVencidosValor)}
-          hint={`${data.aReceberVencidosCount + data.aPagarVencidosCount} títulos vencidos no total.`}
-          info="Total de títulos vencidos, somando o que você deveria ter recebido (clientes em atraso) e o que deveria ter pago (contas em atraso). Indicador de saúde da operação: quanto menor, melhor."
-          accent="red"
-          delta={data.deltas ? { ...data.deltas.vencidosValor, baseDate: data.deltas.baseDate, goodWhen: "down" } : null}
-        />
+        <Card>
+          <div className="h-0.5 w-8 rounded-full bg-status-red mb-4" />
+          <Label info="Detalhamento dos títulos vencidos separados por tipo. A receber = clientes em atraso (dinheiro que ainda não entrou). A pagar = contas em atraso com fornecedores (risco de juros/multas/protesto).">
+            Vencidos
+          </Label>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
+                <ArrowUp className="size-3 text-status-green" /> A receber
+              </p>
+              <p className="mt-1 text-base md:text-lg font-display font-bold tabular-nums leading-tight text-status-green break-words">
+                {brl(data.aReceberVencidosValor)}
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
+                {data.aReceberVencidosCount} {data.aReceberVencidosCount === 1 ? "título" : "títulos"}
+              </p>
+            </div>
+            <div className="border-l border-border pl-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
+                <ArrowDown className="size-3 text-status-red" /> A pagar
+              </p>
+              <p className="mt-1 text-base md:text-lg font-display font-bold tabular-nums leading-tight text-status-red break-words">
+                {brl(data.aPagarVencidosValor)}
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
+                {data.aPagarVencidosCount} {data.aPagarVencidosCount === 1 ? "título" : "títulos"}
+              </p>
+            </div>
+          </div>
+          {data.deltas && (
+            <div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between gap-2">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                Total {brlShort(data.aReceberVencidosValor + data.aPagarVencidosValor)}
+              </span>
+              <DeltaChip
+                abs={data.deltas.vencidosValor.abs}
+                pct={data.deltas.vencidosValor.pct}
+                baseDate={data.deltas.baseDate}
+                goodWhen="down"
+              />
+            </div>
+          )}
+        </Card>
         <KpiCard
           label="Resultado Líquido Projetado 30d"
           value={`${resultado >= 0 ? "+" : ""}${brl(resultado)}`}
