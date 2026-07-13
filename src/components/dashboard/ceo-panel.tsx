@@ -38,6 +38,7 @@ const BANK_COLORS = [
 export function CeoPanel() {
   const [fluxoPeriodo, setFluxoPeriodo] = React.useState<7 | 15 | 30 | 60 | 90 | 180>(30);
   const [fluxoCenario, setFluxoCenario] = React.useState<"otimista" | "realista">("realista");
+  const [resultadoPeriodo, setResultadoPeriodo] = React.useState<7 | 15 | 30 | 60 | 90 | 180>(30);
   const [pagarSort, setPagarSort] = React.useState<"valor" | "dias">("valor");
   const [clientesSort, setClientesSort] = React.useState<"valor" | "dias">("valor");
   const { data, error } = useQuery<DashboardData>({
