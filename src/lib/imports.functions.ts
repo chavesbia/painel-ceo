@@ -54,11 +54,20 @@ export const importInvoices = createServerFn({ method: "POST" })
 
     const withImport = data.rows.map((r) => ({ ...r, import_id: imp.id }));
 
+    // Deduplicate rows on the same conflict key (kind,numero,entidade_doc,data_vencimento)
+    // Postgres rejects upsert when a single batch contains two rows that match the same target row.
+    const seen = new Map<string, typeof withImport[number]>();
+    for (const r of withImport) {
+      const key = `${r.kind}||${r.numero}||${r.entidade_doc ?? ""}||${r.data_vencimento ?? ""}`;
+      seen.set(key, r); // last occurrence wins
+    }
+    const deduped = Array.from(seen.values());
+
     // Chunked upsert
     let imported = 0;
     const chunk = 500;
-    for (let i = 0; i < withImport.length; i += chunk) {
-      const slice = withImport.slice(i, i + chunk);
+    for (let i = 0; i < deduped.length; i += chunk) {
+      const slice = deduped.slice(i, i + chunk);
       const { error } = await supabaseAdmin
         .from("invoices")
         .upsert(slice, { onConflict: "kind,numero,entidade_doc,data_vencimento" });
