@@ -10,14 +10,18 @@ function SetupPage() {
   const seed = useServerFn(seedInitialUsers);
   const navigate = useNavigate();
   const [status, setStatus] = useState<null | { kind: "ok" | "err" | "info"; msg: string }>(null);
+  const [creds, setCreds] = useState<{ username: string; password: string }[] | null>(null);
+  const [token, setToken] = useState("");
   const [busy, setBusy] = useState(false);
 
   const run = async () => {
     setBusy(true); setStatus({ kind: "info", msg: "Criando usuários iniciais…" });
     try {
-      const res = await seed();
-      if (res.seeded) setStatus({ kind: "ok", msg: "Usuários criados. Senha inicial: prevermed" });
-      else setStatus({ kind: "info", msg: "Sistema já inicializado. Nenhuma alteração feita." });
+      const res = await seed({ data: { setupToken: token } });
+      if (res.seeded) {
+        setCreds(res.credentials);
+        setStatus({ kind: "ok", msg: "Usuários criados. Copie as senhas abaixo — elas não serão exibidas novamente." });
+      } else setStatus({ kind: "info", msg: "Sistema já inicializado. Nenhuma alteração feita." });
     } catch (e) {
       setStatus({ kind: "err", msg: e instanceof Error ? e.message : "Erro no setup" });
     } finally { setBusy(false); }
@@ -31,14 +35,31 @@ function SetupPage() {
         </div>
         <h1 className="mt-4 text-xl font-display font-bold">Configuração inicial</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Cria os três usuários iniciais (Beatriz — administradora, Bruna — operacional, Patricia — visualização). Senha padrão <code className="font-mono">prevermed</code>, com troca obrigatória no 1º acesso.
+          Cria os três usuários iniciais (Beatriz — administradora, Bruna — operacional, Patricia — visualização) com senhas aleatórias exibidas apenas uma vez. Requer o <code className="font-mono">SETUP_TOKEN</code> configurado no backend.
         </p>
+        <input
+          type="password"
+          value={token}
+          onChange={(e) => setToken(e.target.value)}
+          placeholder="Token de setup"
+          className="mt-4 w-full h-10 rounded-md border border-border bg-background px-3 text-sm font-mono"
+        />
         <button
-          onClick={run} disabled={busy}
+          onClick={run} disabled={busy || !token}
           className="mt-6 w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
         >
           {busy && <Loader2 className="size-4 animate-spin" />} Executar setup
         </button>
+        {creds && (
+          <div className="mt-4 rounded-md border border-border bg-muted/40 p-3 text-left text-xs font-mono space-y-1">
+            {creds.map((c) => (
+              <div key={c.username} className="flex justify-between gap-3">
+                <span>{c.username}</span>
+                <span className="font-bold">{c.password}</span>
+              </div>
+            ))}
+          </div>
+        )}
         {status && (
           <div className={`mt-4 rounded-md border p-3 text-sm flex items-start gap-2 text-left ${
             status.kind === "ok" ? "border-status-green/30 bg-status-green/5 text-status-green"
