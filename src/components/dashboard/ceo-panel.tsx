@@ -766,7 +766,7 @@ function ConcentracaoCard({
     <Card>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <Label>{titulo}</Label>
+          <Label info="O ranking é por VALOR em aberto (soma das faturas não pagas por entidade), não pela quantidade de títulos. A coluna 'X títulos' é só informativa — mostra quantas faturas compõem aquele valor. O % indica a fatia daquela entidade no total (a receber ou a pagar).">{titulo}</Label>
           <p className="text-xs text-muted-foreground mt-1 max-w-md">{descricao}</p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
