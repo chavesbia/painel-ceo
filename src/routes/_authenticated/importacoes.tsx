@@ -4,10 +4,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { AppShell } from "@/components/app-shell";
 import { csvToInvoices } from "@/lib/csv";
+import { skippedRowsToCsv, type SkippedRow } from "@/lib/csv";
 import { importInvoices, deleteImport } from "@/lib/imports.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/lib/auth";
-import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, Lock, Trash2 } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, Lock, Trash2, Download } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/importacoes")({
   component: () => (
@@ -32,6 +33,7 @@ function ImportPage() {
   const [history, setHistory] = useState<ImpRow[]>([]);
   const [status, setStatus] = useState<null | { kind: "info" | "ok" | "err"; msg: string }>(null);
   const [busy, setBusy] = useState(false);
+  const [lastSkipped, setLastSkipped] = useState<{ filename: string; rows: SkippedRow[] } | null>(null);
   const doImport = useServerFn(importInvoices);
   const doDelete = useServerFn(deleteImport);
   const qc = useQueryClient();
@@ -62,6 +64,7 @@ function ImportPage() {
   const handleFile = async (file: File, kind: "receivable" | "payable") => {
     if (!canWrite) return;
     setBusy(true);
+    setLastSkipped(null);
     setStatus({ kind: "info", msg: `Lendo ${file.name}…` });
     try {
       const buf = await file.arrayBuffer();
@@ -70,11 +73,27 @@ function ImportPage() {
       setStatus({ kind: "info", msg: `Enviando ${parsed.rows.length} registros…` });
       const res = await doImport({ data: { kind, filename: file.name, total: parsed.total, skipped: parsed.skipped, rows: parsed.rows } });
       setStatus({ kind: "ok", msg: `Importado com sucesso: ${res.imported} registros (${res.skipped} ignorados de ${res.total} totais).` });
+      if (parsed.skippedRows.length > 0) setLastSkipped({ filename: file.name, rows: parsed.skippedRows });
       void load();
       void qc.invalidateQueries({ queryKey: ["dashboard"] });
     } catch (e) {
       setStatus({ kind: "err", msg: e instanceof Error ? e.message : "Erro ao importar" });
     } finally { setBusy(false); }
+  };
+
+  const handleDownloadSkipped = () => {
+    if (!lastSkipped) return;
+    const csv = skippedRowsToCsv(lastSkipped.rows);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const base = lastSkipped.filename.replace(/\.csv$/i, "");
+    a.download = `${base}__ignorados.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -108,6 +127,24 @@ function ImportPage() {
            status.kind === "err" ? <AlertCircle className="size-4 mt-0.5" /> :
            <Loader2 className="size-4 mt-0.5 animate-spin" />}
           <span>{status.msg}</span>
+        </div>
+      )}
+
+      {lastSkipped && lastSkipped.rows.length > 0 && (
+        <div className="rounded-lg border border-border bg-card p-4 flex items-center justify-between gap-3 text-sm">
+          <div>
+            <p className="font-semibold">Auditar registros ignorados</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {lastSkipped.rows.length} linhas ignoradas em <span className="font-medium">{lastSkipped.filename}</span> — baixe o CSV com o motivo de cada uma.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleDownloadSkipped}
+            className="inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent/10 text-accent px-3 py-1.5 text-xs font-semibold hover:bg-accent/20"
+          >
+            <Download className="size-3.5" /> Baixar ignorados
+          </button>
         </div>
       )}
 
