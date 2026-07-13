@@ -108,13 +108,13 @@ export function CeoPanel() {
   if (resultado > 0) {
     alertas.push({
       tipo: "green",
-      titulo: "Resultado projetado positivo nos próximos 30 dias",
+      titulo: "Resultado projetado positivo (faturas em aberto)",
       detalhe: `Superávit de ${brl(resultado)} previsto`,
     });
   } else if (resultado < 0) {
     alertas.push({
       tipo: "red",
-      titulo: "Resultado projetado negativo nos próximos 30 dias",
+      titulo: "Resultado projetado negativo (faturas em aberto)",
       detalhe: `Déficit projetado de ${brl(Math.abs(resultado))}`,
     });
   }
