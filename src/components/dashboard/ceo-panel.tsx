@@ -152,7 +152,7 @@ export function CeoPanel() {
       <section className="grid grid-cols-12 gap-6">
         <Card className="col-span-12 lg:col-span-8">
           <div className="flex flex-col gap-4">
-            <Label>Resultado de Faturas 30 dias</Label>
+            <Label info="Diferença entre o total a receber e o total a pagar no horizonte de 30 dias. Positivo = sobra prevista; negativo = necessidade de caixa. Baseado nas faturas em aberto importadas do ERP.">Resultado de Faturas 30 dias</Label>
             <div className="flex flex-wrap items-end gap-4">
               <h2 className="text-4xl md:text-5xl font-display font-bold tabular-nums tracking-tight text-accent">
                 {resultado >= 0 ? "+" : ""}{brl(resultado)}
@@ -178,14 +178,14 @@ export function CeoPanel() {
         <Card className="col-span-12 lg:col-span-4 bg-primary text-primary-foreground">
           <div className="flex flex-col justify-between h-full gap-6">
             <div>
-              <Label className="text-primary-foreground/70">Menor saldo projetado (30d)</Label>
+              <Label className="text-primary-foreground/70" info="Menor ponto do saldo bancário previsto nos próximos 30 dias, considerando entradas (recebíveis) e saídas (pagamentos) por data de vencimento. Serve para antecipar risco de caixa." infoOnDark>Menor saldo projetado (30d)</Label>
               <p className="mt-3 text-2xl font-display font-bold tabular-nums">
                 {brlShort(menorSaldoPoint.saldo)}
               </p>
               <p className="text-sm text-primary-foreground/75 mt-1">em {menorSaldoPoint.dia || "—"}</p>
             </div>
             <div className="border-t border-white/15 pt-4">
-              <Label className="text-primary-foreground/70">Saldo bancário inicial</Label>
+              <Label className="text-primary-foreground/70" info="Soma dos saldos das contas bancárias cadastradas — ponto de partida para projetar o fluxo de caixa dos próximos dias." infoOnDark>Saldo bancário inicial</Label>
               <p className="mt-2 text-lg font-display font-semibold tabular-nums">
                 {brl(saldoAtual)}
                 <span className="ml-2 text-[10px] font-normal opacity-70 uppercase tracking-wider">Saldos cadastrados</span>
@@ -210,6 +210,7 @@ export function CeoPanel() {
           label="A Receber"
           value={brl(data.aReceberTotal)}
           hint="Total em aberto, somando todos os vencimentos (passados e futuros)."
+          info="Soma de todas as faturas de clientes ainda não pagas, incluindo as já vencidas e as com vencimento futuro. Não desconta possíveis perdas — é o valor de face."
           accent="green"
           direction="up"
           delta={data.deltas ? { ...data.deltas.aReceber, baseDate: data.deltas.baseDate, goodWhen: "up" } : null}
@@ -218,6 +219,7 @@ export function CeoPanel() {
           label="A Pagar"
           value={brl(data.aPagarTotal)}
           hint="Total em aberto, somando todos os vencimentos (passados e futuros)."
+          info="Soma de todas as contas com fornecedores ainda não quitadas, incluindo as já vencidas e as com vencimento futuro."
           accent="red"
           direction="down"
           delta={data.deltas ? { ...data.deltas.aPagar, baseDate: data.deltas.baseDate, goodWhen: "down" } : null}
@@ -226,6 +228,7 @@ export function CeoPanel() {
           label="Vencidos (a receber + a pagar)"
           value={brl(data.aReceberVencidosValor + data.aPagarVencidosValor)}
           hint={`${data.aReceberVencidosCount + data.aPagarVencidosCount} títulos vencidos no total.`}
+          info="Total de títulos vencidos, somando o que você deveria ter recebido (clientes em atraso) e o que deveria ter pago (contas em atraso). Indicador de saúde da operação: quanto menor, melhor."
           accent="red"
           delta={data.deltas ? { ...data.deltas.vencidosValor, baseDate: data.deltas.baseDate, goodWhen: "down" } : null}
         />
@@ -233,6 +236,7 @@ export function CeoPanel() {
           label="Resultado Líquido Projetado 30d"
           value={`${resultado >= 0 ? "+" : ""}${brl(resultado)}`}
           hint={`↑ Entradas ${brlShort(data.aReceberTotal)}  ·  ↓ Saídas ${brlShort(data.aPagarTotal)}`}
+          info="Entradas menos saídas previstas com base nas faturas em aberto. É uma projeção teórica: não considera novas vendas nem inadimplência."
           accent="brand"
         />
       </section>
@@ -241,7 +245,7 @@ export function CeoPanel() {
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <div className="flex items-center justify-between">
-            <Label>Hoje · {new Date().toLocaleDateString("pt-BR")}</Label>
+            <Label info="Movimentações previstas para o dia de hoje: quanto entra (recebimentos com vencimento hoje) e quanto sai (pagamentos com vencimento hoje).">Hoje · {new Date().toLocaleDateString("pt-BR")}</Label>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Movimentos previstos</span>
           </div>
           <div className="mt-5 grid grid-cols-2 gap-4">
@@ -251,7 +255,7 @@ export function CeoPanel() {
         </Card>
         <Card>
           <div className="flex items-center justify-between">
-            <Label>Esta Semana</Label>
+            <Label info="Total previsto de entradas e saídas nos próximos 7 dias (a partir de hoje). Resultado = Receber − Pagar do período.">Esta Semana</Label>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">7 dias</span>
           </div>
           <div className="mt-5 grid grid-cols-3 gap-4">
@@ -265,7 +269,7 @@ export function CeoPanel() {
       {/* FAIXA 4 — SALDOS / ALERTAS (acima do fluxo) */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <Label>Saldos por Conta Bancária</Label>
+          <Label info="Saldo mais recente cadastrado em cada conta bancária, agrupado por empresa. É a base para a projeção do fluxo de caixa.">Saldos por Conta Bancária</Label>
           <div className="mt-5 space-y-3">
             {data.saldos.length === 0 && <p className="text-xs text-muted-foreground">Sem saldos cadastrados</p>}
             {data.saldos.slice(0, 5).map((saldo) => (
@@ -286,7 +290,7 @@ export function CeoPanel() {
         </Card>
 
         <Card>
-          <Label>Alertas</Label>
+          <Label info="Sinais automáticos gerados a partir dos dados: títulos vencidos, recebíveis em atraso e resultado projetado (positivo ou negativo).">Alertas</Label>
           <div className="mt-4 space-y-3">
             {alertas.length === 0 && <p className="text-xs text-muted-foreground">Nenhum alerta ativo.</p>}
             {alertas.map((a, i) => <AlertRow key={i} {...a} />)}
@@ -299,7 +303,10 @@ export function CeoPanel() {
         <Card>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="text-lg font-display font-semibold">Fluxo de Caixa Projetado</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-display font-semibold">Fluxo de Caixa Projetado</h3>
+                <InfoTooltip text="Mostra como o saldo bancário evolui dia a dia se todas as faturas forem pagas na data de vencimento. Cenário otimista: assume que 100% dos vencidos serão recebidos hoje. Cenário realista: aplica uma taxa de recuperação por aging (quanto mais antigo o atraso, menor a chance de receber)." />
+              </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Saldo acumulado dia a dia ({fluxoPeriodo} dias). Contas vencidas entram/saem hoje. No cenário <strong>realista</strong>, recebíveis vencidos aplicam taxa de recuperação por aging (30d 90% · 60d 60% · 90d 30% · +90d 10%).
               </p>
@@ -360,7 +367,7 @@ export function CeoPanel() {
       {/* FAIXA 6 — POSIÇÃO POR EMPRESA (horizontal, abaixo do fluxo) */}
       <section>
         <Card>
-          <Label>Posição por Empresa (a receber × a pagar)</Label>
+          <Label info="Por CNPJ, compara o total em aberto a receber (entradas) com o total a pagar (saídas). Resultado = Receber − Pagar: verde indica sobra prevista, vermelho indica necessidade de caixa naquela empresa.">Posição por Empresa (a receber × a pagar)</Label>
           <p className="mt-1 text-[11px] text-muted-foreground">
             Compara, por CNPJ, o total em aberto a receber e a pagar. Resultado = Receber − Pagar (verde = sobra, vermelho = falta).
           </p>
@@ -430,7 +437,7 @@ export function CeoPanel() {
         <Card>
           <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
             <div className="min-w-0">
-              <Label>Top 5 contas a pagar em atraso</Label>
+              <Label info="Cinco maiores contas com fornecedores já vencidas. Use para priorizar negociações e evitar juros/multas. Ordene por valor (impacto no caixa) ou por dias (risco de bloqueio/protesto).">Top 5 contas a pagar em atraso</Label>
               <p className="text-xs text-muted-foreground mt-1">
                 Boletos/faturas já vencidos, ordenados por {pagarSort === "valor" ? "valor (maior → menor)" : "dias em atraso (mais antigos primeiro)"} — priorize a regularização
               </p>
@@ -482,7 +489,7 @@ export function CeoPanel() {
         <Card>
           <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
             <div className="min-w-0">
-              <Label>Inadimplência de Clientes</Label>
+              <Label info="Recebíveis vencidos agrupados por cliente, com faixa de atraso (aging). Quanto mais antigo o atraso, menor a chance de receber sem renegociação. Priorize contato nos blocos vermelhos.">Inadimplência de Clientes</Label>
               <p className="text-xs text-muted-foreground mt-1">
                 Recebíveis vencidos agrupados por cliente. Quanto mais dias em atraso, menor a chance de receber sem negociação — priorize contato nos blocos vermelhos.
               </p>
@@ -606,9 +613,10 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 
 function Label({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <p className={`text-[10px] uppercase tracking-[0.2em] font-semibold text-muted-foreground ${className}`}>
-      {children}
-    </p>
+    <span className={`inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] font-semibold text-muted-foreground ${className}`}>
+      <span>{children}</span>
+      {info && <InfoTooltip text={info} onDark={infoOnDark} />}
+    </span>
   );
 }
 
