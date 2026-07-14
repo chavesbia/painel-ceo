@@ -991,16 +991,16 @@ function MiniStat({
     brand: "text-accent",
   }[color];
   return (
-    <div className="min-w-0">
+    <div className="min-w-0 overflow-hidden" style={{ containerType: "inline-size" }}>
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</p>
       <p
         className={`mt-1.5 font-display font-semibold tabular-nums flex items-center gap-1 whitespace-nowrap ${cls}`}
-        style={{ fontSize: "clamp(0.8125rem, 1.4vw, 1.125rem)" }}
+        style={{ fontSize: "clamp(0.75rem, 11cqi, 1.125rem)" }}
       >
-        {direction === "up" && <ArrowUp className="size-3.5 shrink-0" />}
-        {direction === "down" && <ArrowDown className="size-3.5 shrink-0" />}
+        {direction === "up" && <ArrowUp className="size-[0.9em] shrink-0" />}
+        {direction === "down" && <ArrowDown className="size-[0.9em] shrink-0" />}
         <span>{value}</span>
-        {suffix && <span className="text-xs text-muted-foreground font-normal ml-1">{suffix}</span>}
+        {suffix && <span className="text-[0.75em] text-muted-foreground font-normal ml-1">{suffix}</span>}
       </p>
     </div>
   );
