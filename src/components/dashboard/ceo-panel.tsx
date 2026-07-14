@@ -36,8 +36,6 @@ const BANK_COLORS = [
 /* ------------------------------------------------------------------ */
 
 export function CeoPanel() {
-  const [fluxoPeriodo, setFluxoPeriodo] = React.useState<7 | 15 | 30 | 60 | 90 | 180>(30);
-  const [fluxoCenario, setFluxoCenario] = React.useState<"otimista" | "realista">("realista");
   const [resultadoPeriodo, setResultadoPeriodo] = React.useState<7 | 15 | 30 | 60 | 90 | 180>(30);
   const [pagarSort, setPagarSort] = React.useState<"valor" | "dias">("valor");
   const [clientesSort, setClientesSort] = React.useState<"valor" | "dias">("valor");
@@ -68,13 +66,9 @@ export function CeoPanel() {
   const saidasJanela = janela.reduce((s, d) => s + d.saida, 0);
   const resultadoJanela = entradasJanela - saidasJanela;
   const saldoAtual = data.saldoBancarioTotal;
-  const fluxoSerie = fluxoCenario === "realista" ? data.fluxoRealista : data.fluxo;
-  const fluxoChart = fluxoSerie
-    .slice(0, fluxoPeriodo)
+  const fluxoChart = data.fluxoRealista
+    .slice(0, 30)
     .map((f) => ({ dia: f.label, saldo: f.saldo, entrada: f.entrada, saida: f.saida }));
-  const menorSaldoPoint = fluxoChart.length
-    ? fluxoChart.reduce((min, p) => (p.saldo < min.saldo ? p : min), fluxoChart[0])
-    : { dia: "", saldo: 0 };
   const bancos = data.bancos.map((b, i) => ({ ...b, cor: BANK_COLORS[i % BANK_COLORS.length] }));
 
   // Necessidade de capital de giro do mês (restante do mês corrente):
