@@ -286,6 +286,27 @@ export async function loadDashboard(): Promise<DashboardData> {
   // nem arrasta saldo — cada mês é independente.
   const mesesProjetados: { key: string; label: string; entrada: number; saida: number; resultado: number }[] = [];
   {
+    // Mês anterior (fechado) — soma valor_parcela de TODAS as faturas com
+    // vencimento no mês passado, independente da situação, para servir de
+    // comparação com os meses projetados.
+    const prevRows = (prevMonthRes.data as { kind: string; valor_parcela: number; situacao: string | null; data_vencimento: string | null }[] | null) || [];
+    let prevEntrada = 0;
+    let prevSaida = 0;
+    prevRows.forEach((r) => {
+      const s = (r.situacao || "").toLowerCase();
+      if (s.startsWith("cancel")) return;
+      const v = Number(r.valor_parcela) || 0;
+      if (r.kind === "receivable") prevEntrada += v;
+      else if (r.kind === "payable") prevSaida += v;
+    });
+    mesesProjetados.push({
+      key: prevMonthKey,
+      label: prevMonthLabel,
+      entrada: prevEntrada,
+      saida: prevSaida,
+      resultado: prevEntrada - prevSaida,
+    });
+
     const monthMap = new Map<string, { label: string; entrada: number; saida: number }>();
     for (let i = 0; i < 6; i++) {
       const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
