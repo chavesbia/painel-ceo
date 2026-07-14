@@ -71,6 +71,13 @@ type InvoiceRow = {
   data_pagamento: string | null;
 };
 
+type EfetivoRow = {
+  kind: string;
+  valor_parcela: number;
+  situacao: string | null;
+  data_vencimento: string | null;
+};
+
 type CashBalanceRow = {
   company_name: string;
   account_name: string;
@@ -116,6 +123,29 @@ async function fetchAllInvoices(pastStr: string): Promise<InvoiceRow[]> {
   return all;
 }
 
+async function fetchEfetivoRange(startStr: string, endStr: string): Promise<EfetivoRow[]> {
+  const pageSize = 1000;
+  let from = 0;
+  const all: EfetivoRow[] = [];
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { data, error } = await supabase
+      .from("invoices")
+      .select("kind,valor_parcela,situacao,data_vencimento")
+      .gte("data_vencimento", startStr)
+      .lte("data_vencimento", endStr)
+      .order("data_vencimento", { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    const chunk = (data as EfetivoRow[] | null) || [];
+    all.push(...chunk);
+    if (chunk.length < pageSize) break;
+    from += pageSize;
+    if (from > 200000) break;
+  }
+  return all;
+}
+
 export async function loadDashboard(): Promise<DashboardData> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -132,7 +162,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   const efetivoStartStr = ymd(efetivoStart);
   const efetivoEndStr = ymd(efetivoEnd);
 
-  const [rows, impRes, cashRes, efetivoRes] = await Promise.all([
+  const [rows, impRes, cashRes, efetivoRows] = await Promise.all([
     fetchAllInvoices(ymd(past)),
     supabase.from("imports").select("created_at").order("created_at", { ascending: false }).limit(1),
     supabase
@@ -141,12 +171,7 @@ export async function loadDashboard(): Promise<DashboardData> {
       .order("balance_date", { ascending: false })
       .order("updated_at", { ascending: false })
       .limit(5000),
-    supabase
-      .from("invoices")
-      .select("kind,valor_parcela,situacao,data_vencimento")
-      .gte("data_vencimento", efetivoStartStr)
-      .lte("data_vencimento", efetivoEndStr)
-      .limit(50000),
+    fetchEfetivoRange(efetivoStartStr, efetivoEndStr),
   ]);
 
   const cashRows = (cashRes.data as CashBalanceRow[] | null) || [];
@@ -294,7 +319,6 @@ export async function loadDashboard(): Promise<DashboardData> {
       const label = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} - ${yy}`;
       efetivoMap.set(key, { label, entrada: 0, saida: 0 });
     }
-    const efetivoRows = (efetivoRes.data as { kind: string; valor_parcela: number; situacao: string | null; data_vencimento: string | null }[] | null) || [];
     efetivoRows.forEach((r) => {
       const s = (r.situacao || "").toLowerCase();
       if (s.startsWith("cancel")) return;
