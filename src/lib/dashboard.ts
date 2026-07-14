@@ -443,16 +443,23 @@ async function computeSnapshotAndDeltas(current: {
   targetPrev.setDate(targetPrev.getDate() - 30);
   const targetPrevStr = ymd(targetPrev);
 
-  // Grava snapshot de hoje (ignora conflito de unicidade — 1 por dia).
+  // Grava/atualiza o snapshot de hoje. Usamos upsert para que o registro
+  // reflita sempre o cálculo mais recente do dia (ex.: quando a Bruna
+  // cadastra saldos depois do primeiro acesso do dia).
   try {
-    await supabase.from("dashboard_snapshots").insert({
-      snapshot_date: current.todayStr,
-      saldo_bancario: current.saldoBancario,
-      a_receber: current.aReceber,
-      a_pagar: current.aPagar,
-      vencidos_valor: current.vencidosValor,
-      vencidos_count: current.vencidosCount,
-    });
+    await supabase
+      .from("dashboard_snapshots")
+      .upsert(
+        {
+          snapshot_date: current.todayStr,
+          saldo_bancario: current.saldoBancario,
+          a_receber: current.aReceber,
+          a_pagar: current.aPagar,
+          vencidos_valor: current.vencidosValor,
+          vencidos_count: current.vencidosCount,
+        },
+        { onConflict: "snapshot_date" },
+      );
   } catch {
     // silencioso: se falhar (conflito ou permissão), ainda seguimos com o cálculo do delta.
   }
