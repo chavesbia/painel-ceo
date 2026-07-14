@@ -129,7 +129,7 @@ export function CeoPanel() {
     : "—";
 
   return (
-    <div className="p-6 md:p-8 space-y-8 max-w-[1440px] mx-auto">
+    <div className="p-4 md:p-8 space-y-6 md:space-y-8 max-w-[1440px] mx-auto">
       {/* Cabeçalho de impressão (visível apenas ao imprimir/exportar PDF) */}
       <div className="hidden print:block print:mb-6">
         <div className="flex items-center justify-between border-b border-border pb-3">
@@ -144,18 +144,19 @@ export function CeoPanel() {
         </div>
       </div>
       {/* HEADER */}
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
+      <header className="grid grid-cols-1 gap-4 sm:flex sm:flex-wrap sm:items-end sm:justify-between">
+        <div className="min-w-0">
           <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">
             Visão Consolidada
           </p>
-          <h1 className="mt-1 text-3xl md:text-4xl font-display font-bold text-foreground tracking-tight">
+          <h1 className="mt-1 text-2xl sm:text-3xl md:text-4xl font-display font-bold text-foreground tracking-tight">
             Painel do CEO
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Fonte: ERP · última importação em {ultimaFmt}
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-3">
         <StatusPill state={semaforoState} label={semaforoLabel} hint={semaforoHint} />
         <button
           type="button"
@@ -164,8 +165,10 @@ export function CeoPanel() {
           title="Imprimir ou salvar em PDF"
         >
           <Printer className="size-4" />
-          Exportar / Imprimir
+          <span className="hidden sm:inline">Exportar / Imprimir</span>
+          <span className="sm:hidden">Imprimir</span>
         </button>
+        </div>
       </header>
 
       {/* FAIXA 1 — HERO */}
