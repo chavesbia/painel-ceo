@@ -418,7 +418,7 @@ export function CeoPanel() {
             <Label info="Ritmo mês a mês das faturas em aberto. Para cada mês: soma o que tem para entrar (recebíveis) e para sair (pagáveis) por data de vencimento, e mostra o resultado (positivo ou negativo). Cada mês é isolado — não considera saldo bancário nem carrega resultado do mês anterior. Não considera novas vendas — o faturamento do mês só entra após o fechamento dos exames.">
               Resultado Mensal Projetado
             </Label>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Próximos 6 meses</span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Mês anterior + próximos 6 meses</span>
           </div>
           <div className="mt-5 overflow-x-auto">
             <table className="w-full text-xs">
@@ -445,7 +445,7 @@ export function CeoPanel() {
             </table>
           </div>
           <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed">
-            Cada linha é o mês isolado: quanto está previsto entrar, quanto está previsto sair e a diferença. Não envolve saldo bancário nem arrasta resultado de meses anteriores. Meses no vermelho indicam concentração de vencimentos naquele mês; sequências negativas indicam que o faturamento previsto não cobre as obrigações lançadas.
+            Cada linha é o mês isolado: quanto está previsto entrar, quanto está previsto sair e a diferença. Não envolve saldo bancário nem arrasta resultado de meses anteriores. O <strong>mês anterior</strong> soma o valor de face de todas as faturas com vencimento no mês (pagas + em aberto), servindo de comparação com os meses projetados (que consideram apenas as faturas ainda em aberto).
           </p>
         </Card>
       </section>
