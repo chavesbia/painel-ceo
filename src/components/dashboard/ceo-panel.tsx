@@ -411,47 +411,6 @@ export function CeoPanel() {
         </Card>
       </section>
 
-      {/* FAIXA 3.6 — RESULTADO MENSAL EFETIVO (histórico) */}
-      {data.mesesEfetivo.length > 0 && (
-      <section>
-        <Card>
-          <div className="flex items-center justify-between">
-            <Label info="Meses já fechados. Para cada mês passado: soma tudo que foi recebido e tudo que foi pago conforme a data de pagamento importada, excluindo apenas canceladas. É o resultado real do caixa do mês — base histórica para comparar com a projeção.">
-              Resultado Mensal — Efetivo
-            </Label>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Últimos 6 meses fechados</span>
-          </div>
-          <div className="mt-5 overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  <th className="text-left font-semibold py-2 pr-3">Mês</th>
-                  <th className="text-right font-semibold py-2 px-2">Entrada</th>
-                  <th className="text-right font-semibold py-2 px-2">Saída</th>
-                  <th className="text-right font-semibold py-2 pl-2">Resultado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.mesesEfetivo.map((m) => (
-                  <tr key={m.key} className="border-t border-border">
-                    <td className="py-2 pr-3 font-medium">{m.label}</td>
-                    <td className="py-2 px-2 text-right tabular-nums text-status-green">{brlShort(m.entrada)}</td>
-                    <td className="py-2 px-2 text-right tabular-nums text-status-red">{brlShort(m.saida)}</td>
-                    <td className={`py-2 pl-2 text-right tabular-nums font-semibold ${m.resultado >= 0 ? "text-status-green" : "text-status-red"}`}>
-                      {m.resultado >= 0 ? "+" : ""}{brlShort(m.resultado)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed">
-            Cada linha soma tudo que foi recebido e tudo que foi pago no mês, pela data de pagamento importada, <strong>excluindo apenas canceladas</strong>. Cada mês é isolado — não envolve saldo bancário nem carrega resultado do mês anterior.
-          </p>
-        </Card>
-      </section>
-      )}
-
       {/* FAIXA 3.7 — RESULTADO MENSAL PROJETADO */}
       <section>
         <Card>
@@ -486,7 +445,7 @@ export function CeoPanel() {
             </table>
           </div>
           <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed">
-            Considera apenas faturas <strong>em aberto</strong> (Pendente/Protestada) com vencimento no mês. Cada linha é isolada — sem saldo bancário e sem arrastar resultado de meses anteriores. Compare com o card <em>Efetivo</em> acima para ver a diferença entre mês fechado (real) e mês em curso (projeção).
+            Considera apenas faturas <strong>em aberto</strong> (Pendente/Protestada) com vencimento no mês. Cada linha é isolada — sem saldo bancário e sem arrastar resultado de meses anteriores.
           </p>
         </Card>
       </section>
