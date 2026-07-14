@@ -493,6 +493,7 @@ export async function loadDashboard(): Promise<DashboardData> {
     aPagarVencidosValor: payVenc.reduce((s, r) => s + openAmount(r), 0),
     hoje, semana, fluxo, fluxoRealista, recuperacao,
     mesesProjetados,
+    mesesEfetivo,
     empresas: empresasWithPct, bancos: bancosWithPct, saldos, topVencidos, topClientesVencidos,
     agingRecv, clientesInadimplentes,
     concentracao,
