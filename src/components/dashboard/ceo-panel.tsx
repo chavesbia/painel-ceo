@@ -90,6 +90,31 @@ export function CeoPanel() {
   const necessidadeMes = Math.max(0, -saldoFimMes);
   const fimMesLabel = fimMes.toLocaleDateString("pt-BR", { day: "2-digit", month: "long" });
 
+  // Resultado mensal projetado — agrupa o fluxo realista por mês (próximos 6
+  // meses) e acumula o saldo a partir do saldo bancário atual. Mostra o ritmo
+  // operacional mês a mês, separando questões pontuais de problemas estruturais.
+  const mesesProj: { key: string; label: string; entrada: number; saida: number; resultado: number; saldo: number }[] = [];
+  {
+    const map = new Map<string, { label: string; entrada: number; saida: number }>();
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(hojeRef.getFullYear(), hojeRef.getMonth() + i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const label = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }).replace(".", "");
+      map.set(key, { label: label.charAt(0).toUpperCase() + label.slice(1), entrada: 0, saida: 0 });
+    }
+    data.fluxoRealista.forEach((d) => {
+      const key = d.dia.slice(0, 7);
+      const b = map.get(key);
+      if (b) { b.entrada += d.entrada; b.saida += d.saida; }
+    });
+    let acc = saldoAtual;
+    for (const [key, v] of map) {
+      const resultado = v.entrada - v.saida;
+      acc += resultado;
+      mesesProj.push({ key, label: v.label, entrada: v.entrada, saida: v.saida, resultado, saldo: acc });
+    }
+  }
+
   const alertas: { tipo: "green" | "yellow" | "red"; titulo: string; detalhe: string }[] = [];
   if (data.aPagarVencidosCount > 0) {
     alertas.push({
@@ -408,6 +433,49 @@ export function CeoPanel() {
             {alertas.length === 0 && <p className="text-xs text-muted-foreground">Nenhum alerta ativo.</p>}
             {alertas.map((a, i) => <AlertRow key={i} {...a} />)}
           </div>
+        </Card>
+      </section>
+
+      {/* FAIXA 3.6 — RESULTADO MENSAL PROJETADO */}
+      <section>
+        <Card>
+          <div className="flex items-center justify-between">
+            <Label info="Ritmo mês a mês das faturas em aberto. Entradas e saídas de cada mês vêm do cenário realista (recebíveis vencidos aplicam taxa de recuperação). O saldo acumulado parte do saldo bancário atual e evolui aplicando o resultado de cada mês. Não considera novas vendas — o faturamento do mês só entra após o fechamento dos exames.">
+              Resultado Mensal Projetado
+            </Label>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Próximos 6 meses</span>
+          </div>
+          <div className="mt-5 overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <th className="text-left font-semibold py-2 pr-3">Mês</th>
+                  <th className="text-right font-semibold py-2 px-2">Entradas</th>
+                  <th className="text-right font-semibold py-2 px-2">Saídas</th>
+                  <th className="text-right font-semibold py-2 px-2">Resultado</th>
+                  <th className="text-right font-semibold py-2 pl-2">Saldo acumulado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mesesProj.map((m) => (
+                  <tr key={m.key} className="border-t border-border">
+                    <td className="py-2 pr-3 font-medium">{m.label}</td>
+                    <td className="py-2 px-2 text-right tabular-nums text-status-green">{brlShort(m.entrada)}</td>
+                    <td className="py-2 px-2 text-right tabular-nums text-status-red">{brlShort(m.saida)}</td>
+                    <td className={`py-2 px-2 text-right tabular-nums font-semibold ${m.resultado >= 0 ? "text-status-green" : "text-status-red"}`}>
+                      {m.resultado >= 0 ? "+" : ""}{brlShort(m.resultado)}
+                    </td>
+                    <td className={`py-2 pl-2 text-right tabular-nums font-semibold ${m.saldo >= 0 ? "text-foreground" : "text-status-red"}`}>
+                      {brlShort(m.saldo)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed">
+            Meses isolados no vermelho geralmente indicam concentração de vencimentos e podem ser resolvidos com renegociação ou antecipação de recebíveis. Sequências de meses negativos indicam problema estrutural — o faturamento previsto não cobre as obrigações lançadas.
+          </p>
         </Card>
       </section>
 
