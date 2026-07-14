@@ -346,14 +346,14 @@ export function CeoPanel() {
             </Label>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Próximos 7 dias</span>
           </div>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-xs">
+          <div className="mt-4 -mx-4 md:-mx-6 overflow-x-auto">
+            <table className="min-w-full text-xs px-4 md:px-6">
               <thead>
                 <tr className="text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border">
-                  <th className="text-left font-semibold py-2 pr-3">Dia</th>
-                  <th className="text-right font-semibold py-2 px-3">Entradas</th>
-                  <th className="text-right font-semibold py-2 px-3">Saídas</th>
-                  <th className="text-right font-semibold py-2 pl-3">Resultado</th>
+                  <th className="text-left font-semibold py-2 pl-4 md:pl-6 pr-3 whitespace-nowrap">Dia</th>
+                  <th className="text-right font-semibold py-2 px-3 whitespace-nowrap">Entradas</th>
+                  <th className="text-right font-semibold py-2 px-3 whitespace-nowrap">Saídas</th>
+                  <th className="text-right font-semibold py-2 pl-3 pr-4 md:pr-6 whitespace-nowrap">Resultado</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -363,9 +363,9 @@ export function CeoPanel() {
                   const res = d.entrada - d.saida;
                   return (
                     <tr key={d.dia}>
-                      <td className="py-2 pr-3">
+                      <td className="py-2 pl-4 md:pl-6 pr-3 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold w-8">
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold w-8 shrink-0">
                             {i === 0 ? "Hoje" : diaSemana}
                           </span>
                           <span className="tabular-nums font-medium">{d.label}</span>
@@ -377,7 +377,7 @@ export function CeoPanel() {
                       <td className="py-2 px-3 text-right tabular-nums font-medium text-status-red whitespace-nowrap">
                         {d.saida > 0 ? brl(d.saida) : <span className="text-muted-foreground">—</span>}
                       </td>
-                      <td className={`py-2 pl-3 text-right tabular-nums font-semibold whitespace-nowrap ${res >= 0 ? "text-status-green" : "text-status-red"}`}>
+                      <td className={`py-2 pl-3 pr-4 md:pr-6 text-right tabular-nums font-semibold whitespace-nowrap ${res >= 0 ? "text-status-green" : "text-status-red"}`}>
                         {res >= 0 ? "+" : ""}{brl(res)}
                       </td>
                     </tr>
@@ -386,10 +386,10 @@ export function CeoPanel() {
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-border">
-                  <td className="pt-3 pr-3 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total 7 dias</td>
+                  <td className="pt-3 pl-4 md:pl-6 pr-3 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold whitespace-nowrap">Total 7 dias</td>
                   <td className="pt-3 px-3 text-right tabular-nums font-bold text-status-green whitespace-nowrap">{brl(entradas7)}</td>
                   <td className="pt-3 px-3 text-right tabular-nums font-bold text-status-red whitespace-nowrap">{brl(saidas7)}</td>
-                  <td className={`pt-3 pl-3 text-right tabular-nums font-bold whitespace-nowrap ${resultado7 >= 0 ? "text-status-green" : "text-status-red"}`}>
+                  <td className={`pt-3 pl-3 pr-4 md:pr-6 text-right tabular-nums font-bold whitespace-nowrap ${resultado7 >= 0 ? "text-status-green" : "text-status-red"}`}>
                     {resultado7 >= 0 ? "+" : ""}{brl(resultado7)}
                   </td>
                 </tr>
