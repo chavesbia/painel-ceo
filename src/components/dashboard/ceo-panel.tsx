@@ -329,12 +329,12 @@ export function CeoPanel() {
         </Card>
       </section>
 
-      {/* FAIXA 3.5 — NECESSIDADE DE CAPITAL DE GIRO */}
-      <section className="grid grid-cols-1 gap-6">
+      {/* FAIXA 3.5 — COBERTURA DE CAIXA + NCG */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <div className="flex items-center justify-between">
-            <Label info="Quanto falta para fechar o mês corrente: soma das saídas previstas até o último dia do mês, menos as entradas previstas (com taxa de recuperação de vencidos), menos o saldo bancário atual. Se positivo, é o valor que precisa ser captado ou negociado.">
-              Necessidade de Capital de Giro
+            <Label info="Cobertura de caixa do mês: saldo bancário atual + entradas previstas − saídas previstas, até o último dia do mês corrente (com taxa de recuperação de vencidos). Se negativo, é o quanto falta captar/negociar para fechar o mês.">
+              Cobertura de Caixa (mês)
             </Label>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Até {fimMesLabel}</span>
           </div>
@@ -364,6 +364,33 @@ export function CeoPanel() {
             <div className="rounded-md border border-status-red/30 bg-status-red/5 px-2 py-1.5">
               <p className="uppercase tracking-wider text-status-red font-semibold text-[9px]">Saídas</p>
               <p className="tabular-nums font-semibold mt-0.5 text-status-red">{brlShort(saidaMes)}</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="flex items-center justify-between">
+            <Label info="Necessidade de Capital de Giro (visão contábil): total de Contas a Receber menos Contas a Pagar em aberto. Não considera saldo bancário nem taxa de recuperação — é o valor de face de todas as faturas importadas do ERP (vencidos + a vencer).">
+              Necessidade de Capital de Giro
+            </Label>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">A Receber − A Pagar</span>
+          </div>
+          <div className="mt-5 flex flex-wrap items-end gap-4">
+            <p className={`text-4xl font-display font-bold tabular-nums leading-none whitespace-nowrap ${resultado >= 0 ? "text-status-green" : "text-status-red"}`}>
+              {resultado >= 0 ? "+" : ""}{brl(resultado)}
+            </p>
+            <p className="text-xs text-muted-foreground pb-1">
+              {resultado >= 0 ? "Capital de giro positivo" : "Necessidade de capital de giro"}
+            </p>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2 text-[11px]">
+            <div className="rounded-md border border-status-green/30 bg-status-green/5 px-2 py-1.5">
+              <p className="uppercase tracking-wider text-status-green font-semibold text-[9px]">A Receber</p>
+              <p className="tabular-nums font-semibold mt-0.5 text-status-green">{brlShort(data.aReceberTotal)}</p>
+            </div>
+            <div className="rounded-md border border-status-red/30 bg-status-red/5 px-2 py-1.5">
+              <p className="uppercase tracking-wider text-status-red font-semibold text-[9px]">A Pagar</p>
+              <p className="tabular-nums font-semibold mt-0.5 text-status-red">{brlShort(data.aPagarTotal)}</p>
             </div>
           </div>
         </Card>
