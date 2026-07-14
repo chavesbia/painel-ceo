@@ -319,7 +319,6 @@ export async function loadDashboard(): Promise<DashboardData> {
       const label = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} - ${yy}`;
       efetivoMap.set(key, { label, entrada: 0, saida: 0 });
     }
-    const efetivoRows = (efetivoRes.data as { kind: string; valor_parcela: number; situacao: string | null; data_vencimento: string | null }[] | null) || [];
     efetivoRows.forEach((r) => {
       const s = (r.situacao || "").toLowerCase();
       if (s.startsWith("cancel")) return;
