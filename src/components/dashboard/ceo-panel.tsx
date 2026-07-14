@@ -194,16 +194,19 @@ export function CeoPanel() {
                 ))}
               </div>
             </div>
-            <div className="flex flex-wrap items-end gap-4">
-              <h2 className={`text-4xl md:text-5xl font-display font-bold tabular-nums tracking-tight ${resultadoJanela >= 0 ? "text-status-green" : "text-status-red"}`}>
+            <div className="flex flex-wrap items-end gap-x-4 gap-y-2 min-w-0">
+              <h2
+                className={`font-display font-bold tabular-nums tracking-tight whitespace-nowrap ${resultadoJanela >= 0 ? "text-status-green" : "text-status-red"}`}
+                style={{ fontSize: "clamp(1.75rem, 4.5vw, 3rem)" }}
+              >
                 {resultadoJanela >= 0 ? "+" : ""}{brl(resultadoJanela)}
               </h2>
-              <div className="flex items-center gap-3 text-sm font-semibold pb-2">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm font-semibold pb-2 min-w-0">
                 <span className="inline-flex items-center gap-1 text-status-green">
                   <ArrowUp className="size-4" />
                   Entradas {brl(entradasJanela)}
                 </span>
-                <span className="text-muted-foreground">·</span>
+                <span className="text-muted-foreground hidden sm:inline">·</span>
                 <span className="inline-flex items-center gap-1 text-status-red">
                   <ArrowDown className="size-4" />
                   Saídas {brl(saidasJanela)}
@@ -219,7 +222,10 @@ export function CeoPanel() {
         <Card className="col-span-12 lg:col-span-4 bg-primary text-primary-foreground">
           <div className="flex flex-col justify-center h-full gap-2">
             <Label className="text-primary-foreground/70" info="Soma dos saldos das contas bancárias cadastradas. Para cada empresa+conta somamos apenas o lançamento mais recente — os anteriores ficam preservados como histórico e não são contabilizados de novo." infoOnDark>Saldo bancário atual</Label>
-            <p className="mt-2 text-3xl font-display font-bold tabular-nums">
+            <p
+              className="mt-2 font-display font-bold tabular-nums whitespace-nowrap"
+              style={{ fontSize: "clamp(1.5rem, 3.6vw, 2rem)" }}
+            >
               {brl(saldoAtual)}
             </p>
             {data.deltas && (
