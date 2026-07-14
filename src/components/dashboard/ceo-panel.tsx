@@ -214,30 +214,20 @@ export function CeoPanel() {
         </Card>
 
         <Card className="col-span-12 lg:col-span-4 bg-primary text-primary-foreground">
-          <div className="flex flex-col justify-between h-full gap-6">
-            <div>
-              <Label className="text-primary-foreground/70" info="Menor ponto do saldo bancário previsto nos próximos 30 dias, considerando entradas (recebíveis) e saídas (pagamentos) por data de vencimento. Serve para antecipar risco de caixa." infoOnDark>Menor saldo projetado (30d)</Label>
-              <p className="mt-3 text-2xl font-display font-bold tabular-nums">
-                {brlShort(menorSaldoPoint.saldo)}
-              </p>
-              <p className="text-sm text-primary-foreground/75 mt-1">em {menorSaldoPoint.dia || "—"}</p>
-            </div>
-            <div className="border-t border-white/15 pt-4">
-              <Label className="text-primary-foreground/70" info="Soma dos saldos das contas bancárias cadastradas. Para cada empresa+conta somamos apenas o lançamento mais recente — os anteriores ficam preservados como histórico e não são contabilizados de novo. É o ponto de partida para projetar o fluxo dos próximos dias." infoOnDark>Saldo bancário inicial</Label>
-              <p className="mt-2 text-lg font-display font-semibold tabular-nums">
-                {brl(saldoAtual)}
-                <span className="ml-2 text-[10px] font-normal opacity-70 uppercase tracking-wider">Saldos cadastrados</span>
-              </p>
-              {data.deltas && (
-                <DeltaChip
-                  abs={data.deltas.saldoBancario.abs}
-                  pct={data.deltas.saldoBancario.pct}
-                  baseDate={data.deltas.baseDate}
-                  goodWhen="up"
-                  onDark
-                />
-              )}
-            </div>
+          <div className="flex flex-col justify-center h-full gap-2">
+            <Label className="text-primary-foreground/70" info="Soma dos saldos das contas bancárias cadastradas. Para cada empresa+conta somamos apenas o lançamento mais recente — os anteriores ficam preservados como histórico e não são contabilizados de novo." infoOnDark>Saldo bancário atual</Label>
+            <p className="mt-2 text-3xl font-display font-bold tabular-nums">
+              {brl(saldoAtual)}
+            </p>
+            {data.deltas && (
+              <DeltaChip
+                abs={data.deltas.saldoBancario.abs}
+                pct={data.deltas.saldoBancario.pct}
+                baseDate={data.deltas.baseDate}
+                goodWhen="up"
+                onDark
+              />
+            )}
           </div>
         </Card>
       </section>
