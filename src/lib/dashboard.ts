@@ -74,8 +74,9 @@ type InvoiceRow = {
 type EfetivoRow = {
   kind: string;
   valor_parcela: number;
+  valor_pago: number;
   situacao: string | null;
-  data_vencimento: string | null;
+  data_pagamento: string | null;
 };
 
 type CashBalanceRow = {
@@ -131,10 +132,10 @@ async function fetchEfetivoRange(startStr: string, endStr: string): Promise<Efet
   while (true) {
     const { data, error } = await supabase
       .from("invoices")
-      .select("kind,valor_parcela,situacao,data_vencimento")
-      .gte("data_vencimento", startStr)
-      .lte("data_vencimento", endStr)
-      .order("data_vencimento", { ascending: true })
+      .select("kind,valor_parcela,valor_pago,situacao,data_pagamento")
+      .gte("data_pagamento", startStr)
+      .lte("data_pagamento", endStr)
+      .order("data_pagamento", { ascending: true })
       .range(from, from + pageSize - 1);
     if (error) throw error;
     const chunk = (data as EfetivoRow[] | null) || [];
@@ -154,9 +155,9 @@ export async function loadDashboard(): Promise<DashboardData> {
   const past = new Date(today);
   past.setDate(past.getDate() - 365);
 
-  // Meses efetivos (fechados) — últimos 6 meses. Soma o valor de face de
-  // TODAS as faturas com vencimento no mês (inclui pagas), excluindo apenas
-  // canceladas. Cada mês é isolado e serve de base histórica real.
+  // Meses efetivos (fechados) — últimos 6 meses. Soma o que foi realmente
+  // recebido/pago conforme a data de pagamento importada, excluindo canceladas.
+  // Para contas a pagar importadas sem valor_pago, usa o valor da parcela paga.
   const efetivoStart = new Date(today.getFullYear(), today.getMonth() - 6, 1);
   const efetivoEnd = new Date(today.getFullYear(), today.getMonth(), 0); // último dia do mês anterior
   const efetivoStartStr = ymd(efetivoStart);
@@ -308,8 +309,8 @@ export async function loadDashboard(): Promise<DashboardData> {
   const mesesProjetados: { key: string; label: string; entrada: number; saida: number; resultado: number }[] = [];
   const mesesEfetivo: { key: string; label: string; entrada: number; saida: number; resultado: number }[] = [];
   {
-    // Meses efetivos (últimos 6 meses fechados): valor de face de TODAS as
-    // faturas com vencimento no mês (inclui pagas), exceto canceladas.
+    // Meses efetivos (últimos 6 meses fechados): tudo que foi recebido e tudo
+    // que foi pago no mês, pela data de pagamento, exceto canceladas.
     const efetivoMap = new Map<string, { label: string; entrada: number; saida: number }>();
     for (let i = 6; i >= 1; i--) {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
@@ -322,11 +323,13 @@ export async function loadDashboard(): Promise<DashboardData> {
     efetivoRows.forEach((r) => {
       const s = (r.situacao || "").toLowerCase();
       if (s.startsWith("cancel")) return;
-      if (!r.data_vencimento) return;
-      const key = r.data_vencimento.slice(0, 7);
+      if (!r.data_pagamento) return;
+      const key = r.data_pagamento.slice(0, 7);
       const b = efetivoMap.get(key);
       if (!b) return;
-      const v = Number(r.valor_parcela) || 0;
+      const valorPago = Number(r.valor_pago) || 0;
+      const valorParcela = Number(r.valor_parcela) || 0;
+      const v = valorPago > 0 ? valorPago : valorParcela;
       if (r.kind === "receivable") b.entrada += v;
       else if (r.kind === "payable") b.saida += v;
     });
