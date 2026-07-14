@@ -976,9 +976,12 @@ function MiniStat({
     brand: "text-accent",
   }[color];
   return (
-    <div>
+    <div className="min-w-0">
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</p>
-      <p className={`mt-1.5 text-lg font-display font-semibold tabular-nums flex items-center gap-1 whitespace-nowrap ${cls}`}>
+      <p
+        className={`mt-1.5 font-display font-semibold tabular-nums flex items-center gap-1 whitespace-nowrap ${cls}`}
+        style={{ fontSize: "clamp(0.8125rem, 1.4vw, 1.125rem)" }}
+      >
         {direction === "up" && <ArrowUp className="size-3.5 shrink-0" />}
         {direction === "down" && <ArrowDown className="size-3.5 shrink-0" />}
         <span>{value}</span>
