@@ -899,10 +899,11 @@ function KpiCard({
     <Card>
       <div className={`h-0.5 w-8 rounded-full ${bar} mb-4`} />
       <Label info={info}>{label}</Label>
-      <p className={`mt-3 text-xl md:text-2xl font-display font-bold tabular-nums tracking-tight leading-tight flex items-start gap-1.5 break-words ${valueCls}`}>
-        {direction === "up" && <ArrowUp className="size-5 shrink-0 mt-1" />}
-        {direction === "down" && <ArrowDown className="size-5 shrink-0 mt-1" />}
-        <span title={typeof value === "string" ? value : undefined}>{value}</span>
+      <p className={`mt-3 font-display font-bold tabular-nums tracking-tight leading-tight flex items-center gap-1.5 whitespace-nowrap ${valueCls}`}
+         style={{ fontSize: "clamp(1rem, 2.2vw, 1.75rem)" }}>
+        {direction === "up" && <ArrowUp className="size-5 shrink-0" />}
+        {direction === "down" && <ArrowDown className="size-5 shrink-0" />}
+        <span>{value}</span>
       </p>
       {delta && (
         <div className="mt-1.5">
