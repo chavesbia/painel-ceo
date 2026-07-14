@@ -81,6 +81,25 @@ function BalancesPage() {
 
   const total = useMemo(() => data.reduce((sum, row) => sum + Number(row.balance || 0), 0), [data]);
 
+  // Saldo atual = soma apenas do lançamento mais recente por (empresa + conta).
+  // Mesma lógica usada no Painel do CEO ("Saldo bancário inicial").
+  const { saldoAtual, latestIds } = useMemo(() => {
+    const latest = new Map<string, BalanceRow>();
+    for (const row of data) {
+      const key = `${row.company_name}::${row.account_name}`;
+      const prev = latest.get(key);
+      if (!prev) { latest.set(key, row); continue; }
+      const isNewer =
+        row.balance_date > prev.balance_date ||
+        (row.balance_date === prev.balance_date && row.updated_at > prev.updated_at);
+      if (isNewer) latest.set(key, row);
+    }
+    const ids = new Set<string>();
+    let sum = 0;
+    latest.forEach((r) => { ids.add(r.id); sum += Number(r.balance || 0); });
+    return { saldoAtual: sum, latestIds: ids };
+  }, [data]);
+
   const refresh = async () => {
     await Promise.all([
       qc.invalidateQueries({ queryKey: ["cash-balances"] }),
@@ -141,9 +160,17 @@ function BalancesPage() {
           <h1 className="mt-1 text-3xl md:text-4xl font-display font-bold tracking-tight">Saldos</h1>
           <p className="text-sm text-muted-foreground mt-1">Cadastre os saldos bancários para atualizar o fluxo do Painel do CEO.</p>
         </div>
-        <div className="rounded-lg border border-border bg-card px-4 py-3 text-right">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Saldo total</p>
-          <p className={`mt-1 text-2xl font-display font-bold tabular-nums ${total >= 0 ? "text-status-green" : "text-status-red"}`}>{brl(total)}</p>
+        <div className="flex flex-wrap gap-3">
+          <div className="rounded-lg border border-primary/40 bg-primary/5 px-4 py-3 text-right" title="Soma apenas do lançamento mais recente de cada conta bancária — é o saldo real disponível hoje. Mesmo valor usado no Painel do CEO.">
+            <p className="text-[10px] uppercase tracking-wider text-primary font-semibold">Saldo atual</p>
+            <p className={`mt-1 text-2xl font-display font-bold tabular-nums ${saldoAtual >= 0 ? "text-status-green" : "text-status-red"}`}>{brl(saldoAtual)}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">último lançamento por conta</p>
+          </div>
+          <div className="rounded-lg border border-border bg-card px-4 py-3 text-right" title="Soma de TODOS os lançamentos já cadastrados (inclui histórico). Serve apenas para conferência de digitação.">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Soma do histórico</p>
+            <p className={`mt-1 text-2xl font-display font-bold tabular-nums ${total >= 0 ? "text-status-green" : "text-status-red"}`}>{brl(total)}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">todos os lançamentos</p>
+          </div>
         </div>
       </header>
 
@@ -224,9 +251,16 @@ function BalancesPage() {
             <tbody className="divide-y divide-border">
               {isLoading && <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground"><Loader2 className="inline size-4 animate-spin" /> Carregando…</td></tr>}
               {!isLoading && data.length === 0 && <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">Nenhum saldo cadastrado.</td></tr>}
-              {data.map((row) => (
-                <tr key={row.id}>
-                  <td className="px-4 py-3 font-medium">{row.account_name}</td>
+              {data.map((row) => {
+                const isLatest = latestIds.has(row.id);
+                return (
+                <tr key={row.id} className={isLatest ? "bg-primary/[0.03]" : ""}>
+                  <td className="px-4 py-3 font-medium">
+                    <div className="flex items-center gap-2">
+                      <span>{row.account_name}</span>
+                      {isLatest && <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold" title="Este é o lançamento mais recente desta conta — entra no Saldo atual.">Atual</span>}
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground">{companyLabel(row.company_name)}</td>
                   <td className="px-4 py-3 tabular-nums text-muted-foreground">{new Date(row.balance_date + "T00:00:00").toLocaleDateString("pt-BR")}</td>
                   <td className={`px-4 py-3 text-right tabular-nums font-semibold ${row.balance >= 0 ? "text-status-green" : "text-status-red"}`}>{brl(row.balance)}</td>
@@ -240,7 +274,8 @@ function BalancesPage() {
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
