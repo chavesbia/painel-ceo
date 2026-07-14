@@ -156,7 +156,7 @@ export function CeoPanel() {
             Fonte: ERP · última importação em {ultimaFmt}
           </p>
         </div>
-        <StatusPill state={semaforoState} label={semaforoLabel} hint={`Resultado em aberto ${brlShort(resultado)}`} />
+        <StatusPill state={semaforoState} label={semaforoLabel} hint={`Resultado em aberto ${brl(resultado)}`} />
         <button
           type="button"
           onClick={() => window.print()}
@@ -198,12 +198,12 @@ export function CeoPanel() {
               <div className="flex items-center gap-3 text-sm font-semibold pb-2">
                 <span className="inline-flex items-center gap-1 text-status-green">
                   <ArrowUp className="size-4" />
-                  Entradas {brlShort(entradasJanela)}
+                  Entradas {brl(entradasJanela)}
                 </span>
                 <span className="text-muted-foreground">·</span>
                 <span className="inline-flex items-center gap-1 text-status-red">
                   <ArrowDown className="size-4" />
-                  Saídas {brlShort(saidasJanela)}
+                  Saídas {brl(saidasJanela)}
                 </span>
               </div>
             </div>
@@ -284,7 +284,7 @@ export function CeoPanel() {
           {data.deltas && (
             <div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between gap-2">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                Total {brlShort(data.aReceberVencidosValor + data.aPagarVencidosValor)}
+                Total {brl(data.aReceberVencidosValor + data.aPagarVencidosValor)}
               </span>
               <DeltaChip
                 abs={data.deltas.vencidosValor.abs}
@@ -305,8 +305,8 @@ export function CeoPanel() {
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Movimentos previstos</span>
           </div>
           <div className="mt-5 grid grid-cols-2 gap-4">
-            <MiniStat label="A Receber" value={brlShort(data.hoje.receber)} color="green" direction="up" />
-            <MiniStat label="A Pagar" value={brlShort(data.hoje.pagar)} color="red" direction="down" />
+            <MiniStat label="A Receber" value={brl(data.hoje.receber)} color="green" direction="up" />
+            <MiniStat label="A Pagar" value={brl(data.hoje.pagar)} color="red" direction="down" />
           </div>
         </Card>
         <Card>
@@ -315,9 +315,9 @@ export function CeoPanel() {
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">7 dias</span>
           </div>
           <div className="mt-5 grid grid-cols-3 gap-4">
-            <MiniStat label="A Receber" value={brlShort(data.semana.receber)} color="green" direction="up" />
-            <MiniStat label="A Pagar" value={brlShort(data.semana.pagar)} color="red" direction="down" />
-            <MiniStat label="Resultado" value={brlShort(data.semana.receber - data.semana.pagar)} color="brand" />
+            <MiniStat label="A Receber" value={brl(data.semana.receber)} color="green" direction="up" />
+            <MiniStat label="A Pagar" value={brl(data.semana.pagar)} color="red" direction="down" />
+            <MiniStat label="Resultado" value={brl(data.semana.receber - data.semana.pagar)} color="brand" />
           </div>
         </Card>
       </section>
@@ -338,7 +338,7 @@ export function CeoPanel() {
                     )}
                     <p className="text-xs text-muted-foreground truncate">{saldo.empresaNome} · {new Date(saldo.data + "T00:00:00").toLocaleDateString("pt-BR")}</p>
                   </div>
-                  <p className={`tabular-nums font-semibold ${saldo.saldo >= 0 ? "text-status-green" : "text-status-red"}`}>{brlShort(saldo.saldo)}</p>
+                  <p className={`tabular-nums font-semibold ${saldo.saldo >= 0 ? "text-status-green" : "text-status-red"}`}>{brl(saldo.saldo)}</p>
                 </div>
               </div>
             ))}
@@ -377,10 +377,10 @@ export function CeoPanel() {
                 {data.mesesProjetados.map((m) => (
                   <tr key={m.key} className="border-t border-border">
                     <td className="py-2 pr-3 font-medium">{m.label}</td>
-                    <td className="py-2 px-2 text-right tabular-nums text-status-green">{brlShort(m.entrada)}</td>
-                    <td className="py-2 px-2 text-right tabular-nums text-status-red">{brlShort(m.saida)}</td>
+                    <td className="py-2 px-2 text-right tabular-nums text-status-green">{brl(m.entrada)}</td>
+                    <td className="py-2 px-2 text-right tabular-nums text-status-red">{brl(m.saida)}</td>
                     <td className={`py-2 pl-2 text-right tabular-nums font-semibold ${m.resultado >= 0 ? "text-status-green" : "text-status-red"}`}>
-                      {m.resultado >= 0 ? "+" : ""}{brlShort(m.resultado)}
+                      {m.resultado >= 0 ? "+" : ""}{brl(m.resultado)}
                     </td>
                   </tr>
                 ))}
@@ -425,7 +425,7 @@ export function CeoPanel() {
                     <div>
                       <div className="flex justify-between text-[11px] mb-0.5">
                         <span className="text-muted-foreground">Entrada (a receber)</span>
-                        <span className="tabular-nums text-status-green">{brlShort(e.receber)}</span>
+                        <span className="tabular-nums text-status-green">{brl(e.receber)}</span>
                       </div>
                       <div className="h-2 bg-muted rounded-full overflow-hidden">
                         <div className="h-full rounded-full bg-status-green" style={{ width: `${rPct}%` }} />
@@ -434,7 +434,7 @@ export function CeoPanel() {
                     <div>
                       <div className="flex justify-between text-[11px] mb-0.5">
                         <span className="text-muted-foreground">Saída (a pagar)</span>
-                        <span className="tabular-nums text-status-red">{brlShort(e.pagar)}</span>
+                        <span className="tabular-nums text-status-red">{brl(e.pagar)}</span>
                       </div>
                       <div className="h-2 bg-muted rounded-full overflow-hidden">
                         <div className="h-full rounded-full bg-status-red" style={{ width: `${pPct}%` }} />
@@ -445,7 +445,7 @@ export function CeoPanel() {
                   <div className={`flex justify-between items-center text-xs pt-1.5 border-t border-border/60`}>
                     <span className="text-muted-foreground">Resultado</span>
                     <span className={`tabular-nums font-semibold ${e.valor >= 0 ? "text-status-green" : "text-status-red"}`}>
-                      {e.valor >= 0 ? "+" : ""}{brlShort(e.valor)}
+                      {e.valor >= 0 ? "+" : ""}{brl(e.valor)}
                     </span>
                   </div>
                 </div>
@@ -693,7 +693,7 @@ function AgingBucket({
   return (
     <div className="rounded-md border border-border bg-muted/25 p-3">
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</p>
-      <p className={`mt-1.5 text-lg font-display font-bold tabular-nums ${text}`}>{brlShort(valor)}</p>
+      <p className={`mt-1.5 text-lg font-display font-bold tabular-nums ${text}`}>{brl(valor)}</p>
       <div className="mt-1.5 h-1.5 bg-muted rounded-full overflow-hidden">
         <div className={`h-full ${bg}`} style={{ width: `${pct}%` }} />
       </div>
@@ -708,7 +708,7 @@ function AgingBar({ aging, total }: { aging: { a30: number; a60: number; a90: nu
   if (total <= 0) return <div className="h-2 bg-muted rounded-full" />;
   const seg = (v: number) => `${(v / total) * 100}%`;
   return (
-    <div className="flex h-2 w-full rounded-full overflow-hidden bg-muted" title={`≤30d ${brlShort(aging.a30)} · 31-60d ${brlShort(aging.a60)} · 61-90d ${brlShort(aging.a90)} · +90d ${brlShort(aging.mais)}`}>
+    <div className="flex h-2 w-full rounded-full overflow-hidden bg-muted" title={`≤30d ${brl(aging.a30)} · 31-60d ${brl(aging.a60)} · 61-90d ${brl(aging.a90)} · +90d ${brl(aging.mais)}`}>
       {aging.a30 > 0 && <div className="bg-status-yellow" style={{ width: seg(aging.a30) }} />}
       {aging.a60 > 0 && <div className="bg-orange-500" style={{ width: seg(aging.a60) }} />}
       {aging.a90 > 0 && <div className="bg-status-red" style={{ width: seg(aging.a90) }} />}
@@ -770,7 +770,7 @@ function ConcentracaoCard({
               </div>
             </div>
             <div className="text-right shrink-0 min-w-[92px]">
-              <div className={`text-[12px] tabular-nums font-semibold ${valorCls}`}>{brlShort(it.valor)}</div>
+              <div className={`text-[12px] tabular-nums font-semibold ${valorCls}`}>{brl(it.valor)}</div>
               <div className="text-[10px] tabular-nums text-muted-foreground">{it.pct.toFixed(1)}%</div>
             </div>
           </div>
@@ -1039,7 +1039,7 @@ function CashFlowChart({
           <g key={tick.toFixed(2)}>
             <line x1={pad.left} x2={width - pad.right} y1={yy} y2={yy} stroke="var(--color-border)" strokeDasharray="2 4" vectorEffect="non-scaling-stroke" />
             <text x={pad.left - 10} y={yy + 4} textAnchor="end" className="fill-muted-foreground text-[11px] tabular-nums">
-              {brlShort(tick)}
+              {brl(tick)}
             </text>
           </g>
         );
