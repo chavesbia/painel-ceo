@@ -71,6 +71,13 @@ type InvoiceRow = {
   data_pagamento: string | null;
 };
 
+type EfetivoRow = {
+  kind: string;
+  valor_parcela: number;
+  situacao: string | null;
+  data_vencimento: string | null;
+};
+
 type CashBalanceRow = {
   company_name: string;
   account_name: string;
@@ -112,6 +119,29 @@ async function fetchAllInvoices(pastStr: string): Promise<InvoiceRow[]> {
     if (chunk.length < pageSize) break;
     from += pageSize;
     if (from > 200000) break; // guarda
+  }
+  return all;
+}
+
+async function fetchEfetivoRange(startStr: string, endStr: string): Promise<EfetivoRow[]> {
+  const pageSize = 1000;
+  let from = 0;
+  const all: EfetivoRow[] = [];
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { data, error } = await supabase
+      .from("invoices")
+      .select("kind,valor_parcela,situacao,data_vencimento")
+      .gte("data_vencimento", startStr)
+      .lte("data_vencimento", endStr)
+      .order("data_vencimento", { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    const chunk = (data as EfetivoRow[] | null) || [];
+    all.push(...chunk);
+    if (chunk.length < pageSize) break;
+    from += pageSize;
+    if (from > 200000) break;
   }
   return all;
 }
