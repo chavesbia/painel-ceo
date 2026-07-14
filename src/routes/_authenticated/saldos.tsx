@@ -79,8 +79,6 @@ function BalancesPage() {
     },
   });
 
-  const total = useMemo(() => data.reduce((sum, row) => sum + Number(row.balance || 0), 0), [data]);
-
   // Saldo atual = soma apenas do lançamento mais recente por (empresa + conta).
   // Mesma lógica usada no Painel do CEO ("Saldo bancário inicial").
   const { saldoAtual, latestIds } = useMemo(() => {
