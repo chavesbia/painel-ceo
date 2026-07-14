@@ -14,6 +14,7 @@ export type DashboardData = {
   semana: { receber: number; pagar: number };
   fluxo: { dia: string; label: string; entrada: number; saida: number; saldo: number }[];
   fluxoRealista: { dia: string; label: string; entrada: number; saida: number; saldo: number }[];
+  mesesProjetados: { key: string; label: string; entrada: number; saida: number; resultado: number }[];
   recuperacao: {
     exposicaoVencida: number;   // total de recebíveis vencidos (valor de face)
     recuperacaoEsperada: number; // após aplicar % por faixa
