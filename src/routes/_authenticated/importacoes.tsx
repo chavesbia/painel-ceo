@@ -102,7 +102,7 @@ function ImportPage() {
         <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">Sistema</p>
         <h1 className="mt-1 text-3xl md:text-4xl font-display font-bold tracking-tight">Importações</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Envie os arquivos CSV exportados do ERP (Faturas a Pagar e Faturas a Receber). Registros da empresa CNPJ 37.260.594/0002-60 são excluídos automaticamente.
+          Envie os arquivos CSV exportados do ERP (Faturas a Pagar e Faturas a Receber). Registros da empresa CNPJ 37.260.594/0002-60 são excluídos apenas em A Receber (mantidos em A Pagar).
         </p>
       </header>
 

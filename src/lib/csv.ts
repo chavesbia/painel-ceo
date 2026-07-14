@@ -144,7 +144,13 @@ export function csvToInvoices(
       });
     };
     if (!numero) { pushSkip('Campo "Nº" vazio'); continue; }
-    if (unidade.includes(EXCLUDED_CNPJ)) { pushSkip(`Unidade de Negócio excluída (CNPJ ${EXCLUDED_CNPJ})`); continue; }
+    // ALPHA CLINICA MULTIDISCIPLINAR (37.260.594/0002-60) é excluída apenas
+    // do "A Receber" (evita dupla contagem entre matriz e filial). Em
+    // "A Pagar" mantemos os registros — são obrigações reais da empresa.
+    if (kind === "receivable" && unidade.includes(EXCLUDED_CNPJ)) {
+      pushSkip(`Unidade de Negócio excluída em A Receber (CNPJ ${EXCLUDED_CNPJ})`);
+      continue;
+    }
     // Regra para Faturas a Receber: registros já pagos representam entrada
     // efetiva de caixa e devem entrar mesmo quando a nota veio como NFS-e.
     // Para registros ainda não pagos, mantemos o filtro operacional anterior.

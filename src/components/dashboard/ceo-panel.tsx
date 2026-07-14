@@ -36,8 +36,6 @@ const BANK_COLORS = [
 /* ------------------------------------------------------------------ */
 
 export function CeoPanel() {
-  const [fluxoPeriodo, setFluxoPeriodo] = React.useState<7 | 15 | 30 | 60 | 90 | 180>(30);
-  const [fluxoCenario, setFluxoCenario] = React.useState<"otimista" | "realista">("realista");
   const [resultadoPeriodo, setResultadoPeriodo] = React.useState<7 | 15 | 30 | 60 | 90 | 180>(30);
   const [pagarSort, setPagarSort] = React.useState<"valor" | "dias">("valor");
   const [clientesSort, setClientesSort] = React.useState<"valor" | "dias">("valor");
@@ -68,13 +66,9 @@ export function CeoPanel() {
   const saidasJanela = janela.reduce((s, d) => s + d.saida, 0);
   const resultadoJanela = entradasJanela - saidasJanela;
   const saldoAtual = data.saldoBancarioTotal;
-  const fluxoSerie = fluxoCenario === "realista" ? data.fluxoRealista : data.fluxo;
-  const fluxoChart = fluxoSerie
-    .slice(0, fluxoPeriodo)
+  const fluxoChart = data.fluxoRealista
+    .slice(0, 30)
     .map((f) => ({ dia: f.label, saldo: f.saldo, entrada: f.entrada, saida: f.saida }));
-  const menorSaldoPoint = fluxoChart.length
-    ? fluxoChart.reduce((min, p) => (p.saldo < min.saldo ? p : min), fluxoChart[0])
-    : { dia: "", saldo: 0 };
   const bancos = data.bancos.map((b, i) => ({ ...b, cor: BANK_COLORS[i % BANK_COLORS.length] }));
 
   // Necessidade de capital de giro do mês (restante do mês corrente):
@@ -156,7 +150,7 @@ export function CeoPanel() {
             Fonte: ERP · última importação em {ultimaFmt}
           </p>
         </div>
-        <StatusPill state={semaforoState} label={semaforoLabel} hint={`Resultado em aberto ${brlShort(resultado)}`} />
+        <StatusPill state={semaforoState} label={semaforoLabel} hint={`Resultado em aberto ${brl(resultado)}`} />
         <button
           type="button"
           onClick={() => window.print()}
@@ -198,12 +192,12 @@ export function CeoPanel() {
               <div className="flex items-center gap-3 text-sm font-semibold pb-2">
                 <span className="inline-flex items-center gap-1 text-status-green">
                   <ArrowUp className="size-4" />
-                  Entradas {brlShort(entradasJanela)}
+                  Entradas {brl(entradasJanela)}
                 </span>
                 <span className="text-muted-foreground">·</span>
                 <span className="inline-flex items-center gap-1 text-status-red">
                   <ArrowDown className="size-4" />
-                  Saídas {brlShort(saidasJanela)}
+                  Saídas {brl(saidasJanela)}
                 </span>
               </div>
             </div>
@@ -284,7 +278,7 @@ export function CeoPanel() {
           {data.deltas && (
             <div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between gap-2">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                Total {brlShort(data.aReceberVencidosValor + data.aPagarVencidosValor)}
+                Total {brl(data.aReceberVencidosValor + data.aPagarVencidosValor)}
               </span>
               <DeltaChip
                 abs={data.deltas.vencidosValor.abs}
@@ -305,8 +299,8 @@ export function CeoPanel() {
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Movimentos previstos</span>
           </div>
           <div className="mt-5 grid grid-cols-2 gap-4">
-            <MiniStat label="A Receber" value={brlShort(data.hoje.receber)} color="green" direction="up" />
-            <MiniStat label="A Pagar" value={brlShort(data.hoje.pagar)} color="red" direction="down" />
+            <MiniStat label="A Receber" value={brl(data.hoje.receber)} color="green" direction="up" />
+            <MiniStat label="A Pagar" value={brl(data.hoje.pagar)} color="red" direction="down" />
           </div>
         </Card>
         <Card>
@@ -315,9 +309,9 @@ export function CeoPanel() {
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">7 dias</span>
           </div>
           <div className="mt-5 grid grid-cols-3 gap-4">
-            <MiniStat label="A Receber" value={brlShort(data.semana.receber)} color="green" direction="up" />
-            <MiniStat label="A Pagar" value={brlShort(data.semana.pagar)} color="red" direction="down" />
-            <MiniStat label="Resultado" value={brlShort(data.semana.receber - data.semana.pagar)} color="brand" />
+            <MiniStat label="A Receber" value={brl(data.semana.receber)} color="green" direction="up" />
+            <MiniStat label="A Pagar" value={brl(data.semana.pagar)} color="red" direction="down" />
+            <MiniStat label="Resultado" value={brl(data.semana.receber - data.semana.pagar)} color="brand" />
           </div>
         </Card>
       </section>
@@ -338,7 +332,7 @@ export function CeoPanel() {
                     )}
                     <p className="text-xs text-muted-foreground truncate">{saldo.empresaNome} · {new Date(saldo.data + "T00:00:00").toLocaleDateString("pt-BR")}</p>
                   </div>
-                  <p className={`tabular-nums font-semibold ${saldo.saldo >= 0 ? "text-status-green" : "text-status-red"}`}>{brlShort(saldo.saldo)}</p>
+                  <p className={`tabular-nums font-semibold ${saldo.saldo >= 0 ? "text-status-green" : "text-status-red"}`}>{brl(saldo.saldo)}</p>
                 </div>
               </div>
             ))}
@@ -377,10 +371,10 @@ export function CeoPanel() {
                 {data.mesesProjetados.map((m) => (
                   <tr key={m.key} className="border-t border-border">
                     <td className="py-2 pr-3 font-medium">{m.label}</td>
-                    <td className="py-2 px-2 text-right tabular-nums text-status-green">{brlShort(m.entrada)}</td>
-                    <td className="py-2 px-2 text-right tabular-nums text-status-red">{brlShort(m.saida)}</td>
+                    <td className="py-2 px-2 text-right tabular-nums text-status-green">{brl(m.entrada)}</td>
+                    <td className="py-2 px-2 text-right tabular-nums text-status-red">{brl(m.saida)}</td>
                     <td className={`py-2 pl-2 text-right tabular-nums font-semibold ${m.resultado >= 0 ? "text-status-green" : "text-status-red"}`}>
-                      {m.resultado >= 0 ? "+" : ""}{brlShort(m.resultado)}
+                      {m.resultado >= 0 ? "+" : ""}{brl(m.resultado)}
                     </td>
                   </tr>
                 ))}
@@ -390,72 +384,6 @@ export function CeoPanel() {
           <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed">
             Considera apenas faturas <strong>em aberto</strong> (Pendente/Protestada) com vencimento no mês. Cada linha é isolada — sem saldo bancário e sem arrastar resultado de meses anteriores.
           </p>
-        </Card>
-      </section>
-
-      {/* FAIXA 5 — FLUXO DE CAIXA PROJETADO */}
-      <section>
-        <Card>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-display font-semibold">Fluxo de Caixa Projetado</h3>
-                <InfoTooltip text="Mostra como o saldo bancário evolui dia a dia se todas as faturas forem pagas na data de vencimento. Cenário otimista: assume que 100% dos vencidos serão recebidos hoje. Cenário realista: aplica uma taxa de recuperação por aging (quanto mais antigo o atraso, menor a chance de receber)." />
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Saldo acumulado dia a dia ({fluxoPeriodo} dias). Contas vencidas entram/saem hoje. No cenário <strong>realista</strong>, recebíveis vencidos aplicam taxa de recuperação por aging (30d 90% · 60d 60% · 90d 30% · +90d 10%).
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 print:hidden">
-              <div className="flex gap-1 p-1 rounded-md bg-muted">
-                {(["realista", "otimista"] as const).map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setFluxoCenario(c)}
-                    className={`px-3 py-1 text-xs font-medium rounded-sm capitalize transition-colors ${
-                      c === fluxoCenario ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-1 p-1 rounded-md bg-muted">
-                {([7, 15, 30, 60, 90, 180] as const).map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setFluxoPeriodo(p)}
-                    className={`px-3 py-1 text-xs font-medium rounded-sm transition-colors ${
-                      p === fluxoPeriodo ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {p}d
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          {data.recuperacao.exposicaoVencida > 0 && (
-            <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
-              <div className="rounded-md border border-border bg-muted/25 px-3 py-2">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Exposição vencida</p>
-                <p className="mt-0.5 tabular-nums font-semibold">{brlShort(data.recuperacao.exposicaoVencida)}</p>
-              </div>
-              <div className="rounded-md border border-status-green/30 bg-status-green/5 px-3 py-2">
-                <p className="text-[10px] uppercase tracking-wider text-status-green font-semibold">Recuperação esperada</p>
-                <p className="mt-0.5 tabular-nums font-semibold text-status-green">{brlShort(data.recuperacao.recuperacaoEsperada)}</p>
-              </div>
-              <div className="rounded-md border border-status-red/30 bg-status-red/5 px-3 py-2">
-                <p className="text-[10px] uppercase tracking-wider text-status-red font-semibold">Perda esperada</p>
-                <p className="mt-0.5 tabular-nums font-semibold text-status-red">{brlShort(data.recuperacao.perdaEsperada)}</p>
-              </div>
-            </div>
-          )}
-          <div className="mt-6 h-72 w-full">
-            <CashFlowChart data={fluxoChart} minPoint={menorSaldoPoint} />
-          </div>
         </Card>
       </section>
 
@@ -491,7 +419,7 @@ export function CeoPanel() {
                     <div>
                       <div className="flex justify-between text-[11px] mb-0.5">
                         <span className="text-muted-foreground">Entrada (a receber)</span>
-                        <span className="tabular-nums text-status-green">{brlShort(e.receber)}</span>
+                        <span className="tabular-nums text-status-green">{brl(e.receber)}</span>
                       </div>
                       <div className="h-2 bg-muted rounded-full overflow-hidden">
                         <div className="h-full rounded-full bg-status-green" style={{ width: `${rPct}%` }} />
@@ -500,7 +428,7 @@ export function CeoPanel() {
                     <div>
                       <div className="flex justify-between text-[11px] mb-0.5">
                         <span className="text-muted-foreground">Saída (a pagar)</span>
-                        <span className="tabular-nums text-status-red">{brlShort(e.pagar)}</span>
+                        <span className="tabular-nums text-status-red">{brl(e.pagar)}</span>
                       </div>
                       <div className="h-2 bg-muted rounded-full overflow-hidden">
                         <div className="h-full rounded-full bg-status-red" style={{ width: `${pPct}%` }} />
@@ -511,7 +439,7 @@ export function CeoPanel() {
                   <div className={`flex justify-between items-center text-xs pt-1.5 border-t border-border/60`}>
                     <span className="text-muted-foreground">Resultado</span>
                     <span className={`tabular-nums font-semibold ${e.valor >= 0 ? "text-status-green" : "text-status-red"}`}>
-                      {e.valor >= 0 ? "+" : ""}{brlShort(e.valor)}
+                      {e.valor >= 0 ? "+" : ""}{brl(e.valor)}
                     </span>
                   </div>
                 </div>
@@ -759,7 +687,7 @@ function AgingBucket({
   return (
     <div className="rounded-md border border-border bg-muted/25 p-3">
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</p>
-      <p className={`mt-1.5 text-lg font-display font-bold tabular-nums ${text}`}>{brlShort(valor)}</p>
+      <p className={`mt-1.5 text-lg font-display font-bold tabular-nums ${text}`}>{brl(valor)}</p>
       <div className="mt-1.5 h-1.5 bg-muted rounded-full overflow-hidden">
         <div className={`h-full ${bg}`} style={{ width: `${pct}%` }} />
       </div>
@@ -774,7 +702,7 @@ function AgingBar({ aging, total }: { aging: { a30: number; a60: number; a90: nu
   if (total <= 0) return <div className="h-2 bg-muted rounded-full" />;
   const seg = (v: number) => `${(v / total) * 100}%`;
   return (
-    <div className="flex h-2 w-full rounded-full overflow-hidden bg-muted" title={`≤30d ${brlShort(aging.a30)} · 31-60d ${brlShort(aging.a60)} · 61-90d ${brlShort(aging.a90)} · +90d ${brlShort(aging.mais)}`}>
+    <div className="flex h-2 w-full rounded-full overflow-hidden bg-muted" title={`≤30d ${brl(aging.a30)} · 31-60d ${brl(aging.a60)} · 61-90d ${brl(aging.a90)} · +90d ${brl(aging.mais)}`}>
       {aging.a30 > 0 && <div className="bg-status-yellow" style={{ width: seg(aging.a30) }} />}
       {aging.a60 > 0 && <div className="bg-orange-500" style={{ width: seg(aging.a60) }} />}
       {aging.a90 > 0 && <div className="bg-status-red" style={{ width: seg(aging.a90) }} />}
@@ -836,7 +764,7 @@ function ConcentracaoCard({
               </div>
             </div>
             <div className="text-right shrink-0 min-w-[92px]">
-              <div className={`text-[12px] tabular-nums font-semibold ${valorCls}`}>{brlShort(it.valor)}</div>
+              <div className={`text-[12px] tabular-nums font-semibold ${valorCls}`}>{brl(it.valor)}</div>
               <div className="text-[10px] tabular-nums text-muted-foreground">{it.pct.toFixed(1)}%</div>
             </div>
           </div>
@@ -1105,7 +1033,7 @@ function CashFlowChart({
           <g key={tick.toFixed(2)}>
             <line x1={pad.left} x2={width - pad.right} y1={yy} y2={yy} stroke="var(--color-border)" strokeDasharray="2 4" vectorEffect="non-scaling-stroke" />
             <text x={pad.left - 10} y={yy + 4} textAnchor="end" className="fill-muted-foreground text-[11px] tabular-nums">
-              {brlShort(tick)}
+              {brl(tick)}
             </text>
           </g>
         );

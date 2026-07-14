@@ -79,8 +79,6 @@ function BalancesPage() {
     },
   });
 
-  const total = useMemo(() => data.reduce((sum, row) => sum + Number(row.balance || 0), 0), [data]);
-
   // Saldo atual = soma apenas do lançamento mais recente por (empresa + conta).
   // Mesma lógica usada no Painel do CEO ("Saldo bancário inicial").
   const { saldoAtual, latestIds } = useMemo(() => {
@@ -117,6 +115,9 @@ function BalancesPage() {
     setBusy(true);
     setStatus(null);
     try {
+      if (form.balance_date > today()) {
+        throw new Error("Não é permitido lançar saldo com data futura.");
+      }
       const payload = {
         company_name: form.company_name.trim(),
         account_name: form.account_name.trim(),
@@ -165,11 +166,6 @@ function BalancesPage() {
             <p className="text-[10px] uppercase tracking-wider text-primary font-semibold">Saldo atual</p>
             <p className={`mt-1 text-2xl font-display font-bold tabular-nums ${saldoAtual >= 0 ? "text-status-green" : "text-status-red"}`}>{brl(saldoAtual)}</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">último lançamento por conta</p>
-          </div>
-          <div className="rounded-lg border border-border bg-card px-4 py-3 text-right" title="Soma de TODOS os lançamentos já cadastrados (inclui histórico). Serve apenas para conferência de digitação.">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Soma do histórico</p>
-            <p className={`mt-1 text-2xl font-display font-bold tabular-nums ${total >= 0 ? "text-status-green" : "text-status-red"}`}>{brl(total)}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">todos os lançamentos</p>
           </div>
         </div>
       </header>
@@ -222,7 +218,7 @@ function BalancesPage() {
             </label>
             <label className="block">
               <span className="text-xs font-medium text-muted-foreground">Data</span>
-              <input required disabled={!canWrite || busy} type="date" value={form.balance_date} onChange={(e) => update("balance_date", e.target.value)} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm" />
+              <input required disabled={!canWrite || busy} type="date" max={today()} value={form.balance_date} onChange={(e) => update("balance_date", e.target.value)} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm" />
             </label>
           </div>
           <label className="block">

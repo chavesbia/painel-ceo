@@ -546,7 +546,7 @@ async function computeSnapshotAndDeltas(current: {
   vencidosCount: number;
 }): Promise<DashboardData["deltas"]> {
   const targetPrev = new Date(current.todayStr + "T00:00:00");
-  targetPrev.setDate(targetPrev.getDate() - 30);
+  targetPrev.setDate(targetPrev.getDate() - 1);
   const targetPrevStr = ymd(targetPrev);
 
   // Grava/atualiza o snapshot de hoje. Usamos upsert para que o registro
