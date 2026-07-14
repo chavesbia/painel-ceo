@@ -416,7 +416,7 @@ export function CeoPanel() {
       <section>
         <Card>
           <div className="flex items-center justify-between">
-            <Label info="Meses já fechados. Para cada mês passado: soma o valor de face de TODAS as faturas com vencimento no mês (inclui pagas), excluindo apenas canceladas. É o resultado real do mês — base histórica para comparar com a projeção.">
+            <Label info="Meses já fechados. Para cada mês passado: soma tudo que foi recebido e tudo que foi pago conforme a data de pagamento importada, excluindo apenas canceladas. É o resultado real do caixa do mês — base histórica para comparar com a projeção.">
               Resultado Mensal — Efetivo
             </Label>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Últimos 6 meses fechados</span>
@@ -446,7 +446,7 @@ export function CeoPanel() {
             </table>
           </div>
           <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed">
-            Cada linha soma o valor de face de todas as faturas com vencimento no mês (pagas + em aberto), <strong>excluindo apenas canceladas</strong>. Cada mês é isolado — não envolve saldo bancário nem carrega resultado do mês anterior.
+            Cada linha soma tudo que foi recebido e tudo que foi pago no mês, pela data de pagamento importada, <strong>excluindo apenas canceladas</strong>. Cada mês é isolado — não envolve saldo bancário nem carrega resultado do mês anterior.
           </p>
         </Card>
       </section>
