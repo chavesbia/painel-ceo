@@ -315,7 +315,7 @@ export function CeoPanel() {
       {/* FAIXA 3 — HOJE / SEMANA */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <Label info="Movimentações previstas para o dia de hoje: quanto entra (recebimentos com vencimento hoje) e quanto sai (pagamentos com vencimento hoje).">Hoje · {new Date().toLocaleDateString("pt-BR")}</Label>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Movimentos previstos</span>
           </div>
@@ -325,7 +325,7 @@ export function CeoPanel() {
           </div>
         </Card>
         <Card>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <Label info="Total previsto de entradas e saídas nos próximos 7 dias (a partir de hoje). Resultado = Receber − Pagar do período.">Esta Semana</Label>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">7 dias</span>
           </div>
@@ -340,7 +340,7 @@ export function CeoPanel() {
       {/* FAIXA 3.2 — RESUMO SEMANAL (dia a dia) */}
       <section>
         <Card>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <Label info="Entradas e saídas previstas dia a dia para os próximos 7 dias. Baseado nos vencimentos das faturas em aberto (cenário otimista, valor de face). Vencidos entram/saem em D0.">
               Resumo Semanal
             </Label>
@@ -434,7 +434,7 @@ export function CeoPanel() {
       {/* FAIXA 3.7 — RESULTADO MENSAL PROJETADO */}
       <section>
         <Card>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <Label info="Meses ainda não fechados. Para cada mês: soma o valor de face das faturas em aberto (Pendente/Protestada) com vencimento no mês, incluindo vencidas mantidas no mês original. Cada mês é isolado — não considera saldo bancário nem arrasta resultado do mês anterior. Não considera novas vendas — o faturamento só entra após o fechamento dos exames.">
               Resultado Mensal — Projetado
             </Label>
