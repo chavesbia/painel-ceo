@@ -271,7 +271,10 @@ export function CeoPanel() {
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
                 <ArrowUp className="size-3 text-status-green" /> A receber
               </p>
-              <p className="mt-1 text-lg font-display font-bold tabular-nums leading-tight text-status-green whitespace-nowrap">
+              <p
+                className="mt-1 font-display font-bold tabular-nums leading-tight text-status-green whitespace-nowrap"
+                style={{ fontSize: "clamp(0.95rem, 1.8vw, 1.125rem)" }}
+              >
                 {brl(data.aReceberVencidosValor)}
               </p>
               <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
@@ -282,7 +285,10 @@ export function CeoPanel() {
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
                 <ArrowDown className="size-3 text-status-red" /> A pagar
               </p>
-              <p className="mt-1 text-lg font-display font-bold tabular-nums leading-tight text-status-red whitespace-nowrap">
+              <p
+                className="mt-1 font-display font-bold tabular-nums leading-tight text-status-red whitespace-nowrap"
+                style={{ fontSize: "clamp(0.95rem, 1.8vw, 1.125rem)" }}
+              >
                 {brl(data.aPagarVencidosValor)}
               </p>
               <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
