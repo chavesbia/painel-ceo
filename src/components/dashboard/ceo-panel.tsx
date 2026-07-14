@@ -322,6 +322,68 @@ export function CeoPanel() {
         </Card>
       </section>
 
+      {/* FAIXA 3.2 — RESUMO SEMANAL (dia a dia) */}
+      <section>
+        <Card>
+          <div className="flex items-center justify-between">
+            <Label info="Entradas e saídas previstas dia a dia para os próximos 7 dias. Baseado nos vencimentos das faturas em aberto (cenário otimista, valor de face). Vencidos entram/saem em D0.">
+              Resumo Semanal
+            </Label>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Próximos 7 dias</span>
+          </div>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border">
+                  <th className="text-left font-semibold py-2 pr-3">Dia</th>
+                  <th className="text-right font-semibold py-2 px-3">Entradas</th>
+                  <th className="text-right font-semibold py-2 px-3">Saídas</th>
+                  <th className="text-right font-semibold py-2 pl-3">Resultado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {proximos7.map((d, i) => {
+                  const dt = new Date(d.dia + "T00:00:00");
+                  const diaSemana = dt.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "");
+                  const res = d.entrada - d.saida;
+                  return (
+                    <tr key={d.dia}>
+                      <td className="py-2 pr-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold w-8">
+                            {i === 0 ? "Hoje" : diaSemana}
+                          </span>
+                          <span className="tabular-nums font-medium">{d.label}</span>
+                        </div>
+                      </td>
+                      <td className="py-2 px-3 text-right tabular-nums font-medium text-status-green whitespace-nowrap">
+                        {d.entrada > 0 ? brl(d.entrada) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                      <td className="py-2 px-3 text-right tabular-nums font-medium text-status-red whitespace-nowrap">
+                        {d.saida > 0 ? brl(d.saida) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                      <td className={`py-2 pl-3 text-right tabular-nums font-semibold whitespace-nowrap ${res >= 0 ? "text-status-green" : "text-status-red"}`}>
+                        {res >= 0 ? "+" : ""}{brl(res)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-border">
+                  <td className="pt-3 pr-3 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total 7 dias</td>
+                  <td className="pt-3 px-3 text-right tabular-nums font-bold text-status-green whitespace-nowrap">{brl(entradas7)}</td>
+                  <td className="pt-3 px-3 text-right tabular-nums font-bold text-status-red whitespace-nowrap">{brl(saidas7)}</td>
+                  <td className={`pt-3 pl-3 text-right tabular-nums font-bold whitespace-nowrap ${resultado7 >= 0 ? "text-status-green" : "text-status-red"}`}>
+                    {resultado7 >= 0 ? "+" : ""}{brl(resultado7)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </Card>
+      </section>
+
       {/* FAIXA 4 — SALDOS / ALERTAS (acima do fluxo) */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
