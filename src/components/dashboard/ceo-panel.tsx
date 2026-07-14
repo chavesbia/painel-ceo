@@ -411,14 +411,55 @@ export function CeoPanel() {
         </Card>
       </section>
 
-      {/* FAIXA 3.6 — RESULTADO MENSAL PROJETADO */}
+      {/* FAIXA 3.6 — RESULTADO MENSAL EFETIVO (histórico) */}
+      {data.mesesEfetivo.length > 0 && (
       <section>
         <Card>
           <div className="flex items-center justify-between">
-            <Label info="Ritmo mês a mês das faturas em aberto. Para cada mês: soma o que tem para entrar (recebíveis) e para sair (pagáveis) por data de vencimento, e mostra o resultado (positivo ou negativo). Cada mês é isolado — não considera saldo bancário nem carrega resultado do mês anterior. Não considera novas vendas — o faturamento do mês só entra após o fechamento dos exames.">
-              Resultado Mensal Projetado
+            <Label info="Meses já fechados. Para cada mês passado: soma o valor de face de TODAS as faturas com vencimento no mês (inclui pagas), excluindo apenas canceladas. É o resultado real do mês — base histórica para comparar com a projeção.">
+              Resultado Mensal — Efetivo
             </Label>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Mês anterior + próximos 6 meses</span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Últimos 6 meses fechados</span>
+          </div>
+          <div className="mt-5 overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <th className="text-left font-semibold py-2 pr-3">Mês</th>
+                  <th className="text-right font-semibold py-2 px-2">Entrada</th>
+                  <th className="text-right font-semibold py-2 px-2">Saída</th>
+                  <th className="text-right font-semibold py-2 pl-2">Resultado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.mesesEfetivo.map((m) => (
+                  <tr key={m.key} className="border-t border-border">
+                    <td className="py-2 pr-3 font-medium">{m.label}</td>
+                    <td className="py-2 px-2 text-right tabular-nums text-status-green">{brlShort(m.entrada)}</td>
+                    <td className="py-2 px-2 text-right tabular-nums text-status-red">{brlShort(m.saida)}</td>
+                    <td className={`py-2 pl-2 text-right tabular-nums font-semibold ${m.resultado >= 0 ? "text-status-green" : "text-status-red"}`}>
+                      {m.resultado >= 0 ? "+" : ""}{brlShort(m.resultado)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed">
+            Cada linha soma o valor de face de todas as faturas com vencimento no mês (pagas + em aberto), <strong>excluindo apenas canceladas</strong>. Cada mês é isolado — não envolve saldo bancário nem carrega resultado do mês anterior.
+          </p>
+        </Card>
+      </section>
+      )}
+
+      {/* FAIXA 3.7 — RESULTADO MENSAL PROJETADO */}
+      <section>
+        <Card>
+          <div className="flex items-center justify-between">
+            <Label info="Meses ainda não fechados. Para cada mês: soma o valor de face das faturas em aberto (Pendente/Protestada) com vencimento no mês, incluindo vencidas mantidas no mês original. Cada mês é isolado — não considera saldo bancário nem arrasta resultado do mês anterior. Não considera novas vendas — o faturamento só entra após o fechamento dos exames.">
+              Resultado Mensal — Projetado
+            </Label>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Mês atual + próximos 5 meses</span>
           </div>
           <div className="mt-5 overflow-x-auto">
             <table className="w-full text-xs">
@@ -445,7 +486,7 @@ export function CeoPanel() {
             </table>
           </div>
           <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed">
-            Cada linha é o mês isolado: quanto está previsto entrar, quanto está previsto sair e a diferença. Não envolve saldo bancário nem arrasta resultado de meses anteriores. O <strong>mês anterior</strong> soma o valor de face de todas as faturas com vencimento no mês (pagas + em aberto), servindo de comparação com os meses projetados (que consideram apenas as faturas ainda em aberto).
+            Considera apenas faturas <strong>em aberto</strong> (Pendente/Protestada) com vencimento no mês. Cada linha é isolada — sem saldo bancário e sem arrastar resultado de meses anteriores. Compare com o card <em>Efetivo</em> acima para ver a diferença entre mês fechado (real) e mês em curso (projeção).
           </p>
         </Card>
       </section>
