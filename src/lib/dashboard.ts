@@ -281,27 +281,34 @@ export async function loadDashboard(): Promise<DashboardData> {
   // (inclui vencidas mantidas no mês original). Não aplica taxa de recuperação
   // nem arrasta saldo — cada mês é independente.
   const mesesProjetados: { key: string; label: string; entrada: number; saida: number; resultado: number }[] = [];
+  const mesesEfetivo: { key: string; label: string; entrada: number; saida: number; resultado: number }[] = [];
   {
-    // Mês anterior (fechado) — soma valor_parcela de TODAS as faturas com
-    // vencimento no mês passado, independente da situação, para servir de
-    // comparação com os meses projetados.
-    const prevRows = (prevMonthRes.data as { kind: string; valor_parcela: number; situacao: string | null; data_vencimento: string | null }[] | null) || [];
-    let prevEntrada = 0;
-    let prevSaida = 0;
-    prevRows.forEach((r) => {
+    // Meses efetivos (últimos 6 meses fechados): valor de face de TODAS as
+    // faturas com vencimento no mês (inclui pagas), exceto canceladas.
+    const efetivoMap = new Map<string, { label: string; entrada: number; saida: number }>();
+    for (let i = 6; i >= 1; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const monthName = d.toLocaleDateString("pt-BR", { month: "long" });
+      const yy = String(d.getFullYear()).slice(-2);
+      const label = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} - ${yy}`;
+      efetivoMap.set(key, { label, entrada: 0, saida: 0 });
+    }
+    const efetivoRows = (efetivoRes.data as { kind: string; valor_parcela: number; situacao: string | null; data_vencimento: string | null }[] | null) || [];
+    efetivoRows.forEach((r) => {
       const s = (r.situacao || "").toLowerCase();
       if (s.startsWith("cancel")) return;
+      if (!r.data_vencimento) return;
+      const key = r.data_vencimento.slice(0, 7);
+      const b = efetivoMap.get(key);
+      if (!b) return;
       const v = Number(r.valor_parcela) || 0;
-      if (r.kind === "receivable") prevEntrada += v;
-      else if (r.kind === "payable") prevSaida += v;
+      if (r.kind === "receivable") b.entrada += v;
+      else if (r.kind === "payable") b.saida += v;
     });
-    mesesProjetados.push({
-      key: prevMonthKey,
-      label: prevMonthLabel,
-      entrada: prevEntrada,
-      saida: prevSaida,
-      resultado: prevEntrada - prevSaida,
-    });
+    for (const [key, v] of efetivoMap) {
+      mesesEfetivo.push({ key, label: v.label, entrada: v.entrada, saida: v.saida, resultado: v.entrada - v.saida });
+    }
 
     const monthMap = new Map<string, { label: string; entrada: number; saida: number }>();
     for (let i = 0; i < 6; i++) {
