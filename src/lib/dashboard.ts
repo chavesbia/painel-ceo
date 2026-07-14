@@ -259,6 +259,35 @@ export async function loadDashboard(): Promise<DashboardData> {
   };
   const fluxo = buildFluxo(bucketsOtim);
   const fluxoRealista = buildFluxo(bucketsReal);
+
+  // Resultado mensal projetado — soma ISOLADA por mês (próximos 6 meses),
+  // pelo valor de face de TODAS as faturas em aberto cujo vencimento cai no mês
+  // (inclui vencidas mantidas no mês original). Não aplica taxa de recuperação
+  // nem arrasta saldo — cada mês é independente.
+  const mesesProjetados: { key: string; label: string; entrada: number; saida: number; resultado: number }[] = [];
+  {
+    const monthMap = new Map<string, { label: string; entrada: number; saida: number }>();
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const label = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }).replace(".", "");
+      monthMap.set(key, { label: label.charAt(0).toUpperCase() + label.slice(1), entrada: 0, saida: 0 });
+    }
+    recv.forEach((r) => {
+      const key = r.data_vencimento!.slice(0, 7);
+      const b = monthMap.get(key);
+      if (b) b.entrada += openAmount(r);
+    });
+    pay.forEach((r) => {
+      const key = r.data_vencimento!.slice(0, 7);
+      const b = monthMap.get(key);
+      if (b) b.saida += openAmount(r);
+    });
+    for (const [key, v] of monthMap) {
+      mesesProjetados.push({ key, label: v.label, entrada: v.entrada, saida: v.saida, resultado: v.entrada - v.saida });
+    }
+  }
+
   const recuperacao = {
     exposicaoVencida: overdueReceberOtimista,
     recuperacaoEsperada: overdueReceberRealista,
@@ -417,6 +446,7 @@ export async function loadDashboard(): Promise<DashboardData> {
     aPagarTotal, aPagarVencidosCount: payVenc.length,
     aPagarVencidosValor: payVenc.reduce((s, r) => s + openAmount(r), 0),
     hoje, semana, fluxo, fluxoRealista, recuperacao,
+    mesesProjetados,
     empresas: empresasWithPct, bancos: bancosWithPct, saldos, topVencidos, topClientesVencidos,
     agingRecv, clientesInadimplentes,
     concentracao,
