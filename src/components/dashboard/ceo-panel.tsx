@@ -450,13 +450,13 @@ export function CeoPanel() {
               <thead>
                 <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   <th className="text-left font-semibold py-2 pr-3">Mês</th>
-                  <th className="text-right font-semibold py-2 px-2">Para entrar</th>
-                  <th className="text-right font-semibold py-2 px-2">Para sair</th>
+                  <th className="text-right font-semibold py-2 px-2">Entrada</th>
+                  <th className="text-right font-semibold py-2 px-2">Saída</th>
                   <th className="text-right font-semibold py-2 pl-2">Resultado</th>
                 </tr>
               </thead>
               <tbody>
-                {mesesProj.map((m) => (
+                {data.mesesProjetados.map((m) => (
                   <tr key={m.key} className="border-t border-border">
                     <td className="py-2 pr-3 font-medium">{m.label}</td>
                     <td className="py-2 px-2 text-right tabular-nums text-status-green">{brlShort(m.entrada)}</td>
