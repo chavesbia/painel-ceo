@@ -270,8 +270,10 @@ export async function loadDashboard(): Promise<DashboardData> {
     for (let i = 0; i < 6; i++) {
       const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      const label = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }).replace(".", "");
-      monthMap.set(key, { label: label.charAt(0).toUpperCase() + label.slice(1), entrada: 0, saida: 0 });
+      const monthName = d.toLocaleDateString("pt-BR", { month: "long" });
+      const yy = String(d.getFullYear()).slice(-2);
+      const label = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} - ${yy}`;
+      monthMap.set(key, { label, entrada: 0, saida: 0 });
     }
     recv.forEach((r) => {
       const key = r.data_vencimento!.slice(0, 7);
