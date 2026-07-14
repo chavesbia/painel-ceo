@@ -912,7 +912,7 @@ function MiniStat({
       <p className={`mt-1.5 text-lg font-display font-semibold tabular-nums flex items-center gap-1 whitespace-nowrap ${cls}`}>
         {direction === "up" && <ArrowUp className="size-3.5 shrink-0" />}
         {direction === "down" && <ArrowDown className="size-3.5 shrink-0" />}
-        <span className="truncate">{value}</span>
+        <span>{value}</span>
         {suffix && <span className="text-xs text-muted-foreground font-normal ml-1">{suffix}</span>}
       </p>
     </div>
