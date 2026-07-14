@@ -129,7 +129,7 @@ export function CeoPanel() {
     : "—";
 
   return (
-    <div className="p-6 md:p-8 space-y-8 max-w-[1440px] mx-auto">
+    <div className="p-4 md:p-8 space-y-6 md:space-y-8 max-w-[1440px] mx-auto">
       {/* Cabeçalho de impressão (visível apenas ao imprimir/exportar PDF) */}
       <div className="hidden print:block print:mb-6">
         <div className="flex items-center justify-between border-b border-border pb-3">
@@ -144,18 +144,19 @@ export function CeoPanel() {
         </div>
       </div>
       {/* HEADER */}
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
+      <header className="grid grid-cols-1 gap-4 sm:flex sm:flex-wrap sm:items-end sm:justify-between">
+        <div className="min-w-0">
           <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">
             Visão Consolidada
           </p>
-          <h1 className="mt-1 text-3xl md:text-4xl font-display font-bold text-foreground tracking-tight">
+          <h1 className="mt-1 text-2xl sm:text-3xl md:text-4xl font-display font-bold text-foreground tracking-tight">
             Painel do CEO
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Fonte: ERP · última importação em {ultimaFmt}
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-3">
         <StatusPill state={semaforoState} label={semaforoLabel} hint={semaforoHint} />
         <button
           type="button"
@@ -164,8 +165,10 @@ export function CeoPanel() {
           title="Imprimir ou salvar em PDF"
         >
           <Printer className="size-4" />
-          Exportar / Imprimir
+          <span className="hidden sm:inline">Exportar / Imprimir</span>
+          <span className="sm:hidden">Imprimir</span>
         </button>
+        </div>
       </header>
 
       {/* FAIXA 1 — HERO */}
@@ -191,16 +194,19 @@ export function CeoPanel() {
                 ))}
               </div>
             </div>
-            <div className="flex flex-wrap items-end gap-4">
-              <h2 className={`text-4xl md:text-5xl font-display font-bold tabular-nums tracking-tight ${resultadoJanela >= 0 ? "text-status-green" : "text-status-red"}`}>
+            <div className="flex flex-wrap items-end gap-x-4 gap-y-2 min-w-0">
+              <h2
+                className={`font-display font-bold tabular-nums tracking-tight whitespace-nowrap ${resultadoJanela >= 0 ? "text-status-green" : "text-status-red"}`}
+                style={{ fontSize: "clamp(1.75rem, 4.5vw, 3rem)" }}
+              >
                 {resultadoJanela >= 0 ? "+" : ""}{brl(resultadoJanela)}
               </h2>
-              <div className="flex items-center gap-3 text-sm font-semibold pb-2">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm font-semibold pb-2 min-w-0">
                 <span className="inline-flex items-center gap-1 text-status-green">
                   <ArrowUp className="size-4" />
                   Entradas {brl(entradasJanela)}
                 </span>
-                <span className="text-muted-foreground">·</span>
+                <span className="text-muted-foreground hidden sm:inline">·</span>
                 <span className="inline-flex items-center gap-1 text-status-red">
                   <ArrowDown className="size-4" />
                   Saídas {brl(saidasJanela)}
@@ -216,7 +222,10 @@ export function CeoPanel() {
         <Card className="col-span-12 lg:col-span-4 bg-primary text-primary-foreground">
           <div className="flex flex-col justify-center h-full gap-2">
             <Label className="text-primary-foreground/70" info="Soma dos saldos das contas bancárias cadastradas. Para cada empresa+conta somamos apenas o lançamento mais recente — os anteriores ficam preservados como histórico e não são contabilizados de novo." infoOnDark>Saldo bancário atual</Label>
-            <p className="mt-2 text-3xl font-display font-bold tabular-nums">
+            <p
+              className="mt-2 font-display font-bold tabular-nums whitespace-nowrap"
+              style={{ fontSize: "clamp(1.5rem, 3.6vw, 2rem)" }}
+            >
               {brl(saldoAtual)}
             </p>
             {data.deltas && (
@@ -262,7 +271,10 @@ export function CeoPanel() {
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
                 <ArrowUp className="size-3 text-status-green" /> A receber
               </p>
-              <p className="mt-1 text-lg font-display font-bold tabular-nums leading-tight text-status-green whitespace-nowrap">
+              <p
+                className="mt-1 font-display font-bold tabular-nums leading-tight text-status-green whitespace-nowrap"
+                style={{ fontSize: "clamp(0.95rem, 1.8vw, 1.125rem)" }}
+              >
                 {brl(data.aReceberVencidosValor)}
               </p>
               <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
@@ -273,7 +285,10 @@ export function CeoPanel() {
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
                 <ArrowDown className="size-3 text-status-red" /> A pagar
               </p>
-              <p className="mt-1 text-lg font-display font-bold tabular-nums leading-tight text-status-red whitespace-nowrap">
+              <p
+                className="mt-1 font-display font-bold tabular-nums leading-tight text-status-red whitespace-nowrap"
+                style={{ fontSize: "clamp(0.95rem, 1.8vw, 1.125rem)" }}
+              >
                 {brl(data.aPagarVencidosValor)}
               </p>
               <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
@@ -300,7 +315,7 @@ export function CeoPanel() {
       {/* FAIXA 3 — HOJE / SEMANA */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <Label info="Movimentações previstas para o dia de hoje: quanto entra (recebimentos com vencimento hoje) e quanto sai (pagamentos com vencimento hoje).">Hoje · {new Date().toLocaleDateString("pt-BR")}</Label>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Movimentos previstos</span>
           </div>
@@ -310,7 +325,7 @@ export function CeoPanel() {
           </div>
         </Card>
         <Card>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <Label info="Total previsto de entradas e saídas nos próximos 7 dias (a partir de hoje). Resultado = Receber − Pagar do período.">Esta Semana</Label>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">7 dias</span>
           </div>
@@ -325,7 +340,7 @@ export function CeoPanel() {
       {/* FAIXA 3.2 — RESUMO SEMANAL (dia a dia) */}
       <section>
         <Card>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <Label info="Entradas e saídas previstas dia a dia para os próximos 7 dias. Baseado nos vencimentos das faturas em aberto (cenário otimista, valor de face). Vencidos entram/saem em D0.">
               Resumo Semanal
             </Label>
@@ -419,7 +434,7 @@ export function CeoPanel() {
       {/* FAIXA 3.7 — RESULTADO MENSAL PROJETADO */}
       <section>
         <Card>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <Label info="Meses ainda não fechados. Para cada mês: soma o valor de face das faturas em aberto (Pendente/Protestada) com vencimento no mês, incluindo vencidas mantidas no mês original. Cada mês é isolado — não considera saldo bancário nem arrasta resultado do mês anterior. Não considera novas vendas — o faturamento só entra após o fechamento dos exames.">
               Resultado Mensal — Projetado
             </Label>
@@ -673,7 +688,7 @@ function EmptyState({ ultima }: { ultima: string | null }) {
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={`rounded-xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${className}`}
+      className={`rounded-xl border border-border bg-card p-4 md:p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)] min-w-0 ${className}`}
     >
       {children}
     </div>
