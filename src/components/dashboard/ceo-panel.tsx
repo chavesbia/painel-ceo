@@ -436,6 +436,49 @@ export function CeoPanel() {
         </Card>
       </section>
 
+      {/* FAIXA 3.6 — RESULTADO MENSAL PROJETADO */}
+      <section>
+        <Card>
+          <div className="flex items-center justify-between">
+            <Label info="Ritmo mês a mês das faturas em aberto. Entradas e saídas de cada mês vêm do cenário realista (recebíveis vencidos aplicam taxa de recuperação). O saldo acumulado parte do saldo bancário atual e evolui aplicando o resultado de cada mês. Não considera novas vendas — o faturamento do mês só entra após o fechamento dos exames.">
+              Resultado Mensal Projetado
+            </Label>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Próximos 6 meses</span>
+          </div>
+          <div className="mt-5 overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <th className="text-left font-semibold py-2 pr-3">Mês</th>
+                  <th className="text-right font-semibold py-2 px-2">Entradas</th>
+                  <th className="text-right font-semibold py-2 px-2">Saídas</th>
+                  <th className="text-right font-semibold py-2 px-2">Resultado</th>
+                  <th className="text-right font-semibold py-2 pl-2">Saldo acumulado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mesesProj.map((m) => (
+                  <tr key={m.key} className="border-t border-border">
+                    <td className="py-2 pr-3 font-medium">{m.label}</td>
+                    <td className="py-2 px-2 text-right tabular-nums text-status-green">{brlShort(m.entrada)}</td>
+                    <td className="py-2 px-2 text-right tabular-nums text-status-red">{brlShort(m.saida)}</td>
+                    <td className={`py-2 px-2 text-right tabular-nums font-semibold ${m.resultado >= 0 ? "text-status-green" : "text-status-red"}`}>
+                      {m.resultado >= 0 ? "+" : ""}{brlShort(m.resultado)}
+                    </td>
+                    <td className={`py-2 pl-2 text-right tabular-nums font-semibold ${m.saldo >= 0 ? "text-foreground" : "text-status-red"}`}>
+                      {brlShort(m.saldo)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed">
+            Meses isolados no vermelho geralmente indicam concentração de vencimentos e podem ser resolvidos com renegociação ou antecipação de recebíveis. Sequências de meses negativos indicam problema estrutural — o faturamento previsto não cobre as obrigações lançadas.
+          </p>
+        </Card>
+      </section>
+
       {/* FAIXA 5 — FLUXO DE CAIXA PROJETADO */}
       <section>
         <Card>
