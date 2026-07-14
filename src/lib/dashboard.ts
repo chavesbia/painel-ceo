@@ -166,6 +166,7 @@ export async function loadDashboard(): Promise<DashboardData> {
       hoje: { receber: 0, pagar: 0, vencidos: 0, vencidosValor: 0 },
       semana: { receber: 0, pagar: 0 },
       fluxo: [], fluxoRealista: [],
+      mesesProjetados: [],
       recuperacao: { exposicaoVencida: 0, recuperacaoEsperada: 0, perdaEsperada: 0, taxas: { a30: 0.9, a60: 0.6, a90: 0.3, mais: 0.1 } },
       empresas: [], bancos: [], saldos: [], topVencidos: [], topClientesVencidos: [],
       agingRecv: { a30: 0, a60: 0, a90: 0, mais: 0, total: 0 },
