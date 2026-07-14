@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppShell } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/lib/auth";
-import { AlertCircle, CheckCircle2, Landmark, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Landmark, Loader2, Plus, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/saldos")({
   component: () => (
@@ -60,7 +60,6 @@ function BalancesPage() {
   const { data: me } = useCurrentUser();
   const qc = useQueryClient();
   const [form, setForm] = useState<FormState>(emptyForm);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<null | { kind: "ok" | "err"; msg: string }>(null);
 
@@ -91,22 +90,7 @@ function BalancesPage() {
 
   const update = (key: keyof FormState, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
 
-  const reset = () => {
-    setForm(emptyForm());
-    setEditingId(null);
-  };
-
-  const edit = (row: BalanceRow) => {
-    setEditingId(row.id);
-    setForm({
-      company_name: row.company_name,
-      account_name: row.account_name,
-      balance: String(row.balance).replace(".", ","),
-      balance_date: row.balance_date,
-      notes: row.notes || "",
-    });
-    setStatus(null);
-  };
+  const reset = () => setForm(emptyForm());
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -122,11 +106,9 @@ function BalancesPage() {
         notes: form.notes.trim() || null,
         created_by: me?.id ?? null,
       };
-      const result = editingId
-        ? await supabase.from("cash_balances").update(payload).eq("id", editingId)
-        : await supabase.from("cash_balances").insert(payload);
+      const result = await supabase.from("cash_balances").insert(payload);
       if (result.error) throw new Error(result.error.message);
-      setStatus({ kind: "ok", msg: editingId ? "Saldo atualizado." : "Saldo cadastrado." });
+      setStatus({ kind: "ok", msg: "Saldo cadastrado." });
       reset();
       await refresh();
     } catch (error) {
@@ -177,7 +159,8 @@ function BalancesPage() {
           <div className="flex items-center gap-2">
             <div className="size-9 rounded-md bg-primary/10 text-primary flex items-center justify-center"><Landmark className="size-4" /></div>
             <div>
-              <h2 className="font-display font-semibold">{editingId ? "Editar saldo" : "Novo saldo"}</h2>
+              <h2 className="font-display font-semibold">Novo saldo</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Cada lançamento cria uma nova linha datada. O painel usa sempre o mais recente por conta e mantém os anteriores como histórico.</p>
             </div>
           </div>
 
@@ -220,10 +203,9 @@ function BalancesPage() {
             <textarea disabled={!canWrite || busy} value={form.notes} onChange={(e) => update("notes", e.target.value)} className="mt-1 w-full min-h-20 rounded-md border border-border bg-background px-3 py-2 text-sm resize-none" />
           </label>
           <div className="flex justify-end gap-2">
-            {editingId && <button type="button" onClick={reset} className="h-9 px-3 rounded-md border border-border text-sm hover:bg-muted">Cancelar</button>}
             <button type="submit" disabled={!canWrite || busy} className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-2 disabled:opacity-60">
               {busy ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
-              {editingId ? "Salvar alterações" : "Cadastrar saldo"}
+              Cadastrar saldo
             </button>
           </div>
         </form>
@@ -250,9 +232,6 @@ function BalancesPage() {
                   <td className={`px-4 py-3 text-right tabular-nums font-semibold ${row.balance >= 0 ? "text-status-green" : "text-status-red"}`}>{brl(row.balance)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="inline-flex items-center gap-1.5">
-                      <button type="button" onClick={() => edit(row)} disabled={!canWrite || busy} className="h-8 px-2.5 rounded border border-border hover:bg-muted text-xs inline-flex items-center gap-1.5 disabled:opacity-50">
-                        <Pencil className="size-3.5" /> Editar
-                      </button>
                       {canDelete && (
                         <button type="button" onClick={() => remove(row)} disabled={busy} className="h-8 px-2.5 rounded border border-status-red/30 text-status-red hover:bg-status-red/5 text-xs inline-flex items-center gap-1.5 disabled:opacity-50">
                           <Trash2 className="size-3.5" /> Excluir
