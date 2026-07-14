@@ -145,13 +145,19 @@ export function csvToInvoices(
     };
     if (!numero) { pushSkip('Campo "Nº" vazio'); continue; }
     if (unidade.includes(EXCLUDED_CNPJ)) { pushSkip(`Unidade de Negócio excluída (CNPJ ${EXCLUDED_CNPJ})`); continue; }
-    // Regra para Faturas a Receber: só considerar registros com Nº da Nota contendo "Autorizada"
-    // e com "Criado por" preenchido. Caso contrário, ignorar.
+    // Regra para Faturas a Receber: registros já pagos representam entrada
+    // efetiva de caixa e devem entrar mesmo quando a nota veio como NFS-e.
+    // Para registros ainda não pagos, mantemos o filtro operacional anterior.
     if (kind === "receivable") {
       const numeroNota = (line[col.nn] || "").trim();
       const criadoPor = (line[col.cp] || "").trim();
-      if (!/autorizada/i.test(numeroNota)) { pushSkip('"Nº da Nota" não contém "Autorizada"'); continue; }
-      if (!criadoPor) { pushSkip('"Criado por" vazio'); continue; }
+      const valorPago = col.vpago >= 0 ? parseBrl(line[col.vpago]) : 0;
+      const dataPagamento = parseBrDate(line[col.dp]);
+      const jaRecebido = valorPago > 0 && !!dataPagamento;
+      if (!jaRecebido) {
+        if (!/autorizada/i.test(numeroNota)) { pushSkip('"Nº da Nota" não contém "Autorizada"'); continue; }
+        if (!criadoPor) { pushSkip('"Criado por" vazio'); continue; }
+      }
     }
     const entidadeDoc = extractDoc(line[col.ent]);
     const dataVencimento = parseBrDate(line[col.dv]);
