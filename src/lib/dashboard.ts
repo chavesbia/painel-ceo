@@ -124,21 +124,15 @@ export async function loadDashboard(): Promise<DashboardData> {
   const past = new Date(today);
   past.setDate(past.getDate() - 365);
 
-  // Mês anterior — usado para comparação no "Resultado Mensal Projetado".
-  // Busca faturas de qualquer situação (inclusive Pagas) com vencimento
-  // no mês passado, para refletir o mês fechado.
-  const prevMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-  const prevMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
-  const prevStartStr = ymd(prevMonthStart);
-  const prevEndStr = ymd(prevMonthEnd);
-  const prevMonthKey = `${prevMonthStart.getFullYear()}-${String(prevMonthStart.getMonth() + 1).padStart(2, "0")}`;
-  const prevMonthLabel = (() => {
-    const nm = prevMonthStart.toLocaleDateString("pt-BR", { month: "long" });
-    const yy = String(prevMonthStart.getFullYear()).slice(-2);
-    return `${nm.charAt(0).toUpperCase() + nm.slice(1)} - ${yy}`;
-  })();
+  // Meses efetivos (fechados) — últimos 6 meses. Soma o valor de face de
+  // TODAS as faturas com vencimento no mês (inclui pagas), excluindo apenas
+  // canceladas. Cada mês é isolado e serve de base histórica real.
+  const efetivoStart = new Date(today.getFullYear(), today.getMonth() - 6, 1);
+  const efetivoEnd = new Date(today.getFullYear(), today.getMonth(), 0); // último dia do mês anterior
+  const efetivoStartStr = ymd(efetivoStart);
+  const efetivoEndStr = ymd(efetivoEnd);
 
-  const [rows, impRes, cashRes, prevMonthRes] = await Promise.all([
+  const [rows, impRes, cashRes, efetivoRes] = await Promise.all([
     fetchAllInvoices(ymd(past)),
     supabase.from("imports").select("created_at").order("created_at", { ascending: false }).limit(1),
     supabase
@@ -150,8 +144,8 @@ export async function loadDashboard(): Promise<DashboardData> {
     supabase
       .from("invoices")
       .select("kind,valor_parcela,situacao,data_vencimento")
-      .gte("data_vencimento", prevStartStr)
-      .lte("data_vencimento", prevEndStr)
+      .gte("data_vencimento", efetivoStartStr)
+      .lte("data_vencimento", efetivoEndStr)
       .limit(50000),
   ]);
 
