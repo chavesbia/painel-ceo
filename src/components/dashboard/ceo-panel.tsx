@@ -90,6 +90,31 @@ export function CeoPanel() {
   const necessidadeMes = Math.max(0, -saldoFimMes);
   const fimMesLabel = fimMes.toLocaleDateString("pt-BR", { day: "2-digit", month: "long" });
 
+  // Resultado mensal projetado — agrupa o fluxo realista por mês (próximos 6
+  // meses) e acumula o saldo a partir do saldo bancário atual. Mostra o ritmo
+  // operacional mês a mês, separando questões pontuais de problemas estruturais.
+  const mesesProj: { key: string; label: string; entrada: number; saida: number; resultado: number; saldo: number }[] = [];
+  {
+    const map = new Map<string, { label: string; entrada: number; saida: number }>();
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(hojeRef.getFullYear(), hojeRef.getMonth() + i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const label = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }).replace(".", "");
+      map.set(key, { label: label.charAt(0).toUpperCase() + label.slice(1), entrada: 0, saida: 0 });
+    }
+    data.fluxoRealista.forEach((d) => {
+      const key = d.dia.slice(0, 7);
+      const b = map.get(key);
+      if (b) { b.entrada += d.entrada; b.saida += d.saida; }
+    });
+    let acc = saldoAtual;
+    for (const [key, v] of map) {
+      const resultado = v.entrada - v.saida;
+      acc += resultado;
+      mesesProj.push({ key, label: v.label, entrada: v.entrada, saida: v.saida, resultado, saldo: acc });
+    }
+  }
+
   const alertas: { tipo: "green" | "yellow" | "red"; titulo: string; detalhe: string }[] = [];
   if (data.aPagarVencidosCount > 0) {
     alertas.push({
