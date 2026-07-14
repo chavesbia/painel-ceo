@@ -295,13 +295,6 @@ export function CeoPanel() {
             </div>
           )}
         </Card>
-        <KpiCard
-          label="Resultado Líquido de Faturas em Aberto"
-          value={`${resultado >= 0 ? "+" : ""}${brl(resultado)}`}
-          hint={`↑ Entradas ${brlShort(data.aReceberTotal)}  ·  ↓ Saídas ${brlShort(data.aPagarTotal)}`}
-          info="Entradas menos saídas de todas as faturas em aberto importadas do ERP (vencidos + a vencer até 180 dias). Projeção teórica: não considera novas vendas nem inadimplência."
-          accent="brand"
-        />
       </section>
 
       {/* FAIXA 3 — HOJE / SEMANA */}
