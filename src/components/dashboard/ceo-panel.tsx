@@ -248,7 +248,7 @@ export function CeoPanel() {
               <p className="text-sm text-primary-foreground/75 mt-1">em {menorSaldoPoint.dia || "—"}</p>
             </div>
             <div className="border-t border-white/15 pt-4">
-              <Label className="text-primary-foreground/70" info="Soma dos saldos das contas bancárias cadastradas — ponto de partida para projetar o fluxo de caixa dos próximos dias." infoOnDark>Saldo bancário inicial</Label>
+              <Label className="text-primary-foreground/70" info="Soma dos saldos das contas bancárias cadastradas. Para cada empresa+conta somamos apenas o lançamento mais recente — os anteriores ficam preservados como histórico e não são contabilizados de novo. É o ponto de partida para projetar o fluxo dos próximos dias." infoOnDark>Saldo bancário inicial</Label>
               <p className="mt-2 text-lg font-display font-semibold tabular-nums">
                 {brl(saldoAtual)}
                 <span className="ml-2 text-[10px] font-normal opacity-70 uppercase tracking-wider">Saldos cadastrados</span>
@@ -1027,7 +1027,9 @@ function DeltaChip({
       ? "text-status-green"
       : "text-status-red";
   const Icon = isZero ? null : isUp ? ArrowUp : ArrowDown;
-  const pctTxt = pct == null ? "—" : `${pct > 0 ? "+" : ""}${pct.toFixed(1).replace(".", ",")}%`;
+  const pctTxt = pct == null
+    ? (isZero ? "—" : `${abs > 0 ? "+" : ""}${brl(abs)}`)
+    : `${pct > 0 ? "+" : ""}${pct.toFixed(1).replace(".", ",")}%`;
   const baseFmt = new Date(baseDate + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
   return (
     <span
