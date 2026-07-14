@@ -113,10 +113,16 @@ export function CeoPanel() {
     });
   }
 
+  // Semáforo considera os próximos 7 dias (entradas x saídas previstas).
+  const proximos7 = data.fluxo.slice(0, 7);
+  const entradas7 = proximos7.reduce((s, d) => s + d.entrada, 0);
+  const saidas7 = proximos7.reduce((s, d) => s + d.saida, 0);
+  const resultado7 = entradas7 - saidas7;
   const semaforoState: "green" | "yellow" | "red" =
-    resultado < 0 || data.aPagarVencidosCount > 5 ? "red"
+    resultado7 < 0 || data.aPagarVencidosCount > 5 ? "red"
     : data.aReceberVencidosCount > 0 || data.aPagarVencidosCount > 0 ? "yellow" : "green";
   const semaforoLabel = semaforoState === "green" ? "Saudável" : semaforoState === "yellow" ? "Atenção" : "Crítico";
+  const semaforoHint = `Próx. 7 dias: ${resultado7 >= 0 ? "+" : ""}${brl(resultado7)}`;
 
   const ultimaFmt = data.ultimaImportacao
     ? new Date(data.ultimaImportacao).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
@@ -150,7 +156,7 @@ export function CeoPanel() {
             Fonte: ERP · última importação em {ultimaFmt}
           </p>
         </div>
-        <StatusPill state={semaforoState} label={semaforoLabel} hint={`Resultado em aberto ${brl(resultado)}`} />
+        <StatusPill state={semaforoState} label={semaforoLabel} hint={semaforoHint} />
         <button
           type="button"
           onClick={() => window.print()}
