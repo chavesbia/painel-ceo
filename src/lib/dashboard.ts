@@ -87,7 +87,14 @@ type CashBalanceRow = {
   updated_at: string;
 };
 
-const ymd = (d: Date) => d.toISOString().slice(0, 10);
+// Usa data local (America/Sao_Paulo é UTC-3) em vez de UTC para evitar que
+// o "hoje" avance para o próximo dia após 21h no horário do usuário.
+const ymd = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
 
 function openAmount(r: InvoiceRow): number {
   return Math.max(0, Number(r.valor_parcela) - Number(r.valor_pago));
@@ -570,25 +577,16 @@ async function computeSnapshotAndDeltas(current: {
     // silencioso: se falhar (conflito ou permissão), ainda seguimos com o cálculo do delta.
   }
 
-  // Snapshot base: o mais recente com data <= (hoje - 30d). Se não houver,
-  // pega o mais antigo disponível — assim já mostramos algum comparativo.
+  // Compara SEMPRE com o snapshot do dia anterior (D-1) — sem fallback para
+  // datas mais antigas. Se não houver snapshot do dia anterior, não mostra
+  // delta (assim evita comparar contra 13/07 quando hoje é 15/07, por ex.).
   const { data: prevRows } = await supabase
     .from("dashboard_snapshots")
     .select("snapshot_date,saldo_bancario,a_receber,a_pagar,vencidos_valor,vencidos_count")
-    .lte("snapshot_date", targetPrevStr)
-    .order("snapshot_date", { ascending: false })
+    .eq("snapshot_date", targetPrevStr)
     .limit(1);
 
-  let base = (prevRows as SnapshotRow[] | null)?.[0];
-  if (!base) {
-    const { data: oldest } = await supabase
-      .from("dashboard_snapshots")
-      .select("snapshot_date,saldo_bancario,a_receber,a_pagar,vencidos_valor,vencidos_count")
-      .lt("snapshot_date", current.todayStr)
-      .order("snapshot_date", { ascending: true })
-      .limit(1);
-    base = (oldest as SnapshotRow[] | null)?.[0];
-  }
+  const base = (prevRows as SnapshotRow[] | null)?.[0];
   if (!base) return null;
 
   const diff = (cur: number, prev: number) => {
