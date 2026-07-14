@@ -14,6 +14,7 @@ export type DashboardData = {
   semana: { receber: number; pagar: number };
   fluxo: { dia: string; label: string; entrada: number; saida: number; saldo: number }[];
   fluxoRealista: { dia: string; label: string; entrada: number; saida: number; saldo: number }[];
+  mesesProjetados: { key: string; label: string; entrada: number; saida: number; resultado: number }[];
   recuperacao: {
     exposicaoVencida: number;   // total de recebíveis vencidos (valor de face)
     recuperacaoEsperada: number; // após aplicar % por faixa
@@ -165,6 +166,7 @@ export async function loadDashboard(): Promise<DashboardData> {
       hoje: { receber: 0, pagar: 0, vencidos: 0, vencidosValor: 0 },
       semana: { receber: 0, pagar: 0 },
       fluxo: [], fluxoRealista: [],
+      mesesProjetados: [],
       recuperacao: { exposicaoVencida: 0, recuperacaoEsperada: 0, perdaEsperada: 0, taxas: { a30: 0.9, a60: 0.6, a90: 0.3, mais: 0.1 } },
       empresas: [], bancos: [], saldos: [], topVencidos: [], topClientesVencidos: [],
       agingRecv: { a30: 0, a60: 0, a90: 0, mais: 0, total: 0 },
@@ -257,6 +259,35 @@ export async function loadDashboard(): Promise<DashboardData> {
   };
   const fluxo = buildFluxo(bucketsOtim);
   const fluxoRealista = buildFluxo(bucketsReal);
+
+  // Resultado mensal projetado — soma ISOLADA por mês (próximos 6 meses),
+  // pelo valor de face de TODAS as faturas em aberto cujo vencimento cai no mês
+  // (inclui vencidas mantidas no mês original). Não aplica taxa de recuperação
+  // nem arrasta saldo — cada mês é independente.
+  const mesesProjetados: { key: string; label: string; entrada: number; saida: number; resultado: number }[] = [];
+  {
+    const monthMap = new Map<string, { label: string; entrada: number; saida: number }>();
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const label = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }).replace(".", "");
+      monthMap.set(key, { label: label.charAt(0).toUpperCase() + label.slice(1), entrada: 0, saida: 0 });
+    }
+    recv.forEach((r) => {
+      const key = r.data_vencimento!.slice(0, 7);
+      const b = monthMap.get(key);
+      if (b) b.entrada += openAmount(r);
+    });
+    pay.forEach((r) => {
+      const key = r.data_vencimento!.slice(0, 7);
+      const b = monthMap.get(key);
+      if (b) b.saida += openAmount(r);
+    });
+    for (const [key, v] of monthMap) {
+      mesesProjetados.push({ key, label: v.label, entrada: v.entrada, saida: v.saida, resultado: v.entrada - v.saida });
+    }
+  }
+
   const recuperacao = {
     exposicaoVencida: overdueReceberOtimista,
     recuperacaoEsperada: overdueReceberRealista,
@@ -415,6 +446,7 @@ export async function loadDashboard(): Promise<DashboardData> {
     aPagarTotal, aPagarVencidosCount: payVenc.length,
     aPagarVencidosValor: payVenc.reduce((s, r) => s + openAmount(r), 0),
     hoje, semana, fluxo, fluxoRealista, recuperacao,
+    mesesProjetados,
     empresas: empresasWithPct, bancos: bancosWithPct, saldos, topVencidos, topClientesVencidos,
     agingRecv, clientesInadimplentes,
     concentracao,
