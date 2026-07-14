@@ -162,7 +162,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   const efetivoStartStr = ymd(efetivoStart);
   const efetivoEndStr = ymd(efetivoEnd);
 
-  const [rows, impRes, cashRes, efetivoRes] = await Promise.all([
+  const [rows, impRes, cashRes, efetivoRows] = await Promise.all([
     fetchAllInvoices(ymd(past)),
     supabase.from("imports").select("created_at").order("created_at", { ascending: false }).limit(1),
     supabase
@@ -171,12 +171,7 @@ export async function loadDashboard(): Promise<DashboardData> {
       .order("balance_date", { ascending: false })
       .order("updated_at", { ascending: false })
       .limit(5000),
-    supabase
-      .from("invoices")
-      .select("kind,valor_parcela,situacao,data_vencimento")
-      .gte("data_vencimento", efetivoStartStr)
-      .lte("data_vencimento", efetivoEndStr)
-      .limit(50000),
+    fetchEfetivoRange(efetivoStartStr, efetivoEndStr),
   ]);
 
   const cashRows = (cashRes.data as CashBalanceRow[] | null) || [];
