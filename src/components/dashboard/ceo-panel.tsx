@@ -974,10 +974,10 @@ function DetalheModal({
           {filteredItems.length === 0 ? (
             <p className="p-6 text-sm text-muted-foreground">Nenhum título encontrado.</p>
           ) : (
-            <table className="w-full text-xs">
+            <table className="w-full min-w-[640px] text-xs table-auto">
               <thead className="sticky top-0 bg-muted/60 backdrop-blur text-[10px] uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="text-left font-semibold py-2.5 px-4">{entidadeLabel}</th>
+                  <th className="text-left font-semibold py-2.5 px-3 sm:px-4 w-[38%] sm:w-auto">{entidadeLabel}</th>
                   <th className="text-left font-semibold py-2.5 px-3 hidden md:table-cell">Empresa</th>
                   <th className="text-left font-semibold py-2.5 px-3 whitespace-nowrap">
                     <button
@@ -989,9 +989,9 @@ function DetalheModal({
                       <span className="text-[9px]">{sortKey === "venc" ? (sortDir === "asc" ? "▲" : "▼") : "↕"}</span>
                     </button>
                   </th>
-                  <th className="text-right font-semibold py-2.5 px-3 whitespace-nowrap">Dias atraso</th>
-                  <th className="text-left font-semibold py-2.5 px-3">{statusLabel}</th>
-                  <th className="text-right font-semibold py-2.5 px-4 whitespace-nowrap">
+                  <th className="text-right font-semibold py-2.5 px-3 whitespace-nowrap hidden sm:table-cell">Dias atraso</th>
+                  <th className="text-left font-semibold py-2.5 px-3 whitespace-nowrap">{statusLabel}</th>
+                  <th className="text-right font-semibold py-2.5 px-3 sm:px-4 whitespace-nowrap">
                     <button
                       type="button"
                       onClick={() => toggleSort("valor")}
@@ -1006,19 +1006,22 @@ function DetalheModal({
               <tbody className="divide-y divide-border">
                 {filteredItems.map((r, i) => (
                   <tr key={`${r.numero}-${i}`} className="align-top">
-                    <td className="py-2.5 px-4">
-                      <div className="font-medium">{r.entidade}</div>
-                      {r.descricao && <div className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{r.descricao}</div>}
+                    <td className="py-2.5 px-3 sm:px-4 min-w-0">
+                      <div className="font-medium break-words">{r.entidade}</div>
+                      {r.descricao && <div className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2 break-words">{r.descricao}</div>}
                       <div className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">Nº {r.numero}</div>
+                      <div className="sm:hidden text-[10px] text-muted-foreground mt-0.5">
+                        {r.empresaNome}{r.dias > 0 ? ` · ${r.dias}d atraso` : ""}
+                      </div>
                     </td>
-                    <td className="py-2.5 px-3 hidden md:table-cell">
-                      <div className="text-[12px]">{r.empresaNome}</div>
+                    <td className="py-2.5 px-3 hidden md:table-cell min-w-0">
+                      <div className="text-[12px] break-words">{r.empresaNome}</div>
                       {r.empresaCnpj && <div className="text-[10px] text-muted-foreground tabular-nums">{r.empresaCnpj}</div>}
                     </td>
                     <td className="py-2.5 px-3 tabular-nums whitespace-nowrap">
                       {new Date(r.venc + "T00:00:00").toLocaleDateString("pt-BR")}
                     </td>
-                    <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap hidden sm:table-cell">
                       {r.dias > 0 ? `${r.dias} d` : "—"}
                     </td>
                      <td className="py-2.5 px-3">
@@ -1026,7 +1029,7 @@ function DetalheModal({
                          {r.status ?? "—"}
                        </span>
                      </td>
-                    <td className={`py-2.5 px-4 text-right tabular-nums font-semibold ${toneText(r.tone ?? tone)} whitespace-nowrap`}>
+                    <td className={`py-2.5 px-3 sm:px-4 text-right tabular-nums font-semibold ${toneText(r.tone ?? tone)} whitespace-nowrap`}>
                       {brl(r.valor)}
                     </td>
                   </tr>
@@ -1034,8 +1037,8 @@ function DetalheModal({
               </tbody>
               <tfoot className="bg-muted/40">
                 <tr>
-                  <td colSpan={5} className="py-3 px-4 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total</td>
-                  <td className={`py-3 px-4 text-right tabular-nums font-bold ${toneCls}`}>{brl(filteredTotal)}</td>
+                  <td colSpan={5} className="py-3 px-3 sm:px-4 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total</td>
+                  <td className={`py-3 px-3 sm:px-4 text-right tabular-nums font-bold ${toneCls}`}>{brl(filteredTotal)}</td>
                 </tr>
               </tfoot>
             </table>
