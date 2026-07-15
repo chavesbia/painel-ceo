@@ -104,19 +104,8 @@ export function CeoPanel() {
       detalhe: `Total a cobrar: ${brl(data.aReceberVencidosValor)}`,
     });
   }
-  if (resultado > 0) {
-    alertas.push({
-      tipo: "green",
-      titulo: "Resultado projetado positivo (faturas em aberto)",
-      detalhe: `Superávit de ${brl(resultado)} previsto`,
-    });
-  } else if (resultado < 0) {
-    alertas.push({
-      tipo: "red",
-      titulo: "Resultado projetado negativo (faturas em aberto)",
-      detalhe: `Déficit projetado de ${brl(Math.abs(resultado))}`,
-    });
-  }
+  // Nota: o resultado projetado (positivo/negativo) já é exibido no card
+  // "Resultado de Faturas em Aberto" — evitamos duplicar o sinal aqui.
 
   // Semáforo considera os próximos 7 dias (entradas x saídas previstas).
   const proximos7 = data.fluxo.slice(0, 7);
@@ -539,7 +528,7 @@ export function CeoPanel() {
         </Card>
 
         <Card>
-          <Label info="Sinais automáticos gerados a partir dos dados: títulos vencidos, recebíveis em atraso e resultado projetado (positivo ou negativo).">Alertas</Label>
+          <Label info="Sinais automáticos gerados a partir dos dados: títulos a pagar vencidos e recebíveis em atraso. O resultado projetado é exibido no card 'Resultado de Faturas em Aberto' para evitar duplicidade.">Alertas</Label>
           <div className="mt-4 space-y-3">
             {alertas.length === 0 && <p className="text-xs text-muted-foreground">Nenhum alerta ativo.</p>}
             {alertas.map((a, i) => <AlertRow key={i} {...a} />)}
