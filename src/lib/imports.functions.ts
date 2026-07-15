@@ -133,14 +133,31 @@ export const importInvoices = createServerFn({ method: "POST" })
       .update({ rows_imported: imported, rows_inserted: rowsInserted, rows_updated: rowsUpdated })
       .eq("id", imp.id);
 
-    // Checagem de duplicidade pós-importação
-    const { data: dupRows } = await supabaseAdmin
-      .rpc("count_invoice_duplicates");
-    const dup = (dupRows as { groups: number; excess: number; valor: number } | null) ?? {
-      groups: 0,
-      excess: 0,
-      valor: 0,
-    };
+    // Checagem de duplicidade pós-importação (agrupa em memória: para os
+    // volumes atuais é barato e evita depender de uma RPC específica).
+    const { data: allInvoices } = await supabaseAdmin
+      .from("invoices")
+      .select("kind, numero, entidade, unidade_negocio, data_vencimento, valor_parcela");
+    const groupCounts = new Map<string, { qtd: number; valor: number }>();
+    for (const r of allInvoices ?? []) {
+      const k = [
+        r.kind, r.numero ?? "", r.entidade ?? "",
+        r.unidade_negocio ?? "", r.data_vencimento ?? "",
+        String(r.valor_parcela ?? 0),
+      ].join("||");
+      const cur = groupCounts.get(k) ?? { qtd: 0, valor: Number(r.valor_parcela) || 0 };
+      cur.qtd += 1;
+      groupCounts.set(k, cur);
+    }
+    let dupGroups = 0, dupExcess = 0, dupValor = 0;
+    for (const g of groupCounts.values()) {
+      if (g.qtd > 1) {
+        dupGroups += 1;
+        dupExcess += g.qtd - 1;
+        dupValor += (g.qtd - 1) * g.valor;
+      }
+    }
+    const dup = { groups: dupGroups, excess: dupExcess, valor: Number(dupValor.toFixed(2)) };
 
     await supabaseAdmin.from("import_health_checks").insert({
       source: "import",
