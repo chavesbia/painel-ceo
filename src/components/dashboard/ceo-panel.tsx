@@ -39,6 +39,7 @@ export function CeoPanel() {
   const [resultadoPeriodo, setResultadoPeriodo] = React.useState<7 | 15 | 30 | 60 | 90 | 180>(30);
   const [pagarSort, setPagarSort] = React.useState<"valor" | "dias">("valor");
   const [clientesSort, setClientesSort] = React.useState<"valor" | "dias">("valor");
+  const [showProtestadas, setShowProtestadas] = React.useState(false);
   const { data, error } = useQuery<DashboardData>({
     queryKey: ["dashboard"],
     queryFn: loadDashboard,
@@ -310,11 +311,19 @@ export function CeoPanel() {
             </div>
           )}
         </Card>
-        <Card>
+        <Card
+          onClick={data.aReceberProtestadoCount > 0 ? () => setShowProtestadas(true) : undefined}
+          ariaLabel="Ver detalhamento das faturas protestadas"
+        >
           <div className="h-0.5 w-8 rounded-full bg-status-yellow mb-4" />
-          <Label info="Faturas de clientes já enviadas a cartório (situação 'Protestada'). Estão fora do card 'Vencidos' para não misturar o atraso comum com títulos já em cobrança judicial/cartorial. A recuperação depende de acordo ou pagamento do protesto.">
-            Protestadas
-          </Label>
+          <div className="flex items-center justify-between gap-2">
+            <Label info="Faturas de clientes já enviadas a cartório (situação 'Protestada'). Estão fora do card 'Vencidos' para não misturar o atraso comum com títulos já em cobrança judicial/cartorial. A recuperação depende de acordo ou pagamento do protesto.">
+              Protestadas
+            </Label>
+            {data.aReceberProtestadoCount > 0 && (
+              <span className="text-[10px] uppercase tracking-wider text-primary font-semibold">Ver detalhes →</span>
+            )}
+          </div>
           <div className="mt-3 space-y-3">
             <div>
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
@@ -344,6 +353,14 @@ export function CeoPanel() {
           </div>
         </Card>
       </section>
+
+      {showProtestadas && (
+        <ProtestadasModal
+          items={data.protestadas}
+          total={data.aReceberProtestadoValor}
+          onClose={() => setShowProtestadas(false)}
+        />
+      )}
 
       {/* FAIXA 3 — HOJE / SEMANA */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
