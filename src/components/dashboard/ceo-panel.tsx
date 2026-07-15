@@ -738,15 +738,85 @@ function EmptyState({ ultima }: { ultima: string | null }) {
 /* PRIMITIVES                                                          */
 /* ------------------------------------------------------------------ */
 
-function ProtestadasModal({
+type DetalheItem = {
+  entidade: string;
+  descricao: string | null;
+  numero: string;
+  empresaCnpj: string | null;
+  empresaNome: string;
+  venc: string;
+  dias: number;
+  valor: number;
+  status?: string;
+};
+
+function VencidoCard({
+  tone,
+  icon,
+  label,
+  info,
+  valor,
+  count,
+  countLabel,
+  onOpen,
+}: {
+  tone: "green" | "red" | "yellow";
+  icon: "up" | "down" | "warn";
+  label: string;
+  info: string;
+  valor: number;
+  count: number;
+  countLabel: { one: string; many: string };
+  onOpen?: () => void;
+}) {
+  const barCls = tone === "green" ? "bg-status-green" : tone === "red" ? "bg-status-red" : "bg-status-yellow";
+  const textCls = tone === "green" ? "text-status-green" : tone === "red" ? "text-status-red" : "text-status-yellow";
+  const Icon = icon === "up" ? ArrowUp : icon === "down" ? ArrowDown : AlertTriangle;
+  return (
+    <Card onClick={onOpen} ariaLabel={onOpen ? `Ver detalhamento de ${label}` : undefined}>
+      <div className={`h-0.5 w-8 rounded-full ${barCls} mb-4`} />
+      <div className="flex items-center justify-between gap-2">
+        <Label info={info}>{label}</Label>
+        {onOpen && (
+          <span className="text-[10px] uppercase tracking-wider text-primary font-semibold">Ver detalhes →</span>
+        )}
+      </div>
+      <p
+        className={`mt-3 font-display font-bold tabular-nums tracking-tight leading-tight flex items-center gap-1.5 whitespace-nowrap ${textCls}`}
+        style={{ fontSize: "clamp(0.9rem, 9cqi, 1.75rem)" }}
+      >
+        <Icon className="size-[0.9em] shrink-0" />
+        <span>{brl(valor)}</span>
+      </p>
+      <p className="mt-1.5 text-[11px] text-muted-foreground tabular-nums">
+        {count} {count === 1 ? countLabel.one : countLabel.many}
+      </p>
+    </Card>
+  );
+}
+
+function DetalheModal({
+  title,
   items,
   total,
+  entidadeLabel,
+  statusLabel,
+  tone,
   onClose,
 }: {
-  items: DashboardData["protestadas"];
+  title: string;
+  items: DetalheItem[];
   total: number;
+  entidadeLabel: string;
+  statusLabel: string;
+  tone: "green" | "red" | "yellow";
   onClose: () => void;
 }) {
+  const toneCls = tone === "green" ? "text-status-green" : tone === "red" ? "text-status-red" : "text-status-yellow";
+  const badgeCls =
+    tone === "green" ? "bg-status-green/10 text-status-green"
+    : tone === "red" ? "bg-status-red/10 text-status-red"
+    : "bg-status-yellow/10 text-status-yellow";
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", onKey);
@@ -760,7 +830,7 @@ function ProtestadasModal({
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-foreground/40 backdrop-blur-sm p-0 sm:p-6 print:hidden"
       role="dialog"
       aria-modal="true"
-      aria-label="Faturas protestadas"
+      aria-label={title}
       onClick={onClose}
     >
       <div
@@ -770,7 +840,7 @@ function ProtestadasModal({
         <div className="flex items-start justify-between gap-4 p-5 border-b border-border">
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">Detalhamento</p>
-            <h2 className="mt-1 text-lg sm:text-xl font-display font-bold">Faturas protestadas</h2>
+            <h2 className="mt-1 text-lg sm:text-xl font-display font-bold">{title}</h2>
             <p className="mt-1 text-xs text-muted-foreground">
               {items.length} {items.length === 1 ? "título" : "títulos"} · Total {brl(total)}
             </p>
@@ -786,16 +856,16 @@ function ProtestadasModal({
         </div>
         <div className="overflow-auto">
           {items.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground">Nenhuma fatura protestada.</p>
+            <p className="p-6 text-sm text-muted-foreground">Nenhum título encontrado.</p>
           ) : (
             <table className="w-full text-xs">
               <thead className="sticky top-0 bg-muted/60 backdrop-blur text-[10px] uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="text-left font-semibold py-2.5 px-4">Cliente</th>
+                  <th className="text-left font-semibold py-2.5 px-4">{entidadeLabel}</th>
                   <th className="text-left font-semibold py-2.5 px-3 hidden md:table-cell">Empresa</th>
                   <th className="text-left font-semibold py-2.5 px-3 whitespace-nowrap">Vencimento</th>
                   <th className="text-right font-semibold py-2.5 px-3 whitespace-nowrap">Dias atraso</th>
-                  <th className="text-left font-semibold py-2.5 px-3">Status</th>
+                  <th className="text-left font-semibold py-2.5 px-3">{statusLabel}</th>
                   <th className="text-right font-semibold py-2.5 px-4 whitespace-nowrap">Valor</th>
                 </tr>
               </thead>
@@ -803,7 +873,7 @@ function ProtestadasModal({
                 {items.map((r, i) => (
                   <tr key={`${r.numero}-${i}`} className="align-top">
                     <td className="py-2.5 px-4">
-                      <div className="font-medium">{r.cliente}</div>
+                      <div className="font-medium">{r.entidade}</div>
                       {r.descricao && <div className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{r.descricao}</div>}
                       <div className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">Nº {r.numero}</div>
                     </td>
@@ -818,11 +888,11 @@ function ProtestadasModal({
                       {r.dias > 0 ? `${r.dias} d` : "—"}
                     </td>
                     <td className="py-2.5 px-3">
-                      <span className="inline-flex items-center rounded-full bg-status-yellow/10 text-status-yellow px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold">
-                        {r.situacao}
+                      <span className={`inline-flex items-center rounded-full ${badgeCls} px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold`}>
+                        {r.status ?? "—"}
                       </span>
                     </td>
-                    <td className="py-2.5 px-4 text-right tabular-nums font-semibold text-status-yellow whitespace-nowrap">
+                    <td className={`py-2.5 px-4 text-right tabular-nums font-semibold ${toneCls} whitespace-nowrap`}>
                       {brl(r.valor)}
                     </td>
                   </tr>
@@ -831,7 +901,7 @@ function ProtestadasModal({
               <tfoot className="bg-muted/40">
                 <tr>
                   <td colSpan={5} className="py-3 px-4 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total</td>
-                  <td className="py-3 px-4 text-right tabular-nums font-bold text-status-yellow">{brl(total)}</td>
+                  <td className={`py-3 px-4 text-right tabular-nums font-bold ${toneCls}`}>{brl(total)}</td>
                 </tr>
               </tfoot>
             </table>
