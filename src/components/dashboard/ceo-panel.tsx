@@ -864,11 +864,38 @@ function StatusPill({ state, label, hint }: { state: "green" | "yellow" | "red";
     red: "bg-status-red/10 text-status-red",
   }[state];
   const Icon = state === "green" ? CheckCircle2 : state === "yellow" ? AlertTriangle : AlertTriangle;
+  const [open, setOpen] = React.useState(false);
+  const rootRef = React.useRef<HTMLDivElement | null>(null);
+  React.useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
   return (
     <div
-      className="group relative flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-2 shadow-sm cursor-help"
+      ref={rootRef}
+      className="group relative flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-2 shadow-sm cursor-help select-none"
       tabIndex={0}
+      role="button"
+      aria-expanded={open}
       aria-label="Regra do semáforo"
+      onClick={() => setOpen((v) => !v)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setOpen((v) => !v);
+        }
+      }}
     >
       <div className="flex flex-col items-end">
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Semáforo</span>
@@ -883,7 +910,12 @@ function StatusPill({ state, label, hint }: { state: "green" | "yellow" | "red";
       </div>
       <div
         role="tooltip"
-        className="pointer-events-none absolute right-0 top-full z-50 mt-2 w-80 rounded-lg border border-border bg-popover p-3 text-left text-xs text-popover-foreground shadow-lg opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0"
+        className={`absolute right-0 top-full z-50 mt-2 w-[min(20rem,calc(100vw-2rem))] rounded-lg border border-border bg-popover p-3 text-left text-xs text-popover-foreground shadow-lg transition-all duration-150 ${
+          open
+            ? "opacity-100 translate-y-0 pointer-events-auto"
+            : "opacity-0 translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0"
+        }`}
+        onClick={(e) => e.stopPropagation()}
       >
         <p className="mb-2 font-semibold text-foreground">Regra do semáforo (próx. 7 dias)</p>
         <ul className="space-y-1.5">
