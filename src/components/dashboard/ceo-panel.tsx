@@ -865,6 +865,7 @@ function DetalheModal({
   statusLabel,
   tone,
   onClose,
+  kindFilter,
 }: {
   title: string;
   items: DetalheItem[];
@@ -873,6 +874,7 @@ function DetalheModal({
   statusLabel: string;
   tone: "green" | "red" | "yellow";
   onClose: () => void;
+  kindFilter?: boolean;
 }) {
   const toneText = (t: "green" | "red" | "yellow") =>
     t === "green" ? "text-status-green" : t === "red" ? "text-status-red" : "text-status-yellow";
@@ -881,6 +883,18 @@ function DetalheModal({
     : t === "red" ? "bg-status-red/10 text-status-red"
     : "bg-status-yellow/10 text-status-yellow";
   const toneCls = toneText(tone);
+  const [filter, setFilter] = React.useState<"todos" | "receber" | "pagar">("todos");
+  const filteredItems = React.useMemo(() => {
+    if (!kindFilter || filter === "todos") return items;
+    const wanted: "green" | "red" = filter === "receber" ? "green" : "red";
+    return items.filter((r) => r.tone === wanted);
+  }, [items, filter, kindFilter]);
+  const filteredTotal = React.useMemo(
+    () => (kindFilter && filter !== "todos" ? filteredItems.reduce((s, r) => s + r.valor, 0) : total),
+    [filteredItems, filter, kindFilter, total],
+  );
+  const countReceber = React.useMemo(() => items.filter((r) => r.tone === "green").length, [items]);
+  const countPagar = React.useMemo(() => items.filter((r) => r.tone === "red").length, [items]);
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", onKey);
@@ -906,8 +920,30 @@ function DetalheModal({
             <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">Detalhamento</p>
             <h2 className="mt-1 text-lg sm:text-xl font-display font-bold">{title}</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              {items.length} {items.length === 1 ? "título" : "títulos"} · Total {brl(total)}
+              {filteredItems.length} {filteredItems.length === 1 ? "título" : "títulos"} · Total {brl(filteredTotal)}
             </p>
+            {kindFilter && (
+              <div className="mt-3 inline-flex flex-wrap gap-1 p-1 rounded-md bg-muted">
+                {([
+                  { key: "todos", label: `Todos (${items.length})` },
+                  { key: "receber", label: `A Receber (${countReceber})` },
+                  { key: "pagar", label: `A Pagar (${countPagar})` },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => setFilter(opt.key)}
+                    className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-colors ${
+                      filter === opt.key
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <button
             type="button"
@@ -919,7 +955,7 @@ function DetalheModal({
           </button>
         </div>
         <div className="overflow-auto">
-          {items.length === 0 ? (
+          {filteredItems.length === 0 ? (
             <p className="p-6 text-sm text-muted-foreground">Nenhum título encontrado.</p>
           ) : (
             <table className="w-full text-xs">
@@ -934,7 +970,7 @@ function DetalheModal({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {items.map((r, i) => (
+                {filteredItems.map((r, i) => (
                   <tr key={`${r.numero}-${i}`} className="align-top">
                     <td className="py-2.5 px-4">
                       <div className="font-medium">{r.entidade}</div>
@@ -965,7 +1001,7 @@ function DetalheModal({
               <tfoot className="bg-muted/40">
                 <tr>
                   <td colSpan={5} className="py-3 px-4 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total</td>
-                  <td className={`py-3 px-4 text-right tabular-nums font-bold ${toneCls}`}>{brl(total)}</td>
+                  <td className={`py-3 px-4 text-right tabular-nums font-bold ${toneCls}`}>{brl(filteredTotal)}</td>
                 </tr>
               </tfoot>
             </table>
