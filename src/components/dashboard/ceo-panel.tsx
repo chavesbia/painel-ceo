@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { loadDashboard, type DashboardData } from "@/lib/dashboard";
+import { loadDashboard, loadAlertHistory, type DashboardData, type AlertHistoryPoint } from "@/lib/dashboard";
 
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
@@ -44,6 +44,7 @@ export function CeoPanel() {
   const [showVencPagar, setShowVencPagar] = React.useState(false);
   const [showHoje, setShowHoje] = React.useState(false);
   const [showSemana, setShowSemana] = React.useState(false);
+  const [showHistorico, setShowHistorico] = React.useState(false);
   const { data, error } = useQuery<DashboardData>({
     queryKey: ["dashboard"],
     queryFn: loadDashboard,
@@ -528,13 +529,26 @@ export function CeoPanel() {
         </Card>
 
         <Card>
-          <Label info="Sinais automáticos gerados a partir dos dados: títulos a pagar vencidos e recebíveis em atraso. O resultado projetado é exibido no card 'Resultado de Faturas em Aberto' para evitar duplicidade.">Alertas</Label>
+          <div className="flex items-start justify-between gap-3">
+            <Label info="Sinais automáticos gerados a partir dos dados: títulos a pagar vencidos e recebíveis em atraso. O resultado projetado é exibido no card 'Resultado de Faturas em Aberto' para evitar duplicidade.">Alertas</Label>
+            <button
+              type="button"
+              onClick={() => setShowHistorico(true)}
+              className="shrink-0 h-7 px-2.5 rounded-md border border-border text-[11px] font-medium hover:bg-muted transition-colors"
+            >
+              Histórico
+            </button>
+          </div>
           <div className="mt-4 space-y-3">
             {alertas.length === 0 && <p className="text-xs text-muted-foreground">Nenhum alerta ativo.</p>}
             {alertas.map((a, i) => <AlertRow key={i} {...a} />)}
           </div>
         </Card>
       </section>
+
+      {showHistorico && (
+        <HistoricoAlertasModal onClose={() => setShowHistorico(false)} />
+      )}
 
       {/* FAIXA 3.7 — RESULTADO MENSAL PROJETADO */}
       <section>
@@ -1663,6 +1677,174 @@ function SortToggle({
           {k === "valor" ? "Valor" : "Dias"}
         </button>
       ))}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* HISTÓRICO DE ALERTAS                                               */
+/* ------------------------------------------------------------------ */
+
+function HistoricoAlertasModal({ onClose }: { onClose: () => void }) {
+  const [periodo, setPeriodo] = React.useState<7 | 30 | 90>(30);
+  const { data, isLoading, error } = useQuery<AlertHistoryPoint[]>({
+    queryKey: ["alert-history", periodo],
+    queryFn: () => loadAlertHistory(periodo),
+  });
+
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+  }, [onClose]);
+
+  const points = data ?? [];
+  const fmtData = (iso: string) => {
+    const [y, m, d] = iso.split("-");
+    return `${d}/${m}/${y.slice(2)}`;
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-foreground/40 backdrop-blur-sm p-0 sm:p-6 print:hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Histórico de alertas"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-t-2xl sm:rounded-2xl bg-card border border-border shadow-xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4 p-5 border-b border-border">
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">Histórico</p>
+            <h2 className="mt-1 text-lg sm:text-xl font-display font-bold">Evolução dos alertas</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Baseado nos snapshots diários gravados a cada acesso ao painel. Vencidos combinam a pagar + a receber (limitação do snapshot atual).
+            </p>
+            <div className="mt-3 inline-flex gap-1 p-1 rounded-md bg-muted">
+              {([7, 30, 90] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPeriodo(p)}
+                  className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-colors ${
+                    periodo === p ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {p} dias
+                </button>
+              ))}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar"
+            className="shrink-0 h-9 px-3 rounded-md border border-border text-sm font-medium hover:bg-muted transition-colors"
+          >
+            Fechar
+          </button>
+        </div>
+        <div className="overflow-auto p-5 space-y-5">
+          {isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
+          {error && (
+            <p className="text-sm text-status-red">
+              Falha ao carregar histórico: {error instanceof Error ? error.message : String(error)}
+            </p>
+          )}
+          {!isLoading && !error && points.length === 0 && (
+            <p className="text-sm text-muted-foreground">Nenhum snapshot disponível no período.</p>
+          )}
+          {!isLoading && !error && points.length > 0 && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <Sparkline
+                  titulo="Vencidos (qtd)"
+                  valores={points.map((p) => p.vencidosCount)}
+                  ultimo={points[points.length - 1].vencidosCount.toString()}
+                  tone="red"
+                />
+                <Sparkline
+                  titulo="Vencidos (valor)"
+                  valores={points.map((p) => p.vencidosValor)}
+                  ultimo={brl(points[points.length - 1].vencidosValor)}
+                  tone="red"
+                />
+                <Sparkline
+                  titulo="Resultado projetado"
+                  valores={points.map((p) => p.resultado)}
+                  ultimo={brl(points[points.length - 1].resultado)}
+                  tone={points[points.length - 1].resultado >= 0 ? "green" : "red"}
+                />
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[560px] text-xs table-auto">
+                  <thead className="bg-muted/60 text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="text-left font-semibold py-2 px-3">Data</th>
+                      <th className="text-right font-semibold py-2 px-3">Vencidos (qtd)</th>
+                      <th className="text-right font-semibold py-2 px-3">Vencidos (valor)</th>
+                      <th className="text-right font-semibold py-2 px-3">A Receber</th>
+                      <th className="text-right font-semibold py-2 px-3">A Pagar</th>
+                      <th className="text-right font-semibold py-2 px-3">Resultado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...points].reverse().map((p) => (
+                      <tr key={p.data} className="border-t border-border">
+                        <td className="py-2 px-3 whitespace-nowrap">{fmtData(p.data)}</td>
+                        <td className="py-2 px-3 text-right tabular-nums">{p.vencidosCount}</td>
+                        <td className="py-2 px-3 text-right tabular-nums">{brl(p.vencidosValor)}</td>
+                        <td className="py-2 px-3 text-right tabular-nums">{brl(p.aReceber)}</td>
+                        <td className="py-2 px-3 text-right tabular-nums">{brl(p.aPagar)}</td>
+                        <td className={`py-2 px-3 text-right tabular-nums font-semibold ${p.resultado >= 0 ? "text-status-green" : "text-status-red"}`}>
+                          {p.resultado >= 0 ? "+" : ""}{brl(p.resultado)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Sparkline({ titulo, valores, ultimo, tone }: {
+  titulo: string;
+  valores: number[];
+  ultimo: string;
+  tone: "green" | "red" | "brand";
+}) {
+  const w = 220;
+  const h = 44;
+  const min = Math.min(...valores, 0);
+  const max = Math.max(...valores, 0);
+  const range = max - min || 1;
+  const stroke = tone === "green" ? "var(--status-green)" : tone === "red" ? "var(--status-red)" : "var(--brand-blue)";
+  const pts = valores.map((v, i) => {
+    const x = valores.length === 1 ? w / 2 : (i / (valores.length - 1)) * w;
+    const y = h - ((v - min) / range) * h;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  return (
+    <div className="rounded-lg border border-border bg-muted/30 p-3">
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{titulo}</p>
+      <p className="mt-1 text-sm font-display font-bold tabular-nums">{ultimo}</p>
+      <svg viewBox={`0 0 ${w} ${h}`} className="mt-2 w-full h-11" preserveAspectRatio="none">
+        {valores.length > 1 ? (
+          <polyline fill="none" stroke={stroke} strokeWidth="1.5" points={pts} />
+        ) : (
+          <circle cx={w / 2} cy={h / 2} r="2" fill={stroke} />
+        )}
+      </svg>
     </div>
   );
 }
