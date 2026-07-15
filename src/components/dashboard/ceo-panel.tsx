@@ -42,6 +42,8 @@ export function CeoPanel() {
   const [showProtestadas, setShowProtestadas] = React.useState(false);
   const [showVencReceber, setShowVencReceber] = React.useState(false);
   const [showVencPagar, setShowVencPagar] = React.useState(false);
+  const [showHoje, setShowHoje] = React.useState(false);
+  const [showSemana, setShowSemana] = React.useState(false);
   const { data, error } = useQuery<DashboardData>({
     queryKey: ["dashboard"],
     queryFn: loadDashboard,
