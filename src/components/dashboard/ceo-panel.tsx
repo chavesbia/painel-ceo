@@ -886,11 +886,25 @@ function DetalheModal({
     : "bg-status-yellow/10 text-status-yellow";
   const toneCls = toneText(tone);
   const [filter, setFilter] = React.useState<"todos" | "receber" | "pagar">("todos");
+  const [sortKey, setSortKey] = React.useState<"venc" | "valor">("venc");
+  const [sortDir, setSortDir] = React.useState<"asc" | "desc">("asc");
+  const toggleSort = (key: "venc" | "valor") => {
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir(key === "valor" ? "desc" : "asc"); }
+  };
   const filteredItems = React.useMemo(() => {
-    if (!kindFilter || filter === "todos") return items;
-    const wanted: "green" | "red" = filter === "receber" ? "green" : "red";
-    return items.filter((r) => r.tone === wanted);
-  }, [items, filter, kindFilter]);
+    const base = !kindFilter || filter === "todos"
+      ? items
+      : items.filter((r) => r.tone === (filter === "receber" ? "green" : "red"));
+    const sorted = [...base].sort((a, b) => {
+      const va = sortKey === "venc" ? a.venc : a.valor;
+      const vb = sortKey === "venc" ? b.venc : b.valor;
+      if (va < vb) return sortDir === "asc" ? -1 : 1;
+      if (va > vb) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return sorted;
+  }, [items, filter, kindFilter, sortKey, sortDir]);
   const filteredTotal = React.useMemo(
     () => (kindFilter && filter !== "todos" ? filteredItems.reduce((s, r) => s + r.valor, 0) : total),
     [filteredItems, filter, kindFilter, total],
@@ -965,10 +979,28 @@ function DetalheModal({
                 <tr>
                   <th className="text-left font-semibold py-2.5 px-4">{entidadeLabel}</th>
                   <th className="text-left font-semibold py-2.5 px-3 hidden md:table-cell">Empresa</th>
-                  <th className="text-left font-semibold py-2.5 px-3 whitespace-nowrap">Vencimento</th>
+                  <th className="text-left font-semibold py-2.5 px-3 whitespace-nowrap">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("venc")}
+                      className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-foreground transition-colors"
+                    >
+                      Vencimento
+                      <span className="text-[9px]">{sortKey === "venc" ? (sortDir === "asc" ? "▲" : "▼") : "↕"}</span>
+                    </button>
+                  </th>
                   <th className="text-right font-semibold py-2.5 px-3 whitespace-nowrap">Dias atraso</th>
                   <th className="text-left font-semibold py-2.5 px-3">{statusLabel}</th>
-                  <th className="text-right font-semibold py-2.5 px-4 whitespace-nowrap">Valor</th>
+                  <th className="text-right font-semibold py-2.5 px-4 whitespace-nowrap">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("valor")}
+                      className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-foreground transition-colors"
+                    >
+                      Valor
+                      <span className="text-[9px]">{sortKey === "valor" ? (sortDir === "asc" ? "▲" : "▼") : "↕"}</span>
+                    </button>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
