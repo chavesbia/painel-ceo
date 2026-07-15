@@ -83,6 +83,56 @@ export type Database = {
         }
         Relationships: []
       }
+      import_health_checks: {
+        Row: {
+          checked_at: string
+          details: Json | null
+          duplicate_excess_rows: number
+          duplicate_excess_valor: number
+          duplicate_groups: number
+          id: string
+          import_id: string | null
+          rows_inserted: number | null
+          rows_skipped: number | null
+          rows_updated: number | null
+          source: string
+        }
+        Insert: {
+          checked_at?: string
+          details?: Json | null
+          duplicate_excess_rows?: number
+          duplicate_excess_valor?: number
+          duplicate_groups?: number
+          id?: string
+          import_id?: string | null
+          rows_inserted?: number | null
+          rows_skipped?: number | null
+          rows_updated?: number | null
+          source: string
+        }
+        Update: {
+          checked_at?: string
+          details?: Json | null
+          duplicate_excess_rows?: number
+          duplicate_excess_valor?: number
+          duplicate_groups?: number
+          id?: string
+          import_id?: string | null
+          rows_inserted?: number | null
+          rows_skipped?: number | null
+          rows_updated?: number | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_health_checks_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       imports: {
         Row: {
           created_at: string
@@ -91,8 +141,10 @@ export type Database = {
           kind: Database["public"]["Enums"]["invoice_kind"]
           notes: string | null
           rows_imported: number
+          rows_inserted: number | null
           rows_skipped: number
           rows_total: number
+          rows_updated: number | null
         }
         Insert: {
           created_at?: string
@@ -101,8 +153,10 @@ export type Database = {
           kind: Database["public"]["Enums"]["invoice_kind"]
           notes?: string | null
           rows_imported?: number
+          rows_inserted?: number | null
           rows_skipped?: number
           rows_total?: number
+          rows_updated?: number | null
         }
         Update: {
           created_at?: string
@@ -111,8 +165,10 @@ export type Database = {
           kind?: Database["public"]["Enums"]["invoice_kind"]
           notes?: string | null
           rows_imported?: number
+          rows_inserted?: number | null
           rows_skipped?: number
           rows_total?: number
+          rows_updated?: number | null
         }
         Relationships: []
       }
@@ -265,6 +321,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      run_daily_import_health_check: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "viewer" | "operator" | "admin"
