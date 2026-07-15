@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { loadDashboard, type DashboardData } from "@/lib/dashboard";
+import { loadDashboard, loadAlertHistory, type DashboardData, type AlertHistoryPoint } from "@/lib/dashboard";
 
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
@@ -44,6 +44,7 @@ export function CeoPanel() {
   const [showVencPagar, setShowVencPagar] = React.useState(false);
   const [showHoje, setShowHoje] = React.useState(false);
   const [showSemana, setShowSemana] = React.useState(false);
+  const [showHistorico, setShowHistorico] = React.useState(false);
   const { data, error } = useQuery<DashboardData>({
     queryKey: ["dashboard"],
     queryFn: loadDashboard,
