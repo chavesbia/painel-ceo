@@ -249,7 +249,7 @@ export function CeoPanel() {
       {/* FAIXA 2 — KPIs principais */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <KpiCard
-          label="A Receber"
+          label="A Receber - GERAL"
           value={brl(data.aReceberTotal)}
           hint="Total em aberto, somando todos os vencimentos (passados e futuros)."
           info="Soma de todas as faturas de clientes ainda não pagas, incluindo as já vencidas e as com vencimento futuro. Não desconta possíveis perdas — é o valor de face."
@@ -258,7 +258,7 @@ export function CeoPanel() {
           delta={data.deltas ? { ...data.deltas.aReceber, baseDate: data.deltas.baseDate, goodWhen: "up" } : null}
         />
         <KpiCard
-          label="A Pagar"
+          label="A Pagar - GERAL"
           value={brl(data.aPagarTotal)}
           hint="Total em aberto, somando todos os vencimentos (passados e futuros)."
           info="Soma de todas as contas com fornecedores ainda não quitadas, incluindo as já vencidas e as com vencimento futuro."
@@ -1021,11 +1021,11 @@ function DetalheModal({
                     <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap">
                       {r.dias > 0 ? `${r.dias} d` : "—"}
                     </td>
-                    <td className="py-2.5 px-3">
-                      <span className={`inline-flex items-center rounded-full ${toneBadge(r.tone ?? tone)} px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold`}>
-                        {r.status ?? "—"}
-                      </span>
-                    </td>
+                     <td className="py-2.5 px-3">
+                       <span className={`inline-flex items-center whitespace-nowrap rounded-full ${toneBadge(r.tone ?? tone)} px-2 py-0.5 text-[9px] uppercase tracking-wide font-semibold`}>
+                         {r.status ?? "—"}
+                       </span>
+                     </td>
                     <td className={`py-2.5 px-4 text-right tabular-nums font-semibold ${toneText(r.tone ?? tone)} whitespace-nowrap`}>
                       {brl(r.valor)}
                     </td>
@@ -1064,7 +1064,7 @@ function Card({ children, className = "", onClick, ariaLabel }: { children: Reac
 
 function Label({ children, className = "", info, infoOnDark }: { children: React.ReactNode; className?: string; info?: string; infoOnDark?: boolean }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] font-semibold text-muted-foreground ${className}`}>
+    <span className={`inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground ${className}`}>
       <span>{children}</span>
       {info && <InfoTooltip text={info} onDark={infoOnDark} />}
     </span>
