@@ -233,6 +233,7 @@ export async function loadDashboard(): Promise<DashboardData> {
       aPagarTotal: 0, aPagarVencidosCount: 0, aPagarVencidosValor: 0,
       hoje: { receber: 0, pagar: 0, vencidos: 0, vencidosValor: 0 },
       semana: { receber: 0, pagar: 0 },
+      hojeItems: [], semanaItems: [],
       fluxo: [], fluxoRealista: [],
       mesesProjetados: [],
       mesesEfetivo: [],
