@@ -426,6 +426,7 @@ export function CeoPanel() {
           statusLabel="Tipo"
           tone="yellow"
           onClose={() => setShowHoje(false)}
+          kindFilter
         />
       )}
       {showSemana && (
@@ -448,6 +449,7 @@ export function CeoPanel() {
           statusLabel="Tipo"
           tone="yellow"
           onClose={() => setShowSemana(false)}
+          kindFilter
         />
       )}
 
