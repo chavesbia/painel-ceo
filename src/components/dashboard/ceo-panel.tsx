@@ -865,7 +865,11 @@ function StatusPill({ state, label, hint }: { state: "green" | "yellow" | "red";
   }[state];
   const Icon = state === "green" ? CheckCircle2 : state === "yellow" ? AlertTriangle : AlertTriangle;
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-2 shadow-sm">
+    <div
+      className="group relative flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-2 shadow-sm cursor-help"
+      tabIndex={0}
+      aria-label="Regra do semáforo"
+    >
       <div className="flex flex-col items-end">
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Semáforo</span>
         <span className={`text-xs font-bold flex items-center gap-1.5 ${cls.split(" ")[1]}`}>
@@ -876,6 +880,26 @@ function StatusPill({ state, label, hint }: { state: "green" | "yellow" | "red";
       <div className="border-l border-border pl-3 flex items-center gap-2">
         <Icon className={`size-4 ${cls.split(" ")[1]}`} />
         <span className="text-xs text-muted-foreground">{hint}</span>
+      </div>
+      <div
+        role="tooltip"
+        className="pointer-events-none absolute right-0 top-full z-50 mt-2 w-80 rounded-lg border border-border bg-popover p-3 text-left text-xs text-popover-foreground shadow-lg opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0"
+      >
+        <p className="mb-2 font-semibold text-foreground">Regra do semáforo (próx. 7 dias)</p>
+        <ul className="space-y-1.5">
+          <li className="flex items-start gap-2">
+            <span className="mt-1 size-2 shrink-0 rounded-full bg-status-green" />
+            <span><strong className="text-status-green">Verde · Saudável</strong> — resultado dos 7 dias ≥ 0 <em>e</em> nenhum título vencido.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="mt-1 size-2 shrink-0 rounded-full bg-status-yellow" />
+            <span><strong className="text-status-yellow">Amarelo · Atenção</strong> — resultado dos 7 dias ≥ 0, mas existem títulos vencidos (a receber ou a pagar).</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="mt-1 size-2 shrink-0 rounded-full bg-status-red" />
+            <span><strong className="text-status-red">Vermelho · Crítico</strong> — resultado dos 7 dias &lt; 0 (saídas superam entradas na janela).</span>
+          </li>
+        </ul>
       </div>
     </div>
   );
