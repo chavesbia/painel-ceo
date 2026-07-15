@@ -529,13 +529,26 @@ export function CeoPanel() {
         </Card>
 
         <Card>
-          <Label info="Sinais automáticos gerados a partir dos dados: títulos a pagar vencidos e recebíveis em atraso. O resultado projetado é exibido no card 'Resultado de Faturas em Aberto' para evitar duplicidade.">Alertas</Label>
+          <div className="flex items-start justify-between gap-3">
+            <Label info="Sinais automáticos gerados a partir dos dados: títulos a pagar vencidos e recebíveis em atraso. O resultado projetado é exibido no card 'Resultado de Faturas em Aberto' para evitar duplicidade.">Alertas</Label>
+            <button
+              type="button"
+              onClick={() => setShowHistorico(true)}
+              className="shrink-0 h-7 px-2.5 rounded-md border border-border text-[11px] font-medium hover:bg-muted transition-colors"
+            >
+              Histórico
+            </button>
+          </div>
           <div className="mt-4 space-y-3">
             {alertas.length === 0 && <p className="text-xs text-muted-foreground">Nenhum alerta ativo.</p>}
             {alertas.map((a, i) => <AlertRow key={i} {...a} />)}
           </div>
         </Card>
       </section>
+
+      {showHistorico && (
+        <HistoricoAlertasModal onClose={() => setShowHistorico(false)} />
+      )}
 
       {/* FAIXA 3.7 — RESULTADO MENSAL PROJETADO */}
       <section>
