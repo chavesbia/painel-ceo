@@ -736,3 +736,40 @@ function companyInfo(v: string | null | undefined): { cnpj: string | null; nome:
   const match = CNPJ_BY_NAME.find((c) => norm.includes(c.key));
   return { cnpj: match ? match.cnpj : null, nome: match?.display || nome };
 }
+
+/* ------------------------------------------------------------------ */
+/* HISTÓRICO DE ALERTAS (baseado em dashboard_snapshots)              */
+/* ------------------------------------------------------------------ */
+
+export type AlertHistoryPoint = {
+  data: string;              // ISO YYYY-MM-DD
+  vencidosCount: number;     // total (a pagar + a receber, combinado no snapshot)
+  vencidosValor: number;
+  aReceber: number;
+  aPagar: number;
+  resultado: number;         // aReceber - aPagar
+};
+
+export async function loadAlertHistory(days: 7 | 30 | 90): Promise<AlertHistoryPoint[]> {
+  const from = new Date();
+  from.setDate(from.getDate() - (days - 1));
+  const fromStr = ymd(from);
+  const { data, error } = await supabase
+    .from("dashboard_snapshots")
+    .select("snapshot_date,a_receber,a_pagar,vencidos_valor,vencidos_count")
+    .gte("snapshot_date", fromStr)
+    .order("snapshot_date", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map((r) => {
+    const aReceber = Number(r.a_receber) || 0;
+    const aPagar = Number(r.a_pagar) || 0;
+    return {
+      data: String(r.snapshot_date),
+      vencidosCount: Number(r.vencidos_count) || 0,
+      vencidosValor: Number(r.vencidos_valor) || 0,
+      aReceber,
+      aPagar,
+      resultado: aReceber - aPagar,
+    };
+  });
+}
