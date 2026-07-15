@@ -14,6 +14,18 @@ export type DashboardData = {
   aPagarVencidosValor: number;
   hoje: { receber: number; pagar: number; vencidos: number; vencidosValor: number };
   semana: { receber: number; pagar: number };
+  hojeItems: {
+    kind: "receber" | "pagar";
+    entidade: string; descricao: string | null; numero: string;
+    empresaCnpj: string | null; empresaNome: string;
+    venc: string; dias: number; valor: number; situacao: string;
+  }[];
+  semanaItems: {
+    kind: "receber" | "pagar";
+    entidade: string; descricao: string | null; numero: string;
+    empresaCnpj: string | null; empresaNome: string;
+    venc: string; dias: number; valor: number; situacao: string;
+  }[];
   fluxo: { dia: string; label: string; entrada: number; saida: number; saldo: number }[];
   fluxoRealista: { dia: string; label: string; entrada: number; saida: number; saldo: number }[];
   mesesProjetados: { key: string; label: string; entrada: number; saida: number; resultado: number }[];
