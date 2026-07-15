@@ -7,6 +7,8 @@ export type DashboardData = {
   aReceberTotal: number;
   aReceberVencidosCount: number;
   aReceberVencidosValor: number;
+  aReceberProtestadoCount: number;
+  aReceberProtestadoValor: number;
   aPagarTotal: number;
   aPagarVencidosCount: number;
   aPagarVencidosValor: number;
@@ -210,6 +212,7 @@ export async function loadDashboard(): Promise<DashboardData> {
       ultimaImportacao: ultima,
       saldoBancarioTotal: 0,
       aReceberTotal: 0, aReceberVencidosCount: 0, aReceberVencidosValor: 0,
+      aReceberProtestadoCount: 0, aReceberProtestadoValor: 0,
       aPagarTotal: 0, aPagarVencidosCount: 0, aPagarVencidosValor: 0,
       hoje: { receber: 0, pagar: 0, vencidos: 0, vencidosValor: 0 },
       semana: { receber: 0, pagar: 0 },
@@ -241,13 +244,21 @@ export async function loadDashboard(): Promise<DashboardData> {
   const aPagarTotal = pay.reduce((s, r) => s + openAmount(r), 0);
   const recvVenc = recv.filter((r) => r.data_vencimento! < todayStr);
   const payVenc = pay.filter((r) => r.data_vencimento! < todayStr);
+  // Separa recebíveis vencidos em Pendentes (aguardando cobrança normal) e
+  // Protestadas (já em cartório). O card "Vencidos" mostra apenas pendentes;
+  // as protestadas ganham um card próprio para não inflar o indicador de atraso.
+  const isProtestada = (r: InvoiceRow) => (r.situacao || "").toLowerCase().startsWith("protest");
+  const recvVencPendente = recvVenc.filter((r) => !isProtestada(r));
+  const recvProtestada = recv.filter((r) => isProtestada(r));
+  const aReceberVencidosValorPendente = recvVencPendente.reduce((s, r) => s + openAmount(r), 0);
+  const aReceberProtestadoValor = recvProtestada.reduce((s, r) => s + openAmount(r), 0);
 
   const hoje = {
     receber: recv.filter((r) => r.data_vencimento === todayStr).reduce((s, r) => s + openAmount(r), 0),
     pagar: pay.filter((r) => r.data_vencimento === todayStr).reduce((s, r) => s + openAmount(r), 0),
-    vencidos: recvVenc.length + payVenc.length,
+    vencidos: recvVencPendente.length + payVenc.length,
     vencidosValor:
-      recvVenc.reduce((s, r) => s + openAmount(r), 0) +
+      aReceberVencidosValorPendente +
       payVenc.reduce((s, r) => s + openAmount(r), 0),
   };
   const semana = {
@@ -505,9 +516,9 @@ export async function loadDashboard(): Promise<DashboardData> {
 
   // Snapshot diário (idempotente) + variação vs. snapshot mais próximo de ~30 dias atrás.
   const vencidosValor =
-    recvVenc.reduce((s, r) => s + openAmount(r), 0) +
+    aReceberVencidosValorPendente +
     payVenc.reduce((s, r) => s + openAmount(r), 0);
-  const vencidosCount = recvVenc.length + payVenc.length;
+  const vencidosCount = recvVencPendente.length + payVenc.length;
   const deltas = await computeSnapshotAndDeltas({
     todayStr,
     saldoBancario: saldoBancarioTotal,
@@ -521,8 +532,11 @@ export async function loadDashboard(): Promise<DashboardData> {
     hasData: true,
     ultimaImportacao: ultima,
     saldoBancarioTotal,
-    aReceberTotal, aReceberVencidosCount: recvVenc.length,
-    aReceberVencidosValor: recvVenc.reduce((s, r) => s + openAmount(r), 0),
+    aReceberTotal,
+    aReceberVencidosCount: recvVencPendente.length,
+    aReceberVencidosValor: aReceberVencidosValorPendente,
+    aReceberProtestadoCount: recvProtestada.length,
+    aReceberProtestadoValor,
     aPagarTotal, aPagarVencidosCount: payVenc.length,
     aPagarVencidosValor: payVenc.reduce((s, r) => s + openAmount(r), 0),
     hoje, semana, fluxo, fluxoRealista, recuperacao,
