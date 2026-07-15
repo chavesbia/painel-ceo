@@ -81,6 +81,26 @@ export const importInvoices = createServerFn({ method: "POST" })
     }
     const deduped = Array.from(seen.values());
 
+    // Pré-checagem: quantos itens da planilha já existem na base (para separar
+    // "inserido" de "atualizado"). Como o índice único agora usa NULLS NOT
+    // DISTINCT, tratamos NULL como igual — normalizando com string vazia.
+    const { data: existingRows } = await supabaseAdmin
+      .from("invoices")
+      .select("numero, entidade_doc, data_vencimento")
+      .eq("kind", data.kind);
+    const existingKeys = new Set(
+      (existingRows ?? []).map(
+        (r) => `${r.numero ?? ""}||${r.entidade_doc ?? ""}||${r.data_vencimento ?? ""}`,
+      ),
+    );
+    let rowsInserted = 0;
+    let rowsUpdated = 0;
+    for (const r of deduped) {
+      const k = `${r.numero ?? ""}||${r.entidade_doc ?? ""}||${r.data_vencimento ?? ""}`;
+      if (existingKeys.has(k)) rowsUpdated += 1;
+      else rowsInserted += 1;
+    }
+
     // Chunked upsert
     let imported = 0;
     const chunk = 500;
@@ -110,10 +130,39 @@ export const importInvoices = createServerFn({ method: "POST" })
 
     await supabaseAdmin
       .from("imports")
-      .update({ rows_imported: imported })
+      .update({ rows_imported: imported, rows_inserted: rowsInserted, rows_updated: rowsUpdated })
       .eq("id", imp.id);
 
-    return { importId: imp.id, imported, skipped: data.skipped, total: data.total };
+    // Checagem de duplicidade pós-importação
+    const { data: dupRows } = await supabaseAdmin
+      .rpc("count_invoice_duplicates");
+    const dup = (dupRows as { groups: number; excess: number; valor: number } | null) ?? {
+      groups: 0,
+      excess: 0,
+      valor: 0,
+    };
+
+    await supabaseAdmin.from("import_health_checks").insert({
+      source: "import",
+      import_id: imp.id,
+      rows_inserted: rowsInserted,
+      rows_updated: rowsUpdated,
+      rows_skipped: data.skipped,
+      duplicate_groups: dup.groups,
+      duplicate_excess_rows: dup.excess,
+      duplicate_excess_valor: dup.valor,
+      details: { filename: data.filename, kind: data.kind, total: data.total },
+    });
+
+    return {
+      importId: imp.id,
+      imported,
+      inserted: rowsInserted,
+      updated: rowsUpdated,
+      skipped: data.skipped,
+      total: data.total,
+      duplicates: dup,
+    };
   });
 
 export const deleteImport = createServerFn({ method: "POST" })
