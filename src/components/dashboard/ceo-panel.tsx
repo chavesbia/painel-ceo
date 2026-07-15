@@ -39,6 +39,7 @@ export function CeoPanel() {
   const [resultadoPeriodo, setResultadoPeriodo] = React.useState<7 | 15 | 30 | 60 | 90 | 180>(30);
   const [pagarSort, setPagarSort] = React.useState<"valor" | "dias">("valor");
   const [clientesSort, setClientesSort] = React.useState<"valor" | "dias">("valor");
+  const [showProtestadas, setShowProtestadas] = React.useState(false);
   const { data, error } = useQuery<DashboardData>({
     queryKey: ["dashboard"],
     queryFn: loadDashboard,
@@ -310,11 +311,19 @@ export function CeoPanel() {
             </div>
           )}
         </Card>
-        <Card>
+        <Card
+          onClick={data.aReceberProtestadoCount > 0 ? () => setShowProtestadas(true) : undefined}
+          ariaLabel="Ver detalhamento das faturas protestadas"
+        >
           <div className="h-0.5 w-8 rounded-full bg-status-yellow mb-4" />
-          <Label info="Faturas de clientes já enviadas a cartório (situação 'Protestada'). Estão fora do card 'Vencidos' para não misturar o atraso comum com títulos já em cobrança judicial/cartorial. A recuperação depende de acordo ou pagamento do protesto.">
-            Protestadas
-          </Label>
+          <div className="flex items-center justify-between gap-2">
+            <Label info="Faturas de clientes já enviadas a cartório (situação 'Protestada'). Estão fora do card 'Vencidos' para não misturar o atraso comum com títulos já em cobrança judicial/cartorial. A recuperação depende de acordo ou pagamento do protesto.">
+              Protestadas
+            </Label>
+            {data.aReceberProtestadoCount > 0 && (
+              <span className="text-[10px] uppercase tracking-wider text-primary font-semibold">Ver detalhes →</span>
+            )}
+          </div>
           <div className="mt-3 space-y-3">
             <div>
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
@@ -344,6 +353,14 @@ export function CeoPanel() {
           </div>
         </Card>
       </section>
+
+      {showProtestadas && (
+        <ProtestadasModal
+          items={data.protestadas}
+          total={data.aReceberProtestadoValor}
+          onClose={() => setShowProtestadas(false)}
+        />
+      )}
 
       {/* FAIXA 3 — HOJE / SEMANA */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -718,10 +735,120 @@ function EmptyState({ ultima }: { ultima: string | null }) {
 /* PRIMITIVES                                                          */
 /* ------------------------------------------------------------------ */
 
-function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function ProtestadasModal({
+  items,
+  total,
+  onClose,
+}: {
+  items: DashboardData["protestadas"];
+  total: number;
+  onClose: () => void;
+}) {
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+  }, [onClose]);
+
   return (
     <div
-      className={`rounded-xl border border-border bg-card p-4 md:p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)] min-w-0 [container-type:inline-size] ${className}`}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-foreground/40 backdrop-blur-sm p-0 sm:p-6 print:hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Faturas protestadas"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-t-2xl sm:rounded-2xl bg-card border border-border shadow-xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4 p-5 border-b border-border">
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">Detalhamento</p>
+            <h2 className="mt-1 text-lg sm:text-xl font-display font-bold">Faturas protestadas</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {items.length} {items.length === 1 ? "título" : "títulos"} · Total {brl(total)}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar"
+            className="shrink-0 h-9 px-3 rounded-md border border-border text-sm font-medium hover:bg-muted transition-colors"
+          >
+            Fechar
+          </button>
+        </div>
+        <div className="overflow-auto">
+          {items.length === 0 ? (
+            <p className="p-6 text-sm text-muted-foreground">Nenhuma fatura protestada.</p>
+          ) : (
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-muted/60 backdrop-blur text-[10px] uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="text-left font-semibold py-2.5 px-4">Cliente</th>
+                  <th className="text-left font-semibold py-2.5 px-3 hidden md:table-cell">Empresa</th>
+                  <th className="text-left font-semibold py-2.5 px-3 whitespace-nowrap">Vencimento</th>
+                  <th className="text-right font-semibold py-2.5 px-3 whitespace-nowrap">Dias atraso</th>
+                  <th className="text-left font-semibold py-2.5 px-3">Status</th>
+                  <th className="text-right font-semibold py-2.5 px-4 whitespace-nowrap">Valor</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {items.map((r, i) => (
+                  <tr key={`${r.numero}-${i}`} className="align-top">
+                    <td className="py-2.5 px-4">
+                      <div className="font-medium">{r.cliente}</div>
+                      {r.descricao && <div className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{r.descricao}</div>}
+                      <div className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">Nº {r.numero}</div>
+                    </td>
+                    <td className="py-2.5 px-3 hidden md:table-cell">
+                      <div className="text-[12px]">{r.empresaNome}</div>
+                      {r.empresaCnpj && <div className="text-[10px] text-muted-foreground tabular-nums">{r.empresaCnpj}</div>}
+                    </td>
+                    <td className="py-2.5 px-3 tabular-nums whitespace-nowrap">
+                      {new Date(r.venc + "T00:00:00").toLocaleDateString("pt-BR")}
+                    </td>
+                    <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap">
+                      {r.dias > 0 ? `${r.dias} d` : "—"}
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <span className="inline-flex items-center rounded-full bg-status-yellow/10 text-status-yellow px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold">
+                        {r.situacao}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-4 text-right tabular-nums font-semibold text-status-yellow whitespace-nowrap">
+                      {brl(r.valor)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="bg-muted/40">
+                <tr>
+                  <td colSpan={5} className="py-3 px-4 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total</td>
+                  <td className="py-3 px-4 text-right tabular-nums font-bold text-status-yellow">{brl(total)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Card({ children, className = "", onClick, ariaLabel }: { children: React.ReactNode; className?: string; onClick?: () => void; ariaLabel?: string }) {
+  const interactive = !!onClick;
+  return (
+    <div
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      aria-label={ariaLabel}
+      onClick={onClick}
+      onKeyDown={interactive ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.(); } } : undefined}
+      className={`rounded-xl border border-border bg-card p-4 md:p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)] min-w-0 [container-type:inline-size] ${interactive ? "cursor-pointer transition-shadow hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60" : ""} ${className}`}
     >
       {children}
     </div>
