@@ -25,12 +25,29 @@ type ImpRow = {
   rows_total: number;
   rows_imported: number;
   rows_skipped: number;
+  rows_inserted: number | null;
+  rows_updated: number | null;
   created_at: string;
+};
+
+type HealthRow = {
+  id: string;
+  checked_at: string;
+  source: "import" | "cron";
+  import_id: string | null;
+  rows_inserted: number | null;
+  rows_updated: number | null;
+  rows_skipped: number | null;
+  duplicate_groups: number;
+  duplicate_excess_rows: number;
+  duplicate_excess_valor: number;
+  details: { filename?: string; kind?: string; total?: number } | null;
 };
 
 function ImportPage() {
   const { data: me } = useCurrentUser();
   const [history, setHistory] = useState<ImpRow[]>([]);
+  const [health, setHealth] = useState<HealthRow[]>([]);
   const [status, setStatus] = useState<null | { kind: "info" | "ok" | "err"; msg: string }>(null);
   const [busy, setBusy] = useState(false);
   const [lastSkipped, setLastSkipped] = useState<{ filename: string; rows: SkippedRow[] } | null>(null);
@@ -39,8 +56,12 @@ function ImportPage() {
   const qc = useQueryClient();
 
   const load = async () => {
-    const { data } = await supabase.from("imports").select("*").order("created_at", { ascending: false }).limit(20);
-    setHistory((data as ImpRow[]) || []);
+    const [imps, hcs] = await Promise.all([
+      supabase.from("imports").select("*").order("created_at", { ascending: false }).limit(20),
+      supabase.from("import_health_checks").select("*").order("checked_at", { ascending: false }).limit(30),
+    ]);
+    setHistory((imps.data as ImpRow[]) || []);
+    setHealth((hcs.data as HealthRow[]) || []);
   };
   useEffect(() => { void load(); }, []);
 
@@ -72,7 +93,13 @@ function ImportPage() {
       const parsed = csvToInvoices(text, kind);
       setStatus({ kind: "info", msg: `Enviando ${parsed.rows.length} registros…` });
       const res = await doImport({ data: { kind, filename: file.name, total: parsed.total, skipped: parsed.skipped, rows: parsed.rows } });
-      setStatus({ kind: "ok", msg: `Importado com sucesso: ${res.imported} registros (${res.skipped} ignorados de ${res.total} totais).` });
+      const dupMsg = res.duplicates && res.duplicates.groups > 0
+        ? ` ⚠️ ${res.duplicates.groups} duplicata(s) detectada(s) na base.`
+        : " Sem duplicatas detectadas.";
+      setStatus({
+        kind: res.duplicates && res.duplicates.groups > 0 ? "info" : "ok",
+        msg: `Concluído: ${res.inserted} novo(s), ${res.updated} atualizado(s), ${res.skipped} ignorado(s) de ${res.total}.${dupMsg}`,
+      });
       if (parsed.skippedRows.length > 0) setLastSkipped({ filename: file.name, rows: parsed.skippedRows });
       void load();
       void qc.invalidateQueries({ queryKey: ["dashboard"] });
@@ -157,7 +184,8 @@ function ImportPage() {
                 <th className="text-left font-semibold px-4 py-2.5">Data</th>
                 <th className="text-left font-semibold px-4 py-2.5">Tipo</th>
                 <th className="text-left font-semibold px-4 py-2.5">Arquivo</th>
-                <th className="text-right font-semibold px-4 py-2.5">Importados</th>
+                <th className="text-right font-semibold px-4 py-2.5">Novos</th>
+                <th className="text-right font-semibold px-4 py-2.5">Atualizados</th>
                 <th className="text-right font-semibold px-4 py-2.5">Ignorados</th>
                 <th className="text-right font-semibold px-4 py-2.5">Total</th>
                 <th className="text-right font-semibold px-4 py-2.5">Ações</th>
@@ -165,14 +193,15 @@ function ImportPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {history.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Nenhuma importação registrada.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">Nenhuma importação registrada.</td></tr>
               )}
               {history.map((h) => (
                 <tr key={h.id}>
                   <td className="px-4 py-3 tabular-nums text-muted-foreground">{new Date(h.created_at).toLocaleString("pt-BR")}</td>
                   <td className="px-4 py-3">{h.kind === "receivable" ? "A Receber" : "A Pagar"}</td>
                   <td className="px-4 py-3 font-medium">{h.filename}</td>
-                  <td className="px-4 py-3 text-right tabular-nums font-semibold text-status-green">{h.rows_imported}</td>
+                  <td className="px-4 py-3 text-right tabular-nums font-semibold text-status-green">{h.rows_inserted ?? "—"}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{h.rows_updated ?? "—"}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{h.rows_skipped}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{h.rows_total}</td>
                   <td className="px-4 py-3 text-right">
@@ -188,6 +217,57 @@ function ImportPage() {
                   </td>
                 </tr>
               ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <div className="flex items-baseline justify-between mb-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Checagens de saúde</h2>
+          <p className="text-xs text-muted-foreground">
+            Roda ao fim de cada importação e diariamente às 06:00 (cron automático).
+          </p>
+        </div>
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40">
+              <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                <th className="text-left font-semibold px-4 py-2.5">Data</th>
+                <th className="text-left font-semibold px-4 py-2.5">Origem</th>
+                <th className="text-left font-semibold px-4 py-2.5">Arquivo</th>
+                <th className="text-right font-semibold px-4 py-2.5">Novos</th>
+                <th className="text-right font-semibold px-4 py-2.5">Atualizados</th>
+                <th className="text-right font-semibold px-4 py-2.5">Ignorados</th>
+                <th className="text-right font-semibold px-4 py-2.5">Grupos dup.</th>
+                <th className="text-right font-semibold px-4 py-2.5">Linhas exced.</th>
+                <th className="text-right font-semibold px-4 py-2.5">R$ duplicado</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {health.length === 0 && (
+                <tr><td colSpan={9} className="px-4 py-6 text-center text-muted-foreground">Nenhuma checagem registrada ainda.</td></tr>
+              )}
+              {health.map((h) => {
+                const dupOk = h.duplicate_groups === 0;
+                return (
+                  <tr key={h.id}>
+                    <td className="px-4 py-3 tabular-nums text-muted-foreground">{new Date(h.checked_at).toLocaleString("pt-BR")}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${h.source === "import" ? "bg-accent/10 text-accent" : "bg-muted text-muted-foreground"}`}>
+                        {h.source === "import" ? "Importação" : "Cron diário"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-medium">{h.details?.filename ?? "—"}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-status-green">{h.rows_inserted ?? "—"}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{h.rows_updated ?? "—"}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{h.rows_skipped ?? "—"}</td>
+                    <td className={`px-4 py-3 text-right tabular-nums font-semibold ${dupOk ? "text-status-green" : "text-status-red"}`}>{h.duplicate_groups}</td>
+                    <td className={`px-4 py-3 text-right tabular-nums ${dupOk ? "text-muted-foreground" : "text-status-red"}`}>{h.duplicate_excess_rows}</td>
+                    <td className={`px-4 py-3 text-right tabular-nums ${dupOk ? "text-muted-foreground" : "text-status-red"}`}>{Number(h.duplicate_excess_valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
