@@ -28,10 +28,10 @@ export type DashboardData = {
   bancos: { nome: string; valor: number; pct: number }[];
   saldos: { empresaCnpj: string | null; empresaNome: string; conta: string; saldo: number; data: string }[];
   topVencidos: {
-    fornecedor: string; descricao: string | null; empresaCnpj: string | null; empresaNome: string; venc: string; dias: number; valor: number;
+    fornecedor: string; descricao: string | null; numero: string; empresaCnpj: string | null; empresaNome: string; venc: string; dias: number; valor: number;
   }[];
   topClientesVencidos: {
-    cliente: string; descricao: string | null; empresaCnpj: string | null; empresaNome: string; venc: string; dias: number; valor: number;
+    cliente: string; descricao: string | null; numero: string; empresaCnpj: string | null; empresaNome: string; venc: string; dias: number; valor: number;
   }[];
   protestadas: {
     cliente: string; descricao: string | null; numero: string;
@@ -446,6 +446,7 @@ export async function loadDashboard(): Promise<DashboardData> {
       return {
         fornecedor: (shortName(r.entidade) || "-").toUpperCase(),
         descricao: r.descricao?.trim() ? r.descricao.trim().toUpperCase() : null,
+        numero: r.numero,
         empresaCnpj: info.cnpj,
         empresaNome: info.nome,
         venc: r.data_vencimento!,
@@ -455,12 +456,13 @@ export async function loadDashboard(): Promise<DashboardData> {
     })
     .sort((a, b) => b.valor - a.valor);
 
-  const topClientesVencidos = recvVenc
+  const topClientesVencidos = recvVencPendente
     .map((r) => {
       const info = companyInfo(r.unidade_negocio);
       return {
         cliente: (shortName(r.entidade) || "-").toUpperCase(),
         descricao: r.descricao?.trim() ? r.descricao.trim().toUpperCase() : null,
+        numero: r.numero,
         empresaCnpj: info.cnpj,
         empresaNome: info.nome,
         venc: r.data_vencimento!,
