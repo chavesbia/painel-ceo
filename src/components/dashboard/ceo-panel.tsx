@@ -748,6 +748,7 @@ type DetalheItem = {
   dias: number;
   valor: number;
   status?: string;
+  tone?: "green" | "red" | "yellow";
 };
 
 function VencidoCard({
