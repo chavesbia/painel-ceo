@@ -33,6 +33,11 @@ export type DashboardData = {
   topClientesVencidos: {
     cliente: string; descricao: string | null; empresaCnpj: string | null; empresaNome: string; venc: string; dias: number; valor: number;
   }[];
+  protestadas: {
+    cliente: string; descricao: string | null; numero: string;
+    empresaCnpj: string | null; empresaNome: string;
+    venc: string; dias: number; valor: number; situacao: string;
+  }[];
   agingRecv: { a30: number; a60: number; a90: number; mais: number; total: number };
   clientesInadimplentes: {
     cliente: string;
