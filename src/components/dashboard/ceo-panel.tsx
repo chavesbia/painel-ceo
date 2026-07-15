@@ -42,6 +42,8 @@ export function CeoPanel() {
   const [showProtestadas, setShowProtestadas] = React.useState(false);
   const [showVencReceber, setShowVencReceber] = React.useState(false);
   const [showVencPagar, setShowVencPagar] = React.useState(false);
+  const [showHoje, setShowHoje] = React.useState(false);
+  const [showSemana, setShowSemana] = React.useState(false);
   const { data, error } = useQuery<DashboardData>({
     queryKey: ["dashboard"],
     queryFn: loadDashboard,
@@ -367,20 +369,34 @@ export function CeoPanel() {
 
       {/* FAIXA 3 — HOJE / SEMANA */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
+        <Card
+          onClick={data.hojeItems.length > 0 ? () => setShowHoje(true) : undefined}
+          ariaLabel={data.hojeItems.length > 0 ? "Ver detalhamento dos movimentos de hoje" : undefined}
+        >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <Label info="Movimentações previstas para o dia de hoje: quanto entra (recebimentos com vencimento hoje) e quanto sai (pagamentos com vencimento hoje).">Hoje · {new Date().toLocaleDateString("pt-BR")}</Label>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Movimentos previstos</span>
+            {data.hojeItems.length > 0 ? (
+              <span className="text-[10px] uppercase tracking-wider text-primary font-semibold">Ver detalhes →</span>
+            ) : (
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Movimentos previstos</span>
+            )}
           </div>
           <div className="mt-5 grid grid-cols-2 gap-4">
             <MiniStat label="A Receber" value={brl(data.hoje.receber)} color="green" direction="up" />
             <MiniStat label="A Pagar" value={brl(data.hoje.pagar)} color="red" direction="down" />
           </div>
         </Card>
-        <Card>
+        <Card
+          onClick={data.semanaItems.length > 0 ? () => setShowSemana(true) : undefined}
+          ariaLabel={data.semanaItems.length > 0 ? "Ver detalhamento dos movimentos desta semana" : undefined}
+        >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <Label info="Total previsto de entradas e saídas nos próximos 7 dias (a partir de hoje). Resultado = Receber − Pagar do período.">Esta Semana</Label>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">7 dias</span>
+            {data.semanaItems.length > 0 ? (
+              <span className="text-[10px] uppercase tracking-wider text-primary font-semibold">Ver detalhes →</span>
+            ) : (
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">7 dias</span>
+            )}
           </div>
           <div className="mt-5 grid grid-cols-3 gap-4">
             <MiniStat label="A Receber" value={brl(data.semana.receber)} color="green" direction="up" />
@@ -389,6 +405,51 @@ export function CeoPanel() {
           </div>
         </Card>
       </section>
+
+      {showHoje && (
+        <DetalheModal
+          title={`Movimentos de hoje · ${new Date().toLocaleDateString("pt-BR")}`}
+          items={data.hojeItems.map((r) => ({
+            entidade: r.entidade,
+            descricao: r.descricao,
+            numero: r.numero,
+            empresaCnpj: r.empresaCnpj,
+            empresaNome: r.empresaNome,
+            venc: r.venc,
+            dias: r.dias,
+            valor: r.valor,
+            status: r.kind === "receber" ? "A Receber" : "A Pagar",
+            tone: r.kind === "receber" ? "green" : "red",
+          }))}
+          total={data.hoje.receber + data.hoje.pagar}
+          entidadeLabel="Cliente / Fornecedor"
+          statusLabel="Tipo"
+          tone="yellow"
+          onClose={() => setShowHoje(false)}
+        />
+      )}
+      {showSemana && (
+        <DetalheModal
+          title="Movimentos dos próximos 7 dias"
+          items={data.semanaItems.map((r) => ({
+            entidade: r.entidade,
+            descricao: r.descricao,
+            numero: r.numero,
+            empresaCnpj: r.empresaCnpj,
+            empresaNome: r.empresaNome,
+            venc: r.venc,
+            dias: r.dias,
+            valor: r.valor,
+            status: r.kind === "receber" ? "A Receber" : "A Pagar",
+            tone: r.kind === "receber" ? "green" : "red",
+          }))}
+          total={data.semana.receber + data.semana.pagar}
+          entidadeLabel="Cliente / Fornecedor"
+          statusLabel="Tipo"
+          tone="yellow"
+          onClose={() => setShowSemana(false)}
+        />
+      )}
 
       {/* FAIXA 3.2 — RESUMO SEMANAL (dia a dia) */}
       <section>
@@ -748,6 +809,7 @@ type DetalheItem = {
   dias: number;
   valor: number;
   status?: string;
+  tone?: "green" | "red" | "yellow";
 };
 
 function VencidoCard({
@@ -812,11 +874,13 @@ function DetalheModal({
   tone: "green" | "red" | "yellow";
   onClose: () => void;
 }) {
-  const toneCls = tone === "green" ? "text-status-green" : tone === "red" ? "text-status-red" : "text-status-yellow";
-  const badgeCls =
-    tone === "green" ? "bg-status-green/10 text-status-green"
-    : tone === "red" ? "bg-status-red/10 text-status-red"
+  const toneText = (t: "green" | "red" | "yellow") =>
+    t === "green" ? "text-status-green" : t === "red" ? "text-status-red" : "text-status-yellow";
+  const toneBadge = (t: "green" | "red" | "yellow") =>
+    t === "green" ? "bg-status-green/10 text-status-green"
+    : t === "red" ? "bg-status-red/10 text-status-red"
     : "bg-status-yellow/10 text-status-yellow";
+  const toneCls = toneText(tone);
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", onKey);
@@ -888,11 +952,11 @@ function DetalheModal({
                       {r.dias > 0 ? `${r.dias} d` : "—"}
                     </td>
                     <td className="py-2.5 px-3">
-                      <span className={`inline-flex items-center rounded-full ${badgeCls} px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold`}>
+                      <span className={`inline-flex items-center rounded-full ${toneBadge(r.tone ?? tone)} px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold`}>
                         {r.status ?? "—"}
                       </span>
                     </td>
-                    <td className={`py-2.5 px-4 text-right tabular-nums font-semibold ${toneCls} whitespace-nowrap`}>
+                    <td className={`py-2.5 px-4 text-right tabular-nums font-semibold ${toneText(r.tone ?? tone)} whitespace-nowrap`}>
                       {brl(r.valor)}
                     </td>
                   </tr>

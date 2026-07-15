@@ -14,6 +14,18 @@ export type DashboardData = {
   aPagarVencidosValor: number;
   hoje: { receber: number; pagar: number; vencidos: number; vencidosValor: number };
   semana: { receber: number; pagar: number };
+  hojeItems: {
+    kind: "receber" | "pagar";
+    entidade: string; descricao: string | null; numero: string;
+    empresaCnpj: string | null; empresaNome: string;
+    venc: string; dias: number; valor: number; situacao: string;
+  }[];
+  semanaItems: {
+    kind: "receber" | "pagar";
+    entidade: string; descricao: string | null; numero: string;
+    empresaCnpj: string | null; empresaNome: string;
+    venc: string; dias: number; valor: number; situacao: string;
+  }[];
   fluxo: { dia: string; label: string; entrada: number; saida: number; saldo: number }[];
   fluxoRealista: { dia: string; label: string; entrada: number; saida: number; saldo: number }[];
   mesesProjetados: { key: string; label: string; entrada: number; saida: number; resultado: number }[];
@@ -221,6 +233,7 @@ export async function loadDashboard(): Promise<DashboardData> {
       aPagarTotal: 0, aPagarVencidosCount: 0, aPagarVencidosValor: 0,
       hoje: { receber: 0, pagar: 0, vencidos: 0, vencidosValor: 0 },
       semana: { receber: 0, pagar: 0 },
+      hojeItems: [], semanaItems: [],
       fluxo: [], fluxoRealista: [],
       mesesProjetados: [],
       mesesEfetivo: [],
@@ -289,6 +302,32 @@ export async function loadDashboard(): Promise<DashboardData> {
     receber: recv.filter((r) => r.data_vencimento! >= todayStr && r.data_vencimento! <= weekStr).reduce((s, r) => s + openAmount(r), 0),
     pagar: pay.filter((r) => r.data_vencimento! >= todayStr && r.data_vencimento! <= weekStr).reduce((s, r) => s + openAmount(r), 0),
   };
+
+  const toItem = (r: InvoiceRow, kind: "receber" | "pagar") => {
+    const info = companyInfo(r.unidade_negocio);
+    const venc = r.data_vencimento!;
+    const dias = Math.floor((today.getTime() - new Date(venc + "T00:00:00").getTime()) / 86400000);
+    return {
+      kind,
+      entidade: (shortName(r.entidade) || "-").toUpperCase(),
+      descricao: r.descricao?.trim() ? r.descricao.trim().toUpperCase() : null,
+      numero: r.numero,
+      empresaCnpj: info.cnpj,
+      empresaNome: info.nome,
+      venc,
+      dias,
+      valor: openAmount(r),
+      situacao: r.situacao || (kind === "receber" ? "A Receber" : "A Pagar"),
+    };
+  };
+  const hojeItems = [
+    ...recv.filter((r) => r.data_vencimento === todayStr).map((r) => toItem(r, "receber")),
+    ...pay.filter((r) => r.data_vencimento === todayStr).map((r) => toItem(r, "pagar")),
+  ].sort((a, b) => b.valor - a.valor);
+  const semanaItems = [
+    ...recv.filter((r) => r.data_vencimento! >= todayStr && r.data_vencimento! <= weekStr).map((r) => toItem(r, "receber")),
+    ...pay.filter((r) => r.data_vencimento! >= todayStr && r.data_vencimento! <= weekStr).map((r) => toItem(r, "pagar")),
+  ].sort((a, b) => (a.venc < b.venc ? -1 : a.venc > b.venc ? 1 : b.valor - a.valor));
 
   // Fluxo projetado 180d — dois cenários:
   //  • Otimista: todo recebível vencido entra hoje pelo valor total.
@@ -566,6 +605,7 @@ export async function loadDashboard(): Promise<DashboardData> {
     aPagarTotal, aPagarVencidosCount: payVenc.length,
     aPagarVencidosValor: payVenc.reduce((s, r) => s + openAmount(r), 0),
     hoje, semana, fluxo, fluxoRealista, recuperacao,
+    hojeItems, semanaItems,
     mesesProjetados,
     mesesEfetivo,
     empresas: empresasWithPct, bancos: bancosWithPct, saldos, topVencidos, topClientesVencidos,
