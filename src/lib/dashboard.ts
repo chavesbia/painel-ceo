@@ -226,6 +226,7 @@ export async function loadDashboard(): Promise<DashboardData> {
       mesesEfetivo: [],
       recuperacao: { exposicaoVencida: 0, recuperacaoEsperada: 0, perdaEsperada: 0, taxas: { a30: 0.9, a60: 0.6, a90: 0.3, mais: 0.1 } },
       empresas: [], bancos: [], saldos: [], topVencidos: [], topClientesVencidos: [],
+      protestadas: [],
       agingRecv: { a30: 0, a60: 0, a90: 0, mais: 0, total: 0 },
       clientesInadimplentes: [],
       concentracao: {
@@ -257,6 +258,24 @@ export async function loadDashboard(): Promise<DashboardData> {
   const recvProtestada = recv.filter((r) => isProtestada(r));
   const aReceberVencidosValorPendente = recvVencPendente.reduce((s, r) => s + openAmount(r), 0);
   const aReceberProtestadoValor = recvProtestada.reduce((s, r) => s + openAmount(r), 0);
+  const protestadas = recvProtestada
+    .map((r) => {
+      const info = companyInfo(r.unidade_negocio);
+      const venc = r.data_vencimento!;
+      const dias = Math.floor((today.getTime() - new Date(venc + "T00:00:00").getTime()) / 86400000);
+      return {
+        cliente: (shortName(r.entidade) || "-").toUpperCase(),
+        descricao: r.descricao?.trim() ? r.descricao.trim().toUpperCase() : null,
+        numero: r.numero,
+        empresaCnpj: info.cnpj,
+        empresaNome: info.nome,
+        venc,
+        dias,
+        valor: openAmount(r),
+        situacao: r.situacao || "Protestada",
+      };
+    })
+    .sort((a, b) => b.valor - a.valor);
 
   const hoje = {
     receber: recv.filter((r) => r.data_vencimento === todayStr).reduce((s, r) => s + openAmount(r), 0),
@@ -548,6 +567,7 @@ export async function loadDashboard(): Promise<DashboardData> {
     mesesProjetados,
     mesesEfetivo,
     empresas: empresasWithPct, bancos: bancosWithPct, saldos, topVencidos, topClientesVencidos,
+    protestadas,
     agingRecv, clientesInadimplentes,
     concentracao,
     deltas,
