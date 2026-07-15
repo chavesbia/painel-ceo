@@ -813,11 +813,13 @@ function DetalheModal({
   tone: "green" | "red" | "yellow";
   onClose: () => void;
 }) {
-  const toneCls = tone === "green" ? "text-status-green" : tone === "red" ? "text-status-red" : "text-status-yellow";
-  const badgeCls =
-    tone === "green" ? "bg-status-green/10 text-status-green"
-    : tone === "red" ? "bg-status-red/10 text-status-red"
+  const toneText = (t: "green" | "red" | "yellow") =>
+    t === "green" ? "text-status-green" : t === "red" ? "text-status-red" : "text-status-yellow";
+  const toneBadge = (t: "green" | "red" | "yellow") =>
+    t === "green" ? "bg-status-green/10 text-status-green"
+    : t === "red" ? "bg-status-red/10 text-status-red"
     : "bg-status-yellow/10 text-status-yellow";
+  const toneCls = toneText(tone);
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", onKey);
@@ -889,11 +891,11 @@ function DetalheModal({
                       {r.dias > 0 ? `${r.dias} d` : "—"}
                     </td>
                     <td className="py-2.5 px-3">
-                      <span className={`inline-flex items-center rounded-full ${badgeCls} px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold`}>
+                      <span className={`inline-flex items-center rounded-full ${toneBadge(r.tone ?? tone)} px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold`}>
                         {r.status ?? "—"}
                       </span>
                     </td>
-                    <td className={`py-2.5 px-4 text-right tabular-nums font-semibold ${toneCls} whitespace-nowrap`}>
+                    <td className={`py-2.5 px-4 text-right tabular-nums font-semibold ${toneText(r.tone ?? tone)} whitespace-nowrap`}>
                       {brl(r.valor)}
                     </td>
                   </tr>
