@@ -263,7 +263,7 @@ export function CeoPanel() {
         />
         <Card>
           <div className="h-0.5 w-8 rounded-full bg-status-red mb-4" />
-          <Label info="Detalhamento dos títulos vencidos separados por tipo. A receber = clientes em atraso (dinheiro que ainda não entrou). A pagar = contas em atraso com fornecedores (risco de juros/multas/protesto).">
+          <Label info="Detalhamento dos títulos vencidos separados por tipo. A receber = clientes em atraso (apenas pendentes — as protestadas estão no card ao lado). A pagar = contas em atraso com fornecedores (risco de juros/multas/protesto).">
             Vencidos
           </Label>
           <div className="mt-3 space-y-3">
@@ -278,7 +278,7 @@ export function CeoPanel() {
                 {brl(data.aReceberVencidosValor)}
               </p>
               <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
-                {data.aReceberVencidosCount} {data.aReceberVencidosCount === 1 ? "título" : "títulos"}
+                {data.aReceberVencidosCount} {data.aReceberVencidosCount === 1 ? "título pendente" : "títulos pendentes"}
               </p>
             </div>
             <div className="pt-3 border-t border-border">
@@ -309,6 +309,39 @@ export function CeoPanel() {
               />
             </div>
           )}
+        </Card>
+        <Card>
+          <div className="h-0.5 w-8 rounded-full bg-status-yellow mb-4" />
+          <Label info="Faturas de clientes já enviadas a cartório (situação 'Protestada'). Estão fora do card 'Vencidos' para não misturar o atraso comum com títulos já em cobrança judicial/cartorial. A recuperação depende de acordo ou pagamento do protesto.">
+            Protestadas
+          </Label>
+          <div className="mt-3 space-y-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
+                <AlertTriangle className="size-3 text-status-yellow" /> A receber (em cartório)
+              </p>
+              <p
+                className="mt-1 font-display font-bold tabular-nums leading-tight text-status-yellow whitespace-nowrap"
+                style={{ fontSize: "clamp(0.85rem, 5.5cqi, 1.125rem)" }}
+              >
+                {brl(data.aReceberProtestadoValor)}
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
+                {data.aReceberProtestadoCount} {data.aReceberProtestadoCount === 1 ? "título protestado" : "títulos protestados"}
+              </p>
+            </div>
+            <div className="pt-3 border-t border-border">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                Exposição total (vencidos + protestados)
+              </p>
+              <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
+                {brl(data.aReceberVencidosValor + data.aReceberProtestadoValor)}
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                Soma do que está em atraso no cliente, independente do estágio de cobrança.
+              </p>
+            </div>
+          </div>
         </Card>
       </section>
 
