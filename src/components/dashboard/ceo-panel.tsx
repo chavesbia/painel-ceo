@@ -197,7 +197,7 @@ export function CeoPanel() {
             <div className="flex flex-wrap items-end gap-x-4 gap-y-2 min-w-0">
               <h2
                 className={`font-display font-bold tabular-nums tracking-tight whitespace-nowrap ${resultadoJanela >= 0 ? "text-status-green" : "text-status-red"}`}
-                style={{ fontSize: "clamp(1.75rem, 4.5vw, 3rem)" }}
+                style={{ fontSize: "clamp(1.25rem, 6cqi, 3rem)" }}
               >
                 {resultadoJanela >= 0 ? "+" : ""}{brl(resultadoJanela)}
               </h2>
@@ -224,7 +224,7 @@ export function CeoPanel() {
             <Label className="text-primary-foreground/70" info="Soma dos saldos das contas bancárias cadastradas. Para cada empresa+conta somamos apenas o lançamento mais recente — os anteriores ficam preservados como histórico e não são contabilizados de novo." infoOnDark>Saldo bancário atual</Label>
             <p
               className="mt-2 font-display font-bold tabular-nums whitespace-nowrap"
-              style={{ fontSize: "clamp(1.5rem, 3.6vw, 2rem)" }}
+              style={{ fontSize: "clamp(1.125rem, 9cqi, 2rem)" }}
             >
               {brl(saldoAtual)}
             </p>
@@ -273,7 +273,7 @@ export function CeoPanel() {
               </p>
               <p
                 className="mt-1 font-display font-bold tabular-nums leading-tight text-status-green whitespace-nowrap"
-                style={{ fontSize: "clamp(0.95rem, 1.8vw, 1.125rem)" }}
+                style={{ fontSize: "clamp(0.85rem, 5.5cqi, 1.125rem)" }}
               >
                 {brl(data.aReceberVencidosValor)}
               </p>
@@ -287,7 +287,7 @@ export function CeoPanel() {
               </p>
               <p
                 className="mt-1 font-display font-bold tabular-nums leading-tight text-status-red whitespace-nowrap"
-                style={{ fontSize: "clamp(0.95rem, 1.8vw, 1.125rem)" }}
+                style={{ fontSize: "clamp(0.85rem, 5.5cqi, 1.125rem)" }}
               >
                 {brl(data.aPagarVencidosValor)}
               </p>
@@ -688,7 +688,7 @@ function EmptyState({ ultima }: { ultima: string | null }) {
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={`rounded-xl border border-border bg-card p-4 md:p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)] min-w-0 ${className}`}
+      className={`rounded-xl border border-border bg-card p-4 md:p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)] min-w-0 [container-type:inline-size] ${className}`}
     >
       {children}
     </div>
@@ -915,9 +915,9 @@ function KpiCard({
       <div className={`h-0.5 w-8 rounded-full ${bar} mb-4`} />
       <Label info={info}>{label}</Label>
       <p className={`mt-3 font-display font-bold tabular-nums tracking-tight leading-tight flex items-center gap-1.5 whitespace-nowrap ${valueCls}`}
-         style={{ fontSize: "clamp(1rem, 2.2vw, 1.75rem)" }}>
-        {direction === "up" && <ArrowUp className="size-5 shrink-0" />}
-        {direction === "down" && <ArrowDown className="size-5 shrink-0" />}
+         style={{ fontSize: "clamp(0.9rem, 9cqi, 1.75rem)" }}>
+        {direction === "up" && <ArrowUp className="size-[0.9em] shrink-0" />}
+        {direction === "down" && <ArrowDown className="size-[0.9em] shrink-0" />}
         <span>{value}</span>
       </p>
       {delta && (
