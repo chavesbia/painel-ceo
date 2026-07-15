@@ -528,7 +528,7 @@ export function CeoPanel() {
         </Card>
 
         <Card>
-          <Label info="Sinais automáticos gerados a partir dos dados: títulos vencidos, recebíveis em atraso e resultado projetado (positivo ou negativo).">Alertas</Label>
+          <Label info="Sinais automáticos gerados a partir dos dados: títulos a pagar vencidos e recebíveis em atraso. O resultado projetado é exibido no card 'Resultado de Faturas em Aberto' para evitar duplicidade.">Alertas</Label>
           <div className="mt-4 space-y-3">
             {alertas.length === 0 && <p className="text-xs text-muted-foreground">Nenhum alerta ativo.</p>}
             {alertas.map((a, i) => <AlertRow key={i} {...a} />)}
