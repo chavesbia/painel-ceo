@@ -40,6 +40,8 @@ export function CeoPanel() {
   const [pagarSort, setPagarSort] = React.useState<"valor" | "dias">("valor");
   const [clientesSort, setClientesSort] = React.useState<"valor" | "dias">("valor");
   const [showProtestadas, setShowProtestadas] = React.useState(false);
+  const [showVencReceber, setShowVencReceber] = React.useState(false);
+  const [showVencPagar, setShowVencPagar] = React.useState(false);
   const { data, error } = useQuery<DashboardData>({
     queryKey: ["dashboard"],
     queryFn: loadDashboard,
@@ -243,7 +245,7 @@ export function CeoPanel() {
       </section>
 
       {/* FAIXA 2 — KPIs principais */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <KpiCard
           label="A Receber"
           value={brl(data.aReceberTotal)}
@@ -262,105 +264,106 @@ export function CeoPanel() {
           direction="down"
           delta={data.deltas ? { ...data.deltas.aPagar, baseDate: data.deltas.baseDate, goodWhen: "down" } : null}
         />
-        <Card>
-          <div className="h-0.5 w-8 rounded-full bg-status-red mb-4" />
-          <Label info="Detalhamento dos títulos vencidos separados por tipo. A receber = clientes em atraso (apenas pendentes — as protestadas estão no card ao lado). A pagar = contas em atraso com fornecedores (risco de juros/multas/protesto).">
-            Vencidos
-          </Label>
-          <div className="mt-3 space-y-3">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
-                <ArrowUp className="size-3 text-status-green" /> A receber
-              </p>
-              <p
-                className="mt-1 font-display font-bold tabular-nums leading-tight text-status-green whitespace-nowrap"
-                style={{ fontSize: "clamp(0.85rem, 5.5cqi, 1.125rem)" }}
-              >
-                {brl(data.aReceberVencidosValor)}
-              </p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
-                {data.aReceberVencidosCount} {data.aReceberVencidosCount === 1 ? "título pendente" : "títulos pendentes"}
-              </p>
-            </div>
-            <div className="pt-3 border-t border-border">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
-                <ArrowDown className="size-3 text-status-red" /> A pagar
-              </p>
-              <p
-                className="mt-1 font-display font-bold tabular-nums leading-tight text-status-red whitespace-nowrap"
-                style={{ fontSize: "clamp(0.85rem, 5.5cqi, 1.125rem)" }}
-              >
-                {brl(data.aPagarVencidosValor)}
-              </p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
-                {data.aPagarVencidosCount} {data.aPagarVencidosCount === 1 ? "título" : "títulos"}
-              </p>
-            </div>
-          </div>
-          {data.deltas && (
-            <div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between gap-2">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                Total {brl(data.aReceberVencidosValor + data.aPagarVencidosValor)}
-              </span>
-              <DeltaChip
-                abs={data.deltas.vencidosValor.abs}
-                pct={data.deltas.vencidosValor.pct}
-                baseDate={data.deltas.baseDate}
-                goodWhen="down"
-              />
-            </div>
-          )}
-        </Card>
-        <Card
-          onClick={data.aReceberProtestadoCount > 0 ? () => setShowProtestadas(true) : undefined}
-          ariaLabel="Ver detalhamento das faturas protestadas"
-        >
-          <div className="h-0.5 w-8 rounded-full bg-status-yellow mb-4" />
-          <div className="flex items-center justify-between gap-2">
-            <Label info="Faturas de clientes já enviadas a cartório (situação 'Protestada'). Estão fora do card 'Vencidos' para não misturar o atraso comum com títulos já em cobrança judicial/cartorial. A recuperação depende de acordo ou pagamento do protesto.">
-              Protestadas
-            </Label>
-            {data.aReceberProtestadoCount > 0 && (
-              <span className="text-[10px] uppercase tracking-wider text-primary font-semibold">Ver detalhes →</span>
-            )}
-          </div>
-          <div className="mt-3 space-y-3">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
-                <AlertTriangle className="size-3 text-status-yellow" /> A receber (em cartório)
-              </p>
-              <p
-                className="mt-1 font-display font-bold tabular-nums leading-tight text-status-yellow whitespace-nowrap"
-                style={{ fontSize: "clamp(0.85rem, 5.5cqi, 1.125rem)" }}
-              >
-                {brl(data.aReceberProtestadoValor)}
-              </p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
-                {data.aReceberProtestadoCount} {data.aReceberProtestadoCount === 1 ? "título protestado" : "títulos protestados"}
-              </p>
-            </div>
-            <div className="pt-3 border-t border-border">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                Exposição total (vencidos + protestados)
-              </p>
-              <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
-                {brl(data.aReceberVencidosValor + data.aReceberProtestadoValor)}
-              </p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">
-                Soma do que está em atraso no cliente, independente do estágio de cobrança.
-              </p>
-            </div>
-          </div>
-        </Card>
+      </section>
+
+      {/* FAIXA 2.1 — Vencidos e Protestadas (cada card abre modal com a lista completa) */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <VencidoCard
+          tone="green"
+          icon="up"
+          label="Vencidos a Receber"
+          info="Faturas de clientes já vencidas e ainda pendentes (não inclui as protestadas). Clique para ver a lista completa."
+          valor={data.aReceberVencidosValor}
+          count={data.aReceberVencidosCount}
+          countLabel={{ one: "título pendente", many: "títulos pendentes" }}
+          onOpen={data.aReceberVencidosCount > 0 ? () => setShowVencReceber(true) : undefined}
+        />
+        <VencidoCard
+          tone="red"
+          icon="down"
+          label="Vencidos a Pagar"
+          info="Contas com fornecedores já vencidas. Risco de juros, multas e protesto — priorize a regularização. Clique para ver a lista completa."
+          valor={data.aPagarVencidosValor}
+          count={data.aPagarVencidosCount}
+          countLabel={{ one: "título vencido", many: "títulos vencidos" }}
+          onOpen={data.aPagarVencidosCount > 0 ? () => setShowVencPagar(true) : undefined}
+        />
+        <VencidoCard
+          tone="yellow"
+          icon="warn"
+          label="Protestadas"
+          info="Faturas de clientes já enviadas a cartório (situação 'Protestada'). Estão fora de 'Vencidos a Receber' para não misturar atraso comum com títulos já em cobrança cartorial. Clique para ver a lista completa."
+          valor={data.aReceberProtestadoValor}
+          count={data.aReceberProtestadoCount}
+          countLabel={{ one: "título protestado", many: "títulos protestados" }}
+          onOpen={data.aReceberProtestadoCount > 0 ? () => setShowProtestadas(true) : undefined}
+        />
       </section>
 
       {showProtestadas && (
-        <ProtestadasModal
-          items={data.protestadas}
+        <DetalheModal
+          title="Faturas protestadas"
+          items={data.protestadas.map((r) => ({
+            entidade: r.cliente,
+            descricao: r.descricao,
+            numero: r.numero,
+            empresaCnpj: r.empresaCnpj,
+            empresaNome: r.empresaNome,
+            venc: r.venc,
+            dias: r.dias,
+            valor: r.valor,
+            status: r.situacao,
+          }))}
           total={data.aReceberProtestadoValor}
+          entidadeLabel="Cliente"
+          statusLabel="Status"
+          tone="yellow"
           onClose={() => setShowProtestadas(false)}
         />
       )}
+      {showVencReceber && (
+        <DetalheModal
+          title="Vencidos a Receber"
+          items={data.topClientesVencidos.map((r) => ({
+            entidade: r.cliente,
+            descricao: r.descricao,
+            numero: r.numero,
+            empresaCnpj: r.empresaCnpj,
+            empresaNome: r.empresaNome,
+            venc: r.venc,
+            dias: r.dias,
+            valor: r.valor,
+            status: "Pendente",
+          }))}
+          total={data.aReceberVencidosValor}
+          entidadeLabel="Cliente"
+          statusLabel="Status"
+          tone="green"
+          onClose={() => setShowVencReceber(false)}
+        />
+      )}
+      {showVencPagar && (
+        <DetalheModal
+          title="Vencidos a Pagar"
+          items={data.topVencidos.map((r) => ({
+            entidade: r.fornecedor,
+            descricao: r.descricao,
+            numero: r.numero,
+            empresaCnpj: r.empresaCnpj,
+            empresaNome: r.empresaNome,
+            venc: r.venc,
+            dias: r.dias,
+            valor: r.valor,
+            status: "Em atraso",
+          }))}
+          total={data.aPagarVencidosValor}
+          entidadeLabel="Fornecedor"
+          statusLabel="Status"
+          tone="red"
+          onClose={() => setShowVencPagar(false)}
+        />
+      )}
+
 
       {/* FAIXA 3 — HOJE / SEMANA */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
