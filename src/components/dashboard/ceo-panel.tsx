@@ -369,20 +369,34 @@ export function CeoPanel() {
 
       {/* FAIXA 3 — HOJE / SEMANA */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
+        <Card
+          onClick={data.hojeItems.length > 0 ? () => setShowHoje(true) : undefined}
+          ariaLabel={data.hojeItems.length > 0 ? "Ver detalhamento dos movimentos de hoje" : undefined}
+        >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <Label info="Movimentações previstas para o dia de hoje: quanto entra (recebimentos com vencimento hoje) e quanto sai (pagamentos com vencimento hoje).">Hoje · {new Date().toLocaleDateString("pt-BR")}</Label>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Movimentos previstos</span>
+            {data.hojeItems.length > 0 ? (
+              <span className="text-[10px] uppercase tracking-wider text-primary font-semibold">Ver detalhes →</span>
+            ) : (
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Movimentos previstos</span>
+            )}
           </div>
           <div className="mt-5 grid grid-cols-2 gap-4">
             <MiniStat label="A Receber" value={brl(data.hoje.receber)} color="green" direction="up" />
             <MiniStat label="A Pagar" value={brl(data.hoje.pagar)} color="red" direction="down" />
           </div>
         </Card>
-        <Card>
+        <Card
+          onClick={data.semanaItems.length > 0 ? () => setShowSemana(true) : undefined}
+          ariaLabel={data.semanaItems.length > 0 ? "Ver detalhamento dos movimentos desta semana" : undefined}
+        >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <Label info="Total previsto de entradas e saídas nos próximos 7 dias (a partir de hoje). Resultado = Receber − Pagar do período.">Esta Semana</Label>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">7 dias</span>
+            {data.semanaItems.length > 0 ? (
+              <span className="text-[10px] uppercase tracking-wider text-primary font-semibold">Ver detalhes →</span>
+            ) : (
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">7 dias</span>
+            )}
           </div>
           <div className="mt-5 grid grid-cols-3 gap-4">
             <MiniStat label="A Receber" value={brl(data.semana.receber)} color="green" direction="up" />
@@ -391,6 +405,51 @@ export function CeoPanel() {
           </div>
         </Card>
       </section>
+
+      {showHoje && (
+        <DetalheModal
+          title={`Movimentos de hoje · ${new Date().toLocaleDateString("pt-BR")}`}
+          items={data.hojeItems.map((r) => ({
+            entidade: r.entidade,
+            descricao: r.descricao,
+            numero: r.numero,
+            empresaCnpj: r.empresaCnpj,
+            empresaNome: r.empresaNome,
+            venc: r.venc,
+            dias: r.dias,
+            valor: r.valor,
+            status: r.kind === "receber" ? "A Receber" : "A Pagar",
+            tone: r.kind === "receber" ? "green" : "red",
+          }))}
+          total={data.hoje.receber + data.hoje.pagar}
+          entidadeLabel="Cliente / Fornecedor"
+          statusLabel="Tipo"
+          tone="yellow"
+          onClose={() => setShowHoje(false)}
+        />
+      )}
+      {showSemana && (
+        <DetalheModal
+          title="Movimentos dos próximos 7 dias"
+          items={data.semanaItems.map((r) => ({
+            entidade: r.entidade,
+            descricao: r.descricao,
+            numero: r.numero,
+            empresaCnpj: r.empresaCnpj,
+            empresaNome: r.empresaNome,
+            venc: r.venc,
+            dias: r.dias,
+            valor: r.valor,
+            status: r.kind === "receber" ? "A Receber" : "A Pagar",
+            tone: r.kind === "receber" ? "green" : "red",
+          }))}
+          total={data.semana.receber + data.semana.pagar}
+          entidadeLabel="Cliente / Fornecedor"
+          statusLabel="Tipo"
+          tone="yellow"
+          onClose={() => setShowSemana(false)}
+        />
+      )}
 
       {/* FAIXA 3.2 — RESUMO SEMANAL (dia a dia) */}
       <section>
