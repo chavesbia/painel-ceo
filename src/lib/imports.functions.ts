@@ -62,53 +62,57 @@ export const importInvoices = createServerFn({ method: "POST" })
       import_id: imp.id,
       numero: cleanText(r.numero) || "",
       entidade_doc: cleanText(r.entidade_doc),
+      unidade_negocio: cleanText(r.unidade_negocio),
       data_vencimento: cleanText(r.data_vencimento),
     }));
 
-    // Deduplicate rows on the same conflict key (kind,numero,entidade_doc,data_vencimento).
-    // Postgres rejects upsert when a single batch contains two rows that match the same target row.
-    // Normalizamos com trim para evitar duplicidades por espaços e mantemos NULLs distintos
-    // (o índice único do Postgres também trata NULLs como distintos).
+    // Chave de identidade por tipo (espelha o índice único invoices_identity_key):
+    // - receivable: kind, numero, entidade_doc, unidade_negocio (prorrogação atualiza a mesma linha)
+    // - payable:    kind, numero, entidade_doc, unidade_negocio + data_vencimento
+    //               (parcelas de provisionamento repetem o mesmo número de propósito)
+    const identityKey = (r: {
+      kind: string;
+      numero: string;
+      entidade_doc: string | null;
+      unidade_negocio: string | null;
+      data_vencimento: string | null;
+    }) =>
+      [
+        r.kind,
+        r.numero ?? "",
+        r.entidade_doc ?? "",
+        r.unidade_negocio ?? "",
+        r.kind === "payable" ? (r.data_vencimento ?? "") : "",
+      ].join("||");
+
+    // Postgres rejeita upsert quando o mesmo lote contém duas linhas que atingem a mesma linha alvo.
     const seen = new Map<string, typeof withImport[number]>();
-    for (const [rowIndex, r] of withImport.entries()) {
-      const numero = r.numero;
-      const doc = r.entidade_doc || "";
-      const venc = r.data_vencimento || "";
-      // Se doc ou venc forem vazios, o Postgres considera cada linha única — geramos chave única no Map.
-      const nullMarker = !doc || !venc ? `__row${rowIndex}__` : "";
-      const key = `${r.kind}||${numero}||${doc}||${venc}||${nullMarker}`;
-      seen.set(key, { ...r, numero, entidade_doc: doc || null, data_vencimento: venc || null });
-    }
+    for (const r of withImport) seen.set(identityKey(r), r);
     const deduped = Array.from(seen.values());
 
     // Pré-checagem: quantos itens da planilha já existem na base (para separar
-    // "inserido" de "atualizado"). Como o índice único agora usa NULLS NOT
-    // DISTINCT, tratamos NULL como igual — normalizando com string vazia.
+    // "inserido" de "atualizado"). O índice usa NULLS NOT DISTINCT, então NULL == "".
     const { data: existingRows } = await supabaseAdmin
       .from("invoices")
-      .select("numero, entidade_doc, data_vencimento")
+      .select("kind, numero, entidade_doc, unidade_negocio, data_vencimento")
       .eq("kind", data.kind);
-    const existingKeys = new Set(
-      (existingRows ?? []).map(
-        (r) => `${r.numero ?? ""}||${r.entidade_doc ?? ""}||${r.data_vencimento ?? ""}`,
-      ),
-    );
+    const existingKeys = new Set((existingRows ?? []).map((r) => identityKey(r)));
     let rowsInserted = 0;
     let rowsUpdated = 0;
     for (const r of deduped) {
-      const k = `${r.numero ?? ""}||${r.entidade_doc ?? ""}||${r.data_vencimento ?? ""}`;
-      if (existingKeys.has(k)) rowsUpdated += 1;
+      if (existingKeys.has(identityKey(r))) rowsUpdated += 1;
       else rowsInserted += 1;
     }
 
     // Chunked upsert
+    const onConflict = "kind,numero,entidade_doc,unidade_negocio,dedupe_vencimento";
     let imported = 0;
     const chunk = 500;
     for (let i = 0; i < deduped.length; i += chunk) {
       const slice = deduped.slice(i, i + chunk);
       const { error } = await supabaseAdmin
         .from("invoices")
-        .upsert(slice, { onConflict: "kind,numero,entidade_doc,data_vencimento" });
+        .upsert(slice, { onConflict });
       if (error) {
         const errorText = [error.message, error.details, error.hint, error.code].filter(Boolean).join(" ");
         // Fallback: se ainda houver colisão no lote, reprocessa linha a linha.
@@ -116,7 +120,7 @@ export const importInvoices = createServerFn({ method: "POST" })
           for (const row of slice) {
             const { error: e2 } = await supabaseAdmin
               .from("invoices")
-              .upsert([row], { onConflict: "kind,numero,entidade_doc,data_vencimento" });
+              .upsert([row], { onConflict });
             if (e2) throw new Error(`Erro no registro ${row.numero}: ${e2.message}`);
             imported += 1;
           }

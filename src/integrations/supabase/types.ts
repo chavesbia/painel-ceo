@@ -182,6 +182,7 @@ export type Database = {
           data_competencia: string | null
           data_pagamento: string | null
           data_vencimento: string | null
+          dedupe_vencimento: string | null
           descricao: string | null
           entidade: string | null
           entidade_doc: string | null
@@ -210,6 +211,7 @@ export type Database = {
           data_competencia?: string | null
           data_pagamento?: string | null
           data_vencimento?: string | null
+          dedupe_vencimento?: string | null
           descricao?: string | null
           entidade?: string | null
           entidade_doc?: string | null
@@ -238,6 +240,7 @@ export type Database = {
           data_competencia?: string | null
           data_pagamento?: string | null
           data_vencimento?: string | null
+          dedupe_vencimento?: string | null
           descricao?: string | null
           entidade?: string | null
           entidade_doc?: string | null
