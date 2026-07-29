@@ -199,6 +199,7 @@ export type Database = {
           updated_at: string
           valor_pago: number
           valor_parcela: number
+          vencimento_original: string | null
         }
         Insert: {
           centro_custos?: string | null
@@ -226,6 +227,7 @@ export type Database = {
           updated_at?: string
           valor_pago?: number
           valor_parcela?: number
+          vencimento_original?: string | null
         }
         Update: {
           centro_custos?: string | null
@@ -253,6 +255,7 @@ export type Database = {
           updated_at?: string
           valor_pago?: number
           valor_parcela?: number
+          vencimento_original?: string | null
         }
         Relationships: [
           {
