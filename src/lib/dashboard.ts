@@ -81,6 +81,7 @@ type InvoiceRow = {
   numero: string;
   unidade_negocio: string | null;
   entidade: string | null;
+  entidade_doc: string | null;
   descricao: string | null;
   conta_bancaria: string | null;
   valor_parcela: number;
@@ -135,7 +136,7 @@ async function fetchAllInvoices(pastStr: string): Promise<InvoiceRow[]> {
   while (true) {
     const { data, error } = await supabase
       .from("invoices")
-      .select("kind,numero,unidade_negocio,entidade,descricao,conta_bancaria,valor_parcela,valor_pago,situacao,data_vencimento,data_pagamento")
+      .select("kind,numero,unidade_negocio,entidade,entidade_doc,descricao,conta_bancaria,valor_parcela,valor_pago,situacao,data_vencimento,data_pagamento")
       .gte("data_vencimento", pastStr)
       .in("situacao", ["Pendente", "Protestada"])
       .order("data_vencimento", { ascending: true })
@@ -253,7 +254,12 @@ export async function loadDashboard(): Promise<DashboardData> {
   }
 
   const recv = rows.filter((r) => r.kind === "receivable" && isOpen(r));
-  const pay = rows.filter((r) => r.kind === "payable" && isOpen(r));
+  const payAll = rows.filter((r) => r.kind === "payable" && isOpen(r));
+  // Duplicatas "a pagar" pendentes de revisão manual (mesmo numero+entidade_doc+
+  // unidade_negocio, vencimentos diferentes, nenhuma linha Paga): conta o valor
+  // UMA única vez, usando a linha de vencimento mais próximo de hoje, para não
+  // inflar o "A Pagar" enquanto a revisão não acontece.
+  const pay = dedupePayables(payAll, today);
 
   const todayStr = ymd(today);
   const inWeekLimit = new Date(today); inWeekLimit.setDate(inWeekLimit.getDate() + 7);
