@@ -128,6 +128,7 @@ function isOpen(r: InvoiceRow): boolean {
 
 async function fetchAllInvoices(pastStr: string): Promise<InvoiceRow[]> {
   const pageSize = 1000;
+  const pageSize = 1000;
   let from = 0;
   const all: InvoiceRow[] = [];
   // Só faturas em aberto (Pendente/Protestada) — reduz drasticamente o payload
