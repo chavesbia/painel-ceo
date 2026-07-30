@@ -81,6 +81,7 @@ type InvoiceRow = {
   numero: string;
   unidade_negocio: string | null;
   entidade: string | null;
+  entidade_doc: string | null;
   descricao: string | null;
   conta_bancaria: string | null;
   valor_parcela: number;
@@ -125,6 +126,33 @@ function isOpen(r: InvoiceRow): boolean {
   return openAmount(r) > 0 && !!r.data_vencimento;
 }
 
+// Duplicatas "a pagar" pendentes de revisão manual: mesmo numero + entidade_doc
+// + unidade_negocio, vencimentos diferentes e nenhuma linha "Paga". Nesse caso
+// o valor deve entrar UMA vez, pela linha de vencimento mais próximo de hoje.
+function dedupePayables(rows: InvoiceRow[], today: Date): InvoiceRow[] {
+  const groups = new Map<string, InvoiceRow[]>();
+  for (const r of rows) {
+    const k = [r.numero ?? "", r.entidade_doc ?? "", r.unidade_negocio ?? ""].join("||");
+    const arr = groups.get(k) ?? [];
+    arr.push(r);
+    groups.set(k, arr);
+  }
+  const out: InvoiceRow[] = [];
+  const t = today.getTime();
+  for (const arr of groups.values()) {
+    if (arr.length < 2) { out.push(...arr); continue; }
+    const dates = new Set(arr.map((r) => r.data_vencimento ?? ""));
+    if (dates.size < 2) { out.push(...arr); continue; }
+    const closest = arr.reduce((best, r) => {
+      const d = Math.abs(new Date((r.data_vencimento ?? "1970-01-01") + "T00:00:00").getTime() - t);
+      const db = Math.abs(new Date((best.data_vencimento ?? "1970-01-01") + "T00:00:00").getTime() - t);
+      return d < db ? r : best;
+    }, arr[0]);
+    out.push(closest);
+  }
+  return out;
+}
+
 async function fetchAllInvoices(pastStr: string): Promise<InvoiceRow[]> {
   const pageSize = 1000;
   let from = 0;
@@ -135,7 +163,7 @@ async function fetchAllInvoices(pastStr: string): Promise<InvoiceRow[]> {
   while (true) {
     const { data, error } = await supabase
       .from("invoices")
-      .select("kind,numero,unidade_negocio,entidade,descricao,conta_bancaria,valor_parcela,valor_pago,situacao,data_vencimento,data_pagamento")
+      .select("kind,numero,unidade_negocio,entidade,entidade_doc,descricao,conta_bancaria,valor_parcela,valor_pago,situacao,data_vencimento,data_pagamento")
       .gte("data_vencimento", pastStr)
       .in("situacao", ["Pendente", "Protestada"])
       .order("data_vencimento", { ascending: true })
@@ -253,7 +281,12 @@ export async function loadDashboard(): Promise<DashboardData> {
   }
 
   const recv = rows.filter((r) => r.kind === "receivable" && isOpen(r));
-  const pay = rows.filter((r) => r.kind === "payable" && isOpen(r));
+  const payAll = rows.filter((r) => r.kind === "payable" && isOpen(r));
+  // Duplicatas "a pagar" pendentes de revisão manual (mesmo numero+entidade_doc+
+  // unidade_negocio, vencimentos diferentes, nenhuma linha Paga): conta o valor
+  // UMA única vez, usando a linha de vencimento mais próximo de hoje, para não
+  // inflar o "A Pagar" enquanto a revisão não acontece.
+  const pay = dedupePayables(payAll, today);
 
   const todayStr = ymd(today);
   const inWeekLimit = new Date(today); inWeekLimit.setDate(inWeekLimit.getDate() + 7);

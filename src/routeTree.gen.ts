@@ -17,6 +17,7 @@ import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedTrocarSenhaRouteImport } from './routes/_authenticated/trocar-senha'
 import { Route as AuthenticatedSaldosRouteImport } from './routes/_authenticated/saldos'
 import { Route as AuthenticatedImportacoesRouteImport } from './routes/_authenticated/importacoes'
+import { Route as AuthenticatedDuplicatasRevisaoRouteImport } from './routes/_authenticated/duplicatas-revisao'
 
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
@@ -59,11 +60,18 @@ const AuthenticatedImportacoesRoute =
     path: '/importacoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDuplicatasRevisaoRoute =
+  AuthenticatedDuplicatasRevisaoRouteImport.update({
+    id: '/duplicatas-revisao',
+    path: '/duplicatas-revisao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/setup': typeof SetupRoute
+  '/duplicatas-revisao': typeof AuthenticatedDuplicatasRevisaoRoute
   '/importacoes': typeof AuthenticatedImportacoesRoute
   '/saldos': typeof AuthenticatedSaldosRoute
   '/trocar-senha': typeof AuthenticatedTrocarSenhaRoute
@@ -72,6 +80,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/setup': typeof SetupRoute
+  '/duplicatas-revisao': typeof AuthenticatedDuplicatasRevisaoRoute
   '/importacoes': typeof AuthenticatedImportacoesRoute
   '/saldos': typeof AuthenticatedSaldosRoute
   '/trocar-senha': typeof AuthenticatedTrocarSenhaRoute
@@ -83,6 +92,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/setup': typeof SetupRoute
+  '/_authenticated/duplicatas-revisao': typeof AuthenticatedDuplicatasRevisaoRoute
   '/_authenticated/importacoes': typeof AuthenticatedImportacoesRoute
   '/_authenticated/saldos': typeof AuthenticatedSaldosRoute
   '/_authenticated/trocar-senha': typeof AuthenticatedTrocarSenhaRoute
@@ -95,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/setup'
+    | '/duplicatas-revisao'
     | '/importacoes'
     | '/saldos'
     | '/trocar-senha'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/setup'
+    | '/duplicatas-revisao'
     | '/importacoes'
     | '/saldos'
     | '/trocar-senha'
@@ -113,6 +125,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/setup'
+    | '/_authenticated/duplicatas-revisao'
     | '/_authenticated/importacoes'
     | '/_authenticated/saldos'
     | '/_authenticated/trocar-senha'
@@ -184,10 +197,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedImportacoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/duplicatas-revisao': {
+      id: '/_authenticated/duplicatas-revisao'
+      path: '/duplicatas-revisao'
+      fullPath: '/duplicatas-revisao'
+      preLoaderRoute: typeof AuthenticatedDuplicatasRevisaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedDuplicatasRevisaoRoute: typeof AuthenticatedDuplicatasRevisaoRoute
   AuthenticatedImportacoesRoute: typeof AuthenticatedImportacoesRoute
   AuthenticatedSaldosRoute: typeof AuthenticatedSaldosRoute
   AuthenticatedTrocarSenhaRoute: typeof AuthenticatedTrocarSenhaRoute
@@ -196,6 +217,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedDuplicatasRevisaoRoute: AuthenticatedDuplicatasRevisaoRoute,
   AuthenticatedImportacoesRoute: AuthenticatedImportacoesRoute,
   AuthenticatedSaldosRoute: AuthenticatedSaldosRoute,
   AuthenticatedTrocarSenhaRoute: AuthenticatedTrocarSenhaRoute,
@@ -214,13 +236,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
