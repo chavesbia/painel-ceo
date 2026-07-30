@@ -6,6 +6,7 @@ import {
   Upload,
   Users as UsersIcon,
   LogOut,
+  CopyCheck,
 } from "lucide-react";
 import logoSquare from "@/assets/prevermed-logo-square.png.asset.json";
 import { useCurrentUser, initials, type AppRole } from "@/lib/auth";
@@ -25,6 +26,7 @@ const NAV: NavItem[] = [
   { to: "/", label: "Painel do CEO", icon: LayoutDashboard, group: "Executivo", requires: "viewer" },
   { to: "/saldos", label: "Saldos", icon: Landmark, group: "Operação", requires: "operator" },
   { to: "/importacoes", label: "Importações", icon: Upload, group: "Sistema", requires: "operator" },
+  { to: "/duplicatas-revisao", label: "Duplicatas em revisão", icon: CopyCheck, group: "Sistema", requires: "operator" },
   { to: "/usuarios", label: "Usuários", icon: UsersIcon, group: "Administração", requires: "admin" },
 ];
 
