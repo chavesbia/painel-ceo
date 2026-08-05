@@ -43,7 +43,7 @@ export function extractDoc(v: string | undefined): string | null {
   return m ? m[1] : null;
 }
 
-export const EXCLUDED_CNPJ = "37.260.594/0002-60";
+export const EXCLUDED_CNPJ = "37260594000260";
 
 export type ParsedInvoiceRow = {
   kind: "receivable" | "payable";
@@ -147,7 +147,7 @@ export function csvToInvoices(
     // ALPHA CLINICA MULTIDISCIPLINAR (37.260.594/0002-60) é excluída apenas
     // do "A Receber" (evita dupla contagem entre matriz e filial). Em
     // "A Pagar" mantemos os registros — são obrigações reais da empresa.
-    if (kind === "receivable" && unidade.includes(EXCLUDED_CNPJ)) {
+    if (kind === "receivable" && (unidade.replace(/\D/g, "").includes(EXCLUDED_CNPJ) || unidade.includes("37.260.594/0002-60"))) {
       pushSkip(`Unidade de Negócio excluída em A Receber (CNPJ ${EXCLUDED_CNPJ})`);
       continue;
     }

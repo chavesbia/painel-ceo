@@ -758,6 +758,16 @@ const CNPJ_BY_NAME: { key: string; cnpj: string; display?: string }[] = [
 function companyInfo(v: string | null | undefined): { cnpj: string | null; nome: string } {
   const raw = shortName(v);
   if (!raw) return { cnpj: null, nome: "Não informado" };
+  
+  // Normaliza o input removendo pontuação para comparação
+  const normInput = raw.replace(/\D/g, "");
+  
+  // Se for um CNPJ (14 dígitos) ou CPF (11 dígitos) puro, busca pelo CNPJ normalizado
+  if (normInput.length === 11 || normInput.length === 14) {
+    const byCnpj = CNPJ_BY_NAME.find((c) => c.cnpj.replace(/\D/g, "") === normInput);
+    if (byCnpj) return { cnpj: byCnpj.cnpj, nome: byCnpj.display || titleCase(raw) };
+  }
+
   // Casa por CNPJ quando o campo vier apenas com o número (ex.: cash_balances.company_name = "28.309.721/0001-05").
   const cnpjMatch = raw.match(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/);
   if (cnpjMatch) {
