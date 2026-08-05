@@ -1,5 +1,24 @@
 import type { ImportInput } from "./imports.schema";
 
+const normalizeUnidade = (v: string | null | undefined) => {
+  let s = (v ?? "").toString().replace(/^\uFEFF/, "").replace(/\s+/g, " ").trim();
+  if (!s) return null;
+
+  // 1. "CNPJ | Nome" -> apenas números do CNPJ
+  if (s.includes("|")) {
+    const part = s.split("|")[0].trim();
+    const cnpjOnly = part.replace(/\D/g, "");
+    if (cnpjOnly.length >= 11) return cnpjOnly; // CNPJ ou CPF
+  }
+
+  // 2. "PreverMed" -> CNPJ específico
+  if (s.toLowerCase() === "prevermed") {
+    return "28309721000105";
+  }
+
+  return s;
+};
+
 const cleanText = (v: string | null | undefined) => {
   const s = (v ?? "").toString().replace(/^\uFEFF/, "").replace(/\s+/g, " ").trim();
   return s || null;
@@ -44,7 +63,7 @@ export async function runImportInvoices(data: ImportInput) {
     import_id: imp.id,
     numero: cleanText(r.numero) || "",
     entidade_doc: cleanText(r.entidade_doc),
-    unidade_negocio: cleanText(r.unidade_negocio),
+    unidade_negocio: normalizeUnidade(r.unidade_negocio),
     data_vencimento: cleanText(r.data_vencimento),
   }));
 
