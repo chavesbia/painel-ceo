@@ -113,7 +113,12 @@ export async function runImportInvoices(data: ImportInput) {
 
   await supabaseAdmin
     .from("imports")
-    .update({ rows_imported: imported, rows_inserted: rowsInserted, rows_updated: rowsUpdated })
+    .update({ 
+      rows_imported: imported, 
+      rows_inserted: rowsInserted, 
+      rows_updated: rowsUpdated,
+      rows_skipped: data.skipped + footerRowsCount // Atualiza o total de ignorados no registro final
+    })
     .eq("id", imp.id);
 
   const { data: allInvoices } = await supabaseAdmin
