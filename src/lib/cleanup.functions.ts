@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 export const runCleanupTrash = createServerFn({ method: "POST" })
-  .input(z.object({ confirm: z.boolean() }))
+  .validator((d: { confirm: boolean }) => d)
   .handler(async ({ data }) => {
     if (!data.confirm) return { count: 0 };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
