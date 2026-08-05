@@ -45,20 +45,25 @@ const identityKey = (r: {
 export async function runImportInvoices(data: ImportInput) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+  // Filtro de "linhas de rodapé" (entidade_doc vazio)
+  const rowsWithEntidade = data.rows.filter(r => cleanText(r.entidade_doc));
+  const footerRowsCount = data.rows.length - rowsWithEntidade.length;
+
   const { data: imp, error: impErr } = await supabaseAdmin
     .from("imports")
     .insert({
       kind: data.kind,
       filename: data.filename,
       rows_total: data.total,
-      rows_skipped: data.skipped,
+      rows_skipped: data.skipped + footerRowsCount,
       rows_imported: 0,
+      notes: footerRowsCount > 0 ? `${footerRowsCount} linhas de rodapé descartadas` : null
     })
     .select("id")
     .single();
   if (impErr || !imp) throw new Error(impErr?.message || "Falha ao criar import");
 
-  const withImport = data.rows.map((r) => ({
+  const withImport = rowsWithEntidade.map((r) => ({
     ...r,
     import_id: imp.id,
     numero: cleanText(r.numero) || "",
@@ -108,7 +113,12 @@ export async function runImportInvoices(data: ImportInput) {
 
   await supabaseAdmin
     .from("imports")
-    .update({ rows_imported: imported, rows_inserted: rowsInserted, rows_updated: rowsUpdated })
+    .update({ 
+      rows_imported: imported, 
+      rows_inserted: rowsInserted, 
+      rows_updated: rowsUpdated,
+      rows_skipped: data.skipped + footerRowsCount // Atualiza o total de ignorados no registro final
+    })
     .eq("id", imp.id);
 
   const { data: allInvoices } = await supabaseAdmin
