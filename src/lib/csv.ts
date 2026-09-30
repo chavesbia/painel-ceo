@@ -179,7 +179,12 @@ export function csvToInvoices(
       entidade: (line[col.ent] || "").trim() || null,
       entidade_doc: entidadeDoc,
       valor_parcela: parseBrl(line[col.vp]),
-      valor_pago: col.vpago >= 0 ? parseBrl(line[col.vpago]) : 0,
+      valor_pago:
+        col.vpago >= 0
+          ? parseBrl(line[col.vpago])
+          : /^paga/i.test((line[col.sit] || "").trim())
+            ? parseBrl(line[col.vp])
+            : 0,
       total_fatura: line[col.tot] ? parseBrl(line[col.tot]) : null,
       situacao: (line[col.sit] || "").trim() || null,
       data_competencia: parseBrDate(line[col.dc]),
