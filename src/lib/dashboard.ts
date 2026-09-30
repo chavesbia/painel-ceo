@@ -178,6 +178,31 @@ async function fetchAllInvoices(pastStr: string): Promise<InvoiceRow[]> {
   return all;
 }
 
+// Chaves (numero+entidade+unidade) de faturas "a pagar" já Pagas. Quando o ERP
+// altera o vencimento no pagamento, surge uma linha "Paga" nova e a antiga
+// "Pendente" fica órfã — ela não deve mais contar no painel.
+async function fetchPaidPayableKeys(): Promise<Set<string>> {
+  const keys = new Set<string>();
+  const pageSize = 1000;
+  let from = 0;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { data, error } = await supabase
+      .from("invoices")
+      .select("numero,entidade_doc,unidade_negocio")
+      .eq("kind", "payable")
+      .ilike("situacao", "paga%")
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    const chunk = data || [];
+    for (const r of chunk) keys.add([r.numero ?? "", r.entidade_doc ?? "", r.unidade_negocio ?? ""].join("||"));
+    if (chunk.length < pageSize) break;
+    from += pageSize;
+    if (from > 500000) break;
+  }
+  return keys;
+}
+
 async function fetchEfetivoRange(startStr: string, endStr: string): Promise<EfetivoRow[]> {
   const pageSize = 1000;
   let from = 0;
@@ -217,7 +242,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   const efetivoStartStr = ymd(efetivoStart);
   const efetivoEndStr = ymd(efetivoEnd);
 
-  const [rows, impRes, cashRes, efetivoRows] = await Promise.all([
+  const [rows, impRes, cashRes, efetivoRows, paidPayableKeys] = await Promise.all([
     fetchAllInvoices(ymd(past)),
     supabase.from("imports").select("created_at").order("created_at", { ascending: false }).limit(1),
     supabase
@@ -227,6 +252,7 @@ export async function loadDashboard(): Promise<DashboardData> {
       .order("updated_at", { ascending: false })
       .limit(5000),
     fetchEfetivoRange(efetivoStartStr, efetivoEndStr),
+    fetchPaidPayableKeys(),
   ]);
 
   const cashRows = (cashRes.data as CashBalanceRow[] | null) || [];
@@ -281,7 +307,12 @@ export async function loadDashboard(): Promise<DashboardData> {
   }
 
   const recv = rows.filter((r) => r.kind === "receivable" && isOpen(r));
-  const payAll = rows.filter((r) => r.kind === "payable" && isOpen(r));
+  const payAll = rows.filter(
+    (r) =>
+      r.kind === "payable" &&
+      isOpen(r) &&
+      !paidPayableKeys.has([r.numero ?? "", r.entidade_doc ?? "", r.unidade_negocio ?? ""].join("||")),
+  );
   // Duplicatas "a pagar" pendentes de revisão manual (mesmo numero+entidade_doc+
   // unidade_negocio, vencimentos diferentes, nenhuma linha Paga): conta o valor
   // UMA única vez, usando a linha de vencimento mais próximo de hoje, para não

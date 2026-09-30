@@ -77,11 +77,18 @@ export async function runImportInvoices(data: ImportInput) {
   for (const r of withImport) seen.set(identityKey(r), r);
   const deduped = Array.from(seen.values());
 
-  const { data: existingRows } = await supabaseAdmin
-    .from("invoices")
-    .select("kind, numero, entidade_doc, unidade_negocio, data_vencimento")
-    .eq("kind", data.kind);
-  const existingKeys = new Set((existingRows ?? []).map((r) => identityKey(r)));
+  const existingKeys = new Set<string>();
+  for (let from = 0; ; from += 1000) {
+    const { data: page, error: pageErr } = await supabaseAdmin
+      .from("invoices")
+      .select("kind, numero, entidade_doc, unidade_negocio, data_vencimento")
+      .eq("kind", data.kind)
+      .order("id")
+      .range(from, from + 999);
+    if (pageErr) throw new Error(pageErr.message);
+    for (const r of page ?? []) existingKeys.add(identityKey(r));
+    if (!page || page.length < 1000) break;
+  }
   let rowsInserted = 0;
   let rowsUpdated = 0;
   for (const r of deduped) {
@@ -108,6 +115,24 @@ export async function runImportInvoices(data: ImportInput) {
       }
     } else {
       imported += slice.length;
+    }
+  }
+
+  // "A pagar": quando o ERP muda o vencimento ao pagar, a linha antiga
+  // "Pendente" (outro vencimento) fica órfã. Marca-a como Paga.
+  if (data.kind === "payable") {
+    const paid = deduped.filter((r) => /^paga/i.test(String(r.situacao ?? "")));
+    for (const r of paid) {
+      let q = supabaseAdmin
+        .from("invoices")
+        .update({ situacao: "Paga", data_pagamento: r.data_pagamento ?? null, import_id: imp.id })
+        .eq("kind", "payable")
+        .eq("numero", r.numero)
+        .in("situacao", ["Pendente", "Protestada"])
+        .neq("data_vencimento", r.data_vencimento ?? "");
+      q = r.entidade_doc ? q.eq("entidade_doc", r.entidade_doc) : q.is("entidade_doc", null);
+      q = r.unidade_negocio ? q.eq("unidade_negocio", r.unidade_negocio) : q.is("unidade_negocio", null);
+      await q;
     }
   }
 
