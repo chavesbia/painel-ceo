@@ -908,10 +908,14 @@ function DetalheModal({
     });
     return sorted;
   }, [items, filter, kindFilter, sortKey, sortDir]);
+  const sumEntradas = React.useMemo(() => items.filter((r) => r.tone === "green").reduce((s, r) => s + r.valor, 0), [items]);
+  const sumSaidas = React.useMemo(() => items.filter((r) => r.tone === "red").reduce((s, r) => s + r.valor, 0), [items]);
+  const isNet = !!kindFilter && filter === "todos";
   const filteredTotal = React.useMemo(
-    () => (kindFilter && filter !== "todos" ? filteredItems.reduce((s, r) => s + r.valor, 0) : total),
-    [filteredItems, filter, kindFilter, total],
+    () => (!kindFilter ? total : filter === "todos" ? sumEntradas - sumSaidas : filteredItems.reduce((s, r) => s + r.valor, 0)),
+    [filteredItems, filter, kindFilter, total, sumEntradas, sumSaidas],
   );
+  const totalCls = isNet ? (filteredTotal >= 0 ? "text-status-green" : "text-status-red") : kindFilter ? (filter === "receber" ? "text-status-green" : "text-status-red") : null;
   const countReceber = React.useMemo(() => items.filter((r) => r.tone === "green").length, [items]);
   const countPagar = React.useMemo(() => items.filter((r) => r.tone === "red").length, [items]);
   React.useEffect(() => {
@@ -939,8 +943,15 @@ function DetalheModal({
             <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">Detalhamento</p>
             <h2 className="mt-1 text-lg sm:text-xl font-display font-bold">{title}</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              {filteredItems.length} {filteredItems.length === 1 ? "título" : "títulos"} · Total {brl(filteredTotal)}
+              {filteredItems.length} {filteredItems.length === 1 ? "título" : "títulos"} · {isNet ? "Resultado" : "Total"} {brl(filteredTotal)}
             </p>
+            {isNet && (
+              <p className="mt-1 text-xs tabular-nums">
+                <span className="text-status-green font-semibold">Entradas {brl(sumEntradas)}</span>
+                {" · "}
+                <span className="text-status-red font-semibold">Saídas {brl(sumSaidas)}</span>
+              </p>
+            )}
             {kindFilter && (
               <div className="mt-3 inline-flex flex-wrap gap-1 p-1 rounded-md bg-muted">
                 {([
@@ -1040,8 +1051,8 @@ function DetalheModal({
               </tbody>
               <tfoot className="bg-muted/40">
                 <tr>
-                  <td colSpan={5} className="py-3 px-3 sm:px-4 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total</td>
-                  <td className={`py-3 px-3 sm:px-4 text-right tabular-nums font-bold ${toneCls}`}>{brl(filteredTotal)}</td>
+                  <td colSpan={5} className="py-3 px-3 sm:px-4 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{isNet ? "Resultado (Entradas − Saídas)" : "Total"}</td>
+                  <td className={`py-3 px-3 sm:px-4 text-right tabular-nums font-bold ${totalCls ?? toneCls}`}>{brl(filteredTotal)}</td>
                 </tr>
               </tfoot>
             </table>
