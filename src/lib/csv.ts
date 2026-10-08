@@ -160,7 +160,11 @@ export function csvToInvoices(
       const valorPago = col.vpago >= 0 ? parseBrl(line[col.vpago]) : 0;
       const dataPagamento = parseBrDate(line[col.dp]);
       const jaRecebido = valorPago > 0 && !!dataPagamento;
-      if (!jaRecebido) {
+      // Canceladas/Pagas sempre passam: precisam atualizar o status no banco
+      // mesmo quando a NFS-e veio como "Cancelada" (sem "Autorizada").
+      const sitAtual = (line[col.sit] || "").trim();
+      const statusFinal = /^(cancelad|paga)/i.test(sitAtual);
+      if (!jaRecebido && !statusFinal) {
         if (!/autorizada/i.test(numeroNota)) { pushSkip('"Nº da Nota" não contém "Autorizada"'); continue; }
         if (!criadoPor) { pushSkip('"Criado por" vazio'); continue; }
       }
